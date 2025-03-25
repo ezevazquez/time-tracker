@@ -44,7 +44,7 @@ export function DeleteProjectDialog({ project, isOpen, onClose, onDelete }: Dele
         <AlertDialogHeader>
           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will permanently delete the project "{project?.name}" and remove all related assignments. This action
+            This will permanently delete the project &quot;{project?.name}&quot; and remove all related assignments. This action
             cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
