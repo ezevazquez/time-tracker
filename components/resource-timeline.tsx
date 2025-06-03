@@ -195,7 +195,9 @@ export function ResourceTimeline({
     const visibleStart = startOfMonth(visibleDateRange.start)
     const today = new Date()
     const todayIndex = differenceInDays(today, visibleStart)
-    const scrollPosition = todayIndex * DAY_WIDTH - scrollContainer.clientWidth / 2
+
+    // Position today at 25% of the visible width (left-aligned) instead of centered
+    const scrollPosition = todayIndex * DAY_WIDTH - scrollContainer.clientWidth * 0.20
 
     scrollContainer.scrollTo({
       left: Math.max(0, scrollPosition),
@@ -308,7 +310,7 @@ export function ResourceTimeline({
                       {summaryStats.unassignedPeople}
                     </Badge>
                   )}
-                  <Badge
+                  {/* <Badge
                     variant="outline"
                     className={`text-xs h-6 ${
                       summaryStats.avgUtilization > 100
@@ -320,7 +322,7 @@ export function ResourceTimeline({
                   >
                     <TrendingUp className="h-3 w-3 mr-1" />
                     {summaryStats.avgUtilization}%
-                  </Badge>
+                  </Badge> */}
                 </div>
               </div>
 
