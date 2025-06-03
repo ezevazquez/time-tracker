@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
@@ -14,7 +14,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Slider } from "@/components/ui/slider"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
 import { usePeople, useProjects, useAssignments } from "@/hooks/use-data"
@@ -26,7 +25,9 @@ const formSchema = z
     project_id: z.string({ required_error: "El proyecto es requerido" }),
     start_date: z.date({ required_error: "La fecha de inicio es requerida" }),
     end_date: z.date({ required_error: "La fecha de fin es requerida" }),
-    allocation: z.number().min(1).max(100),
+    allocation: z.number().refine((val) => [25, 50, 75, 100].includes(val), {
+      message: "La asignación debe ser 25%, 50%, 75% o 100%",
+    }),
     assigned_role: z.string().optional(),
   })
   .refine((data) => data.end_date >= data.start_date, {
@@ -34,12 +35,13 @@ const formSchema = z
     path: ["end_date"],
   })
 
-export default function EditAssignmentPage({ params }: { params: { id: string } }) {
+export default function EditAssignmentPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [assignment, setAssignment] = useState<Assignment | null>(null)
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { id } = use(params)
 
   const { people } = usePeople()
   const { projects } = useProjects()
@@ -57,7 +59,7 @@ export default function EditAssignmentPage({ params }: { params: { id: string } 
     const loadAssignment = async () => {
       try {
         setIsLoadingData(true)
-        const foundAssignment = assignments.find((a: Assignment) => a.id === params.id)
+        const foundAssignment = assignments.find((a: Assignment) => a.id === id)
 
         if (!foundAssignment) {
           setError("Asignación no encontrada")
@@ -86,7 +88,7 @@ export default function EditAssignmentPage({ params }: { params: { id: string } 
     if (assignments.length > 0) {
       loadAssignment()
     }
-  }, [params.id, assignments, form])
+  }, [id, assignments, form])
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!assignment) return
@@ -95,13 +97,13 @@ export default function EditAssignmentPage({ params }: { params: { id: string } 
       setIsLoading(true)
       setError(null)
 
+      // Only include the actual database columns
       const updatedAssignment = {
-        ...assignment,
         person_id: values.person_id,
         project_id: values.project_id,
         start_date: values.start_date.toISOString().split("T")[0],
         end_date: values.end_date.toISOString().split("T")[0],
-        allocation: values.allocation,
+        allocation: values.allocation / 100, // Convert from percentage to decimal
         assigned_role: values.assigned_role || null,
         updated_at: new Date().toISOString(),
       }
@@ -110,7 +112,7 @@ export default function EditAssignmentPage({ params }: { params: { id: string } 
       router.push("/assignments")
     } catch (err) {
       console.error("Error updating assignment:", err)
-      setError("Error al actualizar la asignación")
+      setError(err instanceof Error ? err.message : "Error al actualizar la asignación")
     } finally {
       setIsLoading(false)
     }
@@ -283,20 +285,21 @@ export default function EditAssignmentPage({ params }: { params: { id: string } 
               </div>
 
               <div className="space-y-2">
-                <Label>Asignación: {form.watch("allocation")}%</Label>
-                <Slider
-                  value={[form.watch("allocation")]}
-                  onValueChange={(value) => form.setValue("allocation", value[0])}
-                  max={100}
-                  min={1}
-                  step={5}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>1%</span>
-                  <span>50%</span>
-                  <span>100%</span>
-                </div>
+                <Label>Asignación</Label>
+                <Select
+                  value={form.watch("allocation").toString()}
+                  onValueChange={(value) => form.setValue("allocation", parseInt(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar asignación" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="25">25%</SelectItem>
+                    <SelectItem value="50">50%</SelectItem>
+                    <SelectItem value="75">75%</SelectItem>
+                    <SelectItem value="100">100%</SelectItem>
+                  </SelectContent>
+                </Select>
                 {form.formState.errors.allocation && (
                   <p className="text-sm text-red-500">{form.formState.errors.allocation.message}</p>
                 )}

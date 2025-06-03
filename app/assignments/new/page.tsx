@@ -12,7 +12,6 @@ import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { Slider } from "@/components/ui/slider"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
@@ -32,7 +31,7 @@ export default function NewAssignmentPage() {
     project_id: "",
     start_date: undefined as Date | undefined,
     end_date: undefined as Date | undefined,
-    allocation: [80], // Using array for Slider component
+    allocation: 100, // Default to 100%
     assigned_role: "",
   })
 
@@ -54,7 +53,7 @@ export default function NewAssignmentPage() {
         project_id: formData.project_id,
         start_date: formData.start_date.toISOString().split("T")[0],
         end_date: formData.end_date.toISOString().split("T")[0],
-        allocation: formData.allocation[0] / 100, // Convert to 0-1 range
+        allocation: formData.allocation / 100, // Convert to 0-1 range
         assigned_role: formData.assigned_role || null,
       })
 
@@ -78,7 +77,7 @@ export default function NewAssignmentPage() {
   const checkForConflicts = () => {
     const newWarnings: string[] = []
 
-    if (formData.allocation[0] > 100) {
+    if (formData.allocation > 100) {
       newWarnings.push("La dedicación no puede superar el 100%")
     }
 
@@ -273,23 +272,22 @@ export default function NewAssignmentPage() {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Dedicación: {formData.allocation[0]}%</Label>
-                  <Slider
-                    value={formData.allocation}
-                    onValueChange={(value) => setFormData({ ...formData, allocation: value })}
-                    max={100}
-                    min={10}
-                    step={5}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>10%</span>
-                    <span>50%</span>
-                    <span>100%</span>
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <Label>Asignación</Label>
+                <Select
+                  value={formData.allocation.toString()}
+                  onValueChange={(value) => setFormData({ ...formData, allocation: parseInt(value) })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar asignación" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="25">25%</SelectItem>
+                    <SelectItem value="50">50%</SelectItem>
+                    <SelectItem value="75">75%</SelectItem>
+                    <SelectItem value="100">100%</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -315,7 +313,7 @@ export default function NewAssignmentPage() {
                         <strong>Proyecto:</strong> {selectedProject.name}
                       </div>
                       <div>
-                        <strong>Dedicación:</strong> {formData.allocation[0]}%
+                        <strong>Dedicación:</strong> {formData.allocation}%
                       </div>
                       {formData.assigned_role && (
                         <div>
