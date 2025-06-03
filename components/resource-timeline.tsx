@@ -257,7 +257,7 @@ export function ResourceTimeline({
                   <div className="w-full">
                     <div className="font-medium truncate">{item.name}</div>
                     <div className="text-xs text-muted-foreground truncate">
-                      {viewMode === "people" ? item.profile : item.description}
+                      {viewMode === "people" ? (item as Person).profile : (item as Project).description}
                     </div>
                     {viewMode === "people" && (
                       <Badge variant="outline" className={`mt-1 ${getStatusColor(item.status)}`}>
