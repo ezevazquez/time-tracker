@@ -7,7 +7,6 @@ import { isSupabaseConfigured } from "@/lib/supabase"
 import { DashboardStats } from "@/components/dashboard-stats"
 import { DataSourceNotice } from "@/components/data-source-notice"
 import { ResourceTimeline } from "@/components/resource-timeline"
-import { QuickActions } from "@/components/quick-actions"
 
 export default function Dashboard() {
   const [viewMode, setViewMode] = useState("people")
@@ -89,7 +88,6 @@ export default function Dashboard() {
       />
 
       {/* Quick Actions */}
-      <QuickActions />
     </main>
   )
 }
