@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { isSupabaseConfigured } from "@/lib/supabase"
 import Script from "next/script"
+import { MainNav } from "@/components/main-nav"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -46,26 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <h1 className="text-2xl font-bold text-primary">ResourceFlow</h1>
-                    <nav className="hidden md:flex space-x-6">
-                      <Link href="/" className="text-sm font-medium text-primary">
-                        Dashboard
-                      </Link>
-                      <Link href="/people" className="text-sm font-medium text-muted-foreground hover:text-primary">
-                        Personas
-                      </Link>
-                      <Link href="/projects" className="text-sm font-medium text-muted-foreground hover:text-primary">
-                        Proyectos
-                      </Link>
-                      <Link
-                        href="/assignments"
-                        className="text-sm font-medium text-muted-foreground hover:text-primary"
-                      >
-                        Asignaciones
-                      </Link>
-                      <Link href="/settings" className="text-sm font-medium text-muted-foreground hover:text-primary">
-                        Configuración
-                      </Link>
-                    </nav>
+                    <MainNav />
                   </div>
                   <div className="flex items-center space-x-2">
                     {/* Data Source Indicator */}

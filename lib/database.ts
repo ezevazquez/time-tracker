@@ -353,6 +353,12 @@ export const assignmentsService = {
     }
 
     try {
+      // Validate allocation value
+      const allocationPercentage = Math.round(assignment.allocation * 100)
+      if (![25, 50, 75, 100].includes(allocationPercentage)) {
+        throw new Error("La asignación debe ser 25%, 50%, 75% o 100%")
+      }
+
       // Generate UUID for new assignment
       const newId = crypto.randomUUID()
 
@@ -360,7 +366,7 @@ export const assignmentsService = {
       const dbAssignment = {
         ...assignment,
         id: newId,
-        allocation: assignment.allocation * 100, // Convert to percentage for DB
+        allocation: allocationPercentage, // Store as percentage
       }
 
       const { data, error } = await supabase.from("assignments").insert([dbAssignment]).select().single()
@@ -387,10 +393,18 @@ export const assignmentsService = {
     }
 
     try {
+      // Validate allocation value if present
+      if (updates.allocation !== undefined) {
+        const allocationPercentage = Math.round(updates.allocation * 100)
+        if (![25, 50, 75, 100].includes(allocationPercentage)) {
+          throw new Error("La asignación debe ser 25%, 50%, 75% o 100%")
+        }
+      }
+
       // Convert allocation if present
       const dbUpdates = {
         ...updates,
-        allocation: updates.allocation !== undefined ? updates.allocation * 100 : undefined,
+        allocation: updates.allocation !== undefined ? Math.round(updates.allocation * 100) : undefined,
         updated_at: new Date().toISOString(),
       }
 
