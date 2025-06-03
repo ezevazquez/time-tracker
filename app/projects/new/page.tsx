@@ -1,9 +1,11 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { ArrowLeft, Save, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
@@ -12,62 +14,78 @@ import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { Slider } from "@/components/ui/slider"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { usePeople, useProjects, useAssignments } from "@/hooks/use-data"
+import { useProjects, clientsService } from "@/hooks/use-data"
 import { useToast } from "@/hooks/use-toast"
+import type { Client } from "@/lib/supabase"
 
-export default function NewAssignmentPage() {
+export default function NewProjectPage() {
   const router = useRouter()
-  const { people, loading: peopleLoading } = usePeople()
-  const { projects, loading: projectsLoading } = useProjects()
-  const { createAssignment } = useAssignments()
+  const { createProject } = useProjects()
   const { toast } = useToast()
 
+  const [clients, setClients] = useState<Client[]>([])
+  const [loadingClients, setLoadingClients] = useState(true)
+
   const [formData, setFormData] = useState({
-    person_id: "",
-    project_id: "",
+    name: "",
+    description: "",
+    status: "In Progress" as "In Progress" | "Finished" | "On Hold" | "Not Started",
     start_date: undefined as Date | undefined,
     end_date: undefined as Date | undefined,
-    allocation: [80], // Using array for Slider component
-    assigned_role: "",
+    client_id: "" as string | null,
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [warnings, setWarnings] = useState<string[]>([])
 
+  // Fetch clients
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const clientsData = await clientsService.getAll()
+        setClients(clientsData)
+      } catch (error) {
+        console.error("Error fetching clients:", error)
+      } finally {
+        setLoadingClients(false)
+      }
+    }
+
+    fetchClients()
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.person_id || !formData.project_id || !formData.start_date || !formData.end_date) {
-      setWarnings(["Todos los campos marcados con * son obligatorios"])
+    if (!formData.name.trim()) {
+      setWarnings(["El nombre del proyecto es obligatorio"])
       return
     }
 
     try {
       setIsSubmitting(true)
-      await createAssignment({
-        person_id: formData.person_id,
-        project_id: formData.project_id,
-        start_date: formData.start_date.toISOString().split("T")[0],
-        end_date: formData.end_date.toISOString().split("T")[0],
-        allocation: formData.allocation[0] / 100, // Convert to 0-1 range
-        assigned_role: formData.assigned_role || null,
+      await createProject({
+        name: formData.name.trim(),
+        description: formData.description.trim() || null,
+        status: formData.status,
+        start_date: formData.start_date?.toISOString().split("T")[0] || null,
+        end_date: formData.end_date?.toISOString().split("T")[0] || null,
+        client_id: formData.client_id || null,
       })
 
       toast({
-        title: "Asignación creada",
-        description: "La asignación se ha creado exitosamente.",
+        title: "Proyecto creado",
+        description: "El proyecto se ha creado exitosamente.",
       })
 
-      router.push("/assignments")
+      router.push("/projects")
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error al crear la asignación",
+        description: error instanceof Error ? error.message : "Error al crear el proyecto",
         variant: "destructive",
       })
     } finally {
@@ -75,81 +93,41 @@ export default function NewAssignmentPage() {
     }
   }
 
-  const checkForConflicts = () => {
+  const checkForWarnings = () => {
     const newWarnings: string[] = []
 
-    if (formData.allocation[0] > 100) {
-      newWarnings.push("La dedicación no puede superar el 100%")
+    if (!formData.name.trim()) {
+      newWarnings.push("El nombre del proyecto es obligatorio")
     }
 
     if (formData.start_date && formData.end_date && formData.start_date > formData.end_date) {
       newWarnings.push("La fecha de inicio debe ser anterior a la fecha de fin")
     }
 
-    if (!formData.person_id || !formData.project_id || !formData.start_date || !formData.end_date) {
-      newWarnings.push("Todos los campos marcados con * son obligatorios")
-    }
-
     setWarnings(newWarnings)
   }
 
-  // Check for conflicts when form data changes
   React.useEffect(() => {
-    checkForConflicts()
+    checkForWarnings()
   }, [formData])
 
-  const selectedPerson = people.find((p) => p.id === formData.person_id)
-  const selectedProject = projects.find((p) => p.id === formData.project_id)
-
-  // Filter active people and projects
-  const activePeople = people.filter((p) => p.status === "Active")
-  const activeProjects = projects.filter((p) => p.status === "In Progress" || p.status === "Not Started")
-
-  if (peopleLoading || projectsLoading) {
-    return (
-      <main className="flex-1 container mx-auto px-4 py-6">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-4 mb-6">
-            <Button variant="outline" size="icon" asChild>
-              <Link href="/assignments">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold">Nueva Asignación</h1>
-              <p className="text-muted-foreground">Cargando datos...</p>
-            </div>
-          </div>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="animate-pulse space-y-4">
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    )
-  }
+  const selectedClient = clients.find((client) => client.id === formData.client_id)
 
   return (
     <main className="flex-1 container mx-auto px-4 py-6">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
           <Button variant="outline" size="icon" asChild>
-            <Link href="/assignments">
+            <Link href="/projects">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Nueva Asignación</h1>
-            <p className="text-muted-foreground">Asigna una persona a un proyecto</p>
+            <h1 className="text-3xl font-bold">Nuevo Proyecto</h1>
+            <p className="text-muted-foreground">Crea un nuevo proyecto para asignar recursos</p>
           </div>
         </div>
 
-        {/* Warnings */}
         {warnings.length > 0 && (
           <Alert className="mb-6 border-yellow-200 bg-yellow-50">
             <AlertTriangle className="h-4 w-4" />
@@ -165,28 +143,36 @@ export default function NewAssignmentPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Detalles de la Asignación</CardTitle>
-            <CardDescription>Completa la información de la asignación</CardDescription>
+            <CardTitle>Detalles del Proyecto</CardTitle>
+            <CardDescription>Completa la información del nuevo proyecto</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="person">Persona *</Label>
+                  <Label htmlFor="name">Nombre del Proyecto *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Ej: E-commerce Platform"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="client">Cliente</Label>
                   <Select
-                    value={formData.person_id}
-                    onValueChange={(value) => setFormData({ ...formData, person_id: value })}
+                    value={formData.client_id || ""}
+                    onValueChange={(value) => setFormData({ ...formData, client_id: value || null })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar persona" />
+                      <SelectValue placeholder="Seleccionar cliente" />
                     </SelectTrigger>
                     <SelectContent>
-                      {activePeople.map((person) => (
-                        <SelectItem key={person.id} value={person.id}>
-                          <div>
-                            <div className="font-medium">{person.name}</div>
-                            <div className="text-sm text-muted-foreground">{person.profile}</div>
-                          </div>
+                      <SelectItem value="no-client">Sin cliente</SelectItem>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -194,26 +180,27 @@ export default function NewAssignmentPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="project">Proyecto *</Label>
+                  <Label htmlFor="status">Estado</Label>
                   <Select
-                    value={formData.project_id}
-                    onValueChange={(value) => setFormData({ ...formData, project_id: value })}
+                    value={formData.status}
+                    onValueChange={(value: "In Progress" | "Finished" | "On Hold" | "Not Started") =>
+                      setFormData({ ...formData, status: value })
+                    }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar proyecto" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {activeProjects.map((project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.name}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="In Progress">En Progreso</SelectItem>
+                      <SelectItem value="Not Started">No Iniciado</SelectItem>
+                      <SelectItem value="On Hold">En Pausa</SelectItem>
+                      <SelectItem value="Finished">Finalizado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Fecha de Inicio *</Label>
+                  <Label>Fecha de Inicio</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -243,7 +230,7 @@ export default function NewAssignmentPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Fecha de Fin *</Label>
+                  <Label>Fecha de Fin</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -273,55 +260,40 @@ export default function NewAssignmentPage() {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Dedicación: {formData.allocation[0]}%</Label>
-                  <Slider
-                    value={formData.allocation}
-                    onValueChange={(value) => setFormData({ ...formData, allocation: value })}
-                    max={100}
-                    min={10}
-                    step={5}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>10%</span>
-                    <span>50%</span>
-                    <span>100%</span>
-                  </div>
-                </div>
-              </div>
-
               <div className="space-y-2">
-                <Label htmlFor="assigned_role">Rol Asignado</Label>
-                <Input
-                  id="assigned_role"
-                  value={formData.assigned_role}
-                  onChange={(e) => setFormData({ ...formData, assigned_role: e.target.value })}
-                  placeholder="Ej: Frontend Developer"
+                <Label htmlFor="description">Descripción</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Describe el proyecto..."
+                  rows={4}
                 />
               </div>
 
-              {/* Summary */}
-              {selectedPerson && selectedProject && (
+              {formData.name && (
                 <Card className="bg-muted/50">
                   <CardContent className="pt-6">
-                    <h3 className="font-medium mb-2">Resumen de la Asignación</h3>
+                    <h3 className="font-medium mb-2">Resumen del Proyecto</h3>
                     <div className="space-y-1 text-sm">
                       <div>
-                        <strong>Persona:</strong> {selectedPerson.name} ({selectedPerson.profile})
+                        <strong>Nombre:</strong> {formData.name}
                       </div>
-                      <div>
-                        <strong>Proyecto:</strong> {selectedProject.name}
-                      </div>
-                      <div>
-                        <strong>Dedicación:</strong> {formData.allocation[0]}%
-                      </div>
-                      {formData.assigned_role && (
+                      {selectedClient && (
                         <div>
-                          <strong>Rol:</strong> {formData.assigned_role}
+                          <strong>Cliente:</strong> {selectedClient.name}
                         </div>
                       )}
+                      <div>
+                        <strong>Estado:</strong>{" "}
+                        {formData.status === "In Progress"
+                          ? "En Progreso"
+                          : formData.status === "Not Started"
+                            ? "No Iniciado"
+                            : formData.status === "On Hold"
+                              ? "En Pausa"
+                              : "Finalizado"}
+                      </div>
                       {formData.start_date && formData.end_date && (
                         <div>
                           <strong>Período:</strong> {format(formData.start_date, "dd/MM/yyyy")} -{" "}
@@ -334,12 +306,16 @@ export default function NewAssignmentPage() {
               )}
 
               <div className="flex gap-4 pt-6">
-                <Button type="submit" className="flex-1" disabled={warnings.length > 0 || isSubmitting}>
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={!formData.name.trim() || warnings.length > 0 || isSubmitting}
+                >
                   <Save className="h-4 w-4 mr-2" />
-                  {isSubmitting ? "Creando..." : "Crear Asignación"}
+                  {isSubmitting ? "Creando..." : "Crear Proyecto"}
                 </Button>
                 <Button type="button" variant="outline" asChild>
-                  <Link href="/assignments">Cancelar</Link>
+                  <Link href="/projects">Cancelar</Link>
                 </Button>
               </div>
             </form>
