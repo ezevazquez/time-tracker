@@ -5,8 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, AlertCircle } from "lucide-react"
-import { format, eachDayOfInterval, isWeekend, isSameDay, startOfMonth, endOfMonth, addMonths } from "date-fns"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import {
+  format,
+  eachDayOfInterval,
+  isWeekend,
+  isSameDay,
+  startOfMonth,
+  endOfMonth,
+  addMonths,
+  differenceInDays,
+} from "date-fns"
 import { es } from "date-fns/locale"
 import type { Person, Project, AssignmentWithRelations } from "@/lib/supabase"
 
@@ -27,18 +36,18 @@ function stringToColor(str: string) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash)
   }
 
-  // Use predefined colors for better visual appeal
+  // Use Resource Guru inspired colors
   const colors = [
-    "#4f46e5", // indigo
-    "#0891b2", // cyan
-    "#059669", // emerald
-    "#d97706", // amber
-    "#7c3aed", // violet
-    "#db2777", // pink
-    "#2563eb", // blue
-    "#65a30d", // lime
-    "#9333ea", // purple
-    "#ea580c", // orange
+    "#3B82F6", // blue
+    "#10B981", // emerald
+    "#F59E0B", // amber
+    "#8B5CF6", // violet
+    "#EF4444", // red
+    "#06B6D4", // cyan
+    "#84CC16", // lime
+    "#F97316", // orange
+    "#EC4899", // pink
+    "#6366F1", // indigo
   ]
 
   return colors[Math.abs(hash) % colors.length]
@@ -58,10 +67,11 @@ export function ResourceTimeline({
   const headerRef = useRef<HTMLDivElement>(null)
 
   // Calculate days in the current view
-  const days = eachDayOfInterval({
-    start: startOfMonth(currentMonth),
-    end: endOfMonth(currentMonth),
-  })
+  const monthStart = startOfMonth(currentMonth)
+  const monthEnd = endOfMonth(currentMonth)
+  const days = eachDayOfInterval({ start: monthStart, end: monthEnd })
+
+  const DAY_WIDTH = 32 // Width of each day column in pixels
 
   // Sync horizontal scrolling between header and content
   useEffect(() => {
@@ -87,107 +97,104 @@ export function ResourceTimeline({
     setCurrentMonth((prev) => addMonths(prev, direction === "next" ? 1 : -1))
   }
 
-  // Get active resources based on view mode
-  const activeResources =
-    viewMode === "people" ? people.filter((p) => p.status === "activo") : projects.filter((p) => p.status === "activo")
+  // Get active people
+  const activePeople = people.filter((p) => p.status === "activo")
 
-  // Calculate allocation for a specific day
-  const getDayAllocation = (resourceId: string, day: Date) => {
-    const dayAssignments = assignments.filter((assignment) => {
-      const startDate = new Date(assignment.start_date)
-      const endDate = new Date(assignment.end_date)
-      const isInDateRange = day >= startDate && day <= endDate
-
-      if (viewMode === "people") {
-        return assignment.person_id === resourceId && isInDateRange
-      } else {
-        return assignment.project_id === resourceId && isInDateRange
-      }
-    })
-
-    return dayAssignments.reduce((total, assignment) => total + assignment.allocation, 0)
-  }
-
-  // Get assignments for a specific day and resource
-  const getDayAssignments = (resourceId: string, day: Date) => {
+  // Get assignments for a person within the current month view
+  const getPersonAssignments = (personId: string) => {
     return assignments.filter((assignment) => {
       const startDate = new Date(assignment.start_date)
       const endDate = new Date(assignment.end_date)
-      const isInDateRange = day >= startDate && day <= endDate
 
-      if (viewMode === "people") {
-        return assignment.person_id === resourceId && isInDateRange
-      } else {
-        return assignment.project_id === resourceId && isInDateRange
-      }
+      // Check if assignment overlaps with current month
+      return assignment.person_id === personId && startDate <= monthEnd && endDate >= monthStart
     })
+  }
+
+  // Calculate bar position and width
+  const calculateBarDimensions = (assignment: AssignmentWithRelations) => {
+    const startDate = new Date(assignment.start_date)
+    const endDate = new Date(assignment.end_date)
+
+    // Clamp dates to month boundaries
+    const clampedStart = startDate < monthStart ? monthStart : startDate
+    const clampedEnd = endDate > monthEnd ? monthEnd : endDate
+
+    const startDayIndex = differenceInDays(clampedStart, monthStart)
+    const duration = differenceInDays(clampedEnd, clampedStart) + 1
+
+    return {
+      left: startDayIndex * DAY_WIDTH,
+      width: duration * DAY_WIDTH - 2, // -2px for spacing
+      startDate,
+      endDate,
+      clampedStart,
+      clampedEnd,
+    }
   }
 
   const today = new Date()
 
   return (
-    <Card className="mb-8">
-      <CardHeader className="pb-3">
+    <Card className="mb-8 shadow-sm">
+      <CardHeader className="pb-4 border-b bg-gray-50/50">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
           <div>
-            <CardTitle className="text-xl">
-              {viewMode === "people" ? "Asignaciones por Persona" : "Asignaciones por Proyecto"}
-            </CardTitle>
-            <CardDescription>
-              Visualización de asignaciones para {format(startOfMonth(currentMonth), "MMMM yyyy", { locale: es })}
+            <CardTitle className="text-xl font-semibold text-gray-900">Timeline de Recursos</CardTitle>
+            <CardDescription className="text-gray-600">
+              {format(monthStart, "MMMM yyyy", { locale: es })}
             </CardDescription>
           </div>
 
           <div className="flex items-center space-x-2 mt-2 sm:mt-0">
-            <Button variant="outline" size="icon" onClick={() => navigateMonth("prev")}>
+            <Button variant="outline" size="sm" onClick={() => navigateMonth("prev")} className="h-8 w-8 p-0">
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={() => navigateMonth("next")}>
+            <Button variant="outline" size="sm" onClick={() => navigateMonth("next")} className="h-8 w-8 p-0">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 mb-2">
-          <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium">Vista:</label>
-            <Select value={viewMode} onValueChange={setViewMode}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="people">Por Persona</SelectItem>
-                <SelectItem value="projects">Por Proyecto</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex items-center space-x-2">
+          <label className="text-sm font-medium text-gray-700">Vista:</label>
+          <Select value={viewMode} onValueChange={setViewMode}>
+            <SelectTrigger className="w-40 h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="people">Por Persona</SelectItem>
+              <SelectItem value="projects">Por Proyecto</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </CardHeader>
 
       <CardContent className="p-0">
-        <div className="border rounded-md overflow-hidden">
+        <div className="bg-white">
           {/* Timeline Header - Days */}
-          <div className="border-b bg-muted/50 overflow-hidden">
+          <div className="border-b bg-gray-50/30 sticky top-0 z-20">
             <div className="flex">
               {/* Resource info column */}
-              <div className="min-w-[200px] border-r bg-muted/50 p-2 sticky left-0 z-10">
-                <div className="font-medium">{viewMode === "people" ? "Persona" : "Proyecto"}</div>
+              <div className="min-w-[240px] border-r bg-gray-50/50 p-3 sticky left-0 z-10">
+                <div className="font-medium text-gray-900 text-sm">Persona</div>
               </div>
 
               {/* Days columns - Scrollable */}
               <div className="overflow-x-auto" ref={headerRef}>
-                <div className="flex" style={{ minWidth: `${days.length * 50}px` }}>
+                <div className="flex" style={{ minWidth: `${days.length * DAY_WIDTH}px` }}>
                   {days.map((day, i) => (
                     <div
                       key={i}
                       className={`
-                        min-w-[50px] p-1 text-center text-xs border-r
-                        ${isWeekend(day) ? "bg-gray-100" : ""}
-                        ${isSameDay(day, today) ? "bg-blue-100" : ""}
+                        flex flex-col items-center justify-center text-xs border-r border-gray-200
+                        ${isWeekend(day) ? "bg-gray-100/50" : ""}
+                        ${isSameDay(day, today) ? "bg-blue-50 border-blue-200" : ""}
                       `}
+                      style={{ width: `${DAY_WIDTH}px`, minHeight: "48px" }}
                     >
-                      <div className="font-medium">{format(day, "dd")}</div>
-                      <div className="text-muted-foreground">{format(day, "EEE", { locale: es })}</div>
+                      <div className="font-medium text-gray-900">{format(day, "dd")}</div>
+                      <div className="text-gray-500 text-xs">{format(day, "EEE", { locale: es })}</div>
                     </div>
                   ))}
                 </div>
@@ -195,120 +202,129 @@ export function ResourceTimeline({
             </div>
           </div>
 
-          {/* Timeline Content - Resources and Assignments */}
+          {/* Timeline Content - People and Assignments */}
           <div className="overflow-auto" style={{ maxHeight: "70vh" }}>
             <TooltipProvider>
-              {activeResources.map((resource) => (
-                <div key={resource.id} className="flex border-b last:border-b-0">
-                  {/* Resource info */}
-                  <div className="min-w-[200px] p-2 border-r bg-muted/30 sticky left-0 z-10 flex flex-col justify-center">
-                    <div className="font-medium">{resource.name}</div>
-                    {viewMode === "people" && (
-                      <div className="text-xs text-muted-foreground">
-                        {(resource as Person).profile} •{" "}
-                        {(resource as Person).type === "interno" ? "Interno" : "Externo"}
-                      </div>
-                    )}
-                    {viewMode === "projects" && (resource as Project).description && (
-                      <div className="text-xs text-muted-foreground truncate" title={(resource as Project).description ?? undefined}>
-                        {(resource as Project).description}
-                      </div>
-                    )}
-                  </div>
+              {activePeople.map((person, personIndex) => {
+                const personAssignments = getPersonAssignments(person.id)
+                const rowHeight = Math.max(60, personAssignments.length * 28 + 20) // Dynamic height based on assignments
 
-                  {/* Days with assignments - Scrollable */}
-                  <div className="overflow-x-auto" ref={scrollContainerRef}>
-                    <div className="flex" style={{ minWidth: `${days.length * 50}px` }}>
-                      {days.map((day, i) => {
-                        const dayAssignments = getDayAssignments(resource.id, day)
-                        const totalAllocation = getDayAllocation(resource.id, day)
-                        const isOverallocated = totalAllocation > 1
+                return (
+                  <div
+                    key={person.id}
+                    className={`flex border-b border-gray-100 ${personIndex % 2 === 0 ? "bg-white" : "bg-gray-50/30"}`}
+                    style={{ minHeight: `${rowHeight}px` }}
+                  >
+                    {/* Person info */}
+                    <div className="min-w-[240px] p-4 border-r border-gray-200 bg-white sticky left-0 z-10 flex flex-col justify-center">
+                      <div className="font-medium text-gray-900">{person.name}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {person.profile} • {person.type === "interno" ? "Interno" : "Externo"}
+                      </div>
+                    </div>
 
-                        return (
+                    {/* Assignment bars - Scrollable */}
+                    <div className="overflow-x-auto flex-1" ref={scrollContainerRef}>
+                      <div
+                        className="relative"
+                        style={{
+                          minWidth: `${days.length * DAY_WIDTH}px`,
+                          height: `${rowHeight}px`,
+                        }}
+                      >
+                        {/* Weekend background */}
+                        {days.map((day, i) => (
                           <div
                             key={i}
                             className={`
-                              min-w-[50px] h-16 border-r relative
-                              ${isWeekend(day) ? "bg-gray-100" : ""}
-                              ${isSameDay(day, today) ? "bg-blue-100" : ""}
-                              ${isOverallocated ? "bg-red-50" : ""}
+                              absolute top-0 bottom-0 border-r border-gray-100
+                              ${isWeekend(day) ? "bg-gray-50/50" : ""}
+                              ${isSameDay(day, today) ? "bg-blue-50/30" : ""}
                             `}
-                          >
-                            {/* Assignments */}
-                            {dayAssignments.map((assignment, idx) => {
-                              const project = projects.find((p) => p.id === assignment.project_id)
-                              const person = people.find((p) => p.id === assignment.person_id)
+                            style={{
+                              left: `${i * DAY_WIDTH}px`,
+                              width: `${DAY_WIDTH}px`,
+                            }}
+                          />
+                        ))}
 
-                              // Skip if we don't have the related entity
-                              if ((viewMode === "people" && !project) || (viewMode === "projects" && !person)) {
-                                return null
-                              }
+                        {/* Assignment bars */}
+                        {personAssignments.map((assignment, idx) => {
+                          const project = projects.find((p) => p.id === assignment.project_id)
+                          if (!project) return null
 
-                              const relatedName =
-                                viewMode === "people"
-                                  ? project?.name || "Unknown Project"
-                                  : person?.name || "Unknown Person"
+                          const dimensions = calculateBarDimensions(assignment)
+                          const bgColor = stringToColor(project.name)
+                          const hours = Math.round(assignment.allocation * 8)
 
-                              const bgColor = stringToColor(project?.name || "default")
-                              const hours = Math.round(assignment.allocation * 8) // Assuming 8-hour workday
+                          return (
+                            <Tooltip key={assignment.id}>
+                              <TooltipTrigger asChild>
+                                <div
+                                  className="absolute rounded-md shadow-sm cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] border border-white/20"
+                                  style={{
+                                    backgroundColor: bgColor,
+                                    left: `${dimensions.left + 2}px`,
+                                    width: `${Math.max(dimensions.width, 20)}px`,
+                                    top: `${12 + idx * 28}px`,
+                                    height: "24px",
+                                    zIndex: 5,
+                                  }}
+                                >
+                                  <div className="px-2 py-1 text-white text-xs font-medium truncate h-full flex items-center">
+                                    {project.name}
+                                  </div>
 
-                              return (
-                                <Tooltip key={assignment.id}>
-                                  <TooltipTrigger asChild>
+                                  {/* Allocation indicator */}
+                                  {assignment.allocation !== 1 && (
                                     <div
-                                      className="absolute text-xs text-white px-1 rounded-sm truncate cursor-pointer"
-                                      style={{
-                                        backgroundColor: bgColor,
-                                        top: `${idx * 20 + 2}%`,
-                                        height: "18%",
-                                        left: "2px",
-                                        right: "2px",
-                                        opacity: 0.9,
-                                      }}
+                                      className="absolute top-0 right-0 bg-black/20 text-white text-xs px-1 rounded-tr-md rounded-bl-md"
+                                      style={{ fontSize: "10px", lineHeight: "14px" }}
                                     >
-                                      {relatedName.substring(0, 8)}
+                                      {Math.round(assignment.allocation * 100)}%
                                     </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <div className="space-y-1">
-                                      <p className="font-medium">{relatedName}</p>
-                                      <p className="text-xs">
-                                        {format(new Date(assignment.start_date), "dd MMM")} -{" "}
-                                        {format(new Date(assignment.end_date), "dd MMM yyyy")}
-                                      </p>
-                                      <p className="text-xs">
-                                        {Math.round(assignment.allocation * 100)}% ({hours}h/día)
-                                      </p>
-                                    </div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )
-                            })}
+                                  )}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="bg-gray-900 text-white border-gray-700">
+                                <div className="space-y-1">
+                                  <p className="font-medium">{project.name}</p>
+                                  <p className="text-xs opacity-90">
+                                    {format(dimensions.startDate, "dd MMM")} -{" "}
+                                    {format(dimensions.endDate, "dd MMM yyyy")}
+                                  </p>
+                                  <p className="text-xs opacity-90">
+                                    {Math.round(assignment.allocation * 100)}% • {hours}h/día
+                                  </p>
+                                  {project.description && (
+                                    <p className="text-xs opacity-75 max-w-xs">{project.description}</p>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          )
+                        })}
 
-                            {/* Overallocation indicator */}
-                            {isOverallocated && (
-                              <div className="absolute top-0 right-0 p-0.5">
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <AlertCircle className="h-3 w-3 text-red-500" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="text-xs">Sobreasignación: {Math.round(totalAllocation * 100)}%</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </div>
-                            )}
-                          </div>
-                        )
-                      })}
+                        {/* Today indicator line */}
+                        {isSameDay(today, monthStart) ||
+                          (today >= monthStart && today <= monthEnd && (
+                            <div
+                              className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-10 pointer-events-none"
+                              style={{
+                                left: `${differenceInDays(today, monthStart) * DAY_WIDTH + DAY_WIDTH / 2}px`,
+                              }}
+                            />
+                          ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
 
-              {activeResources.length === 0 && (
-                <div className="p-8 text-center text-muted-foreground">
-                  No hay {viewMode === "people" ? "personas" : "proyectos"} activos para mostrar
+              {activePeople.length === 0 && (
+                <div className="p-12 text-center text-gray-500">
+                  <div className="text-lg font-medium mb-2">No hay personas activas</div>
+                  <div className="text-sm">Agrega personas al equipo para ver sus asignaciones</div>
                 </div>
               )}
             </TooltipProvider>
