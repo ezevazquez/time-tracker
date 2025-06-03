@@ -53,17 +53,17 @@ export default function PeoplePage() {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      activo: "bg-green-100 text-green-800",
-      pausado: "bg-yellow-100 text-yellow-800",
-      fuera: "bg-red-100 text-red-800",
+      Active: "bg-green-100 text-green-800",
+      Paused: "bg-yellow-100 text-yellow-800",
+      Terminated: "bg-red-100 text-red-800",
     }
     return variants[status as keyof typeof variants] || "bg-gray-100 text-gray-800"
   }
 
   const getTypeBadge = (type: string) => {
     const variants = {
-      interno: "bg-blue-100 text-blue-800",
-      externo: "bg-purple-100 text-purple-800",
+      Internal: "bg-blue-100 text-blue-800",
+      External: "bg-purple-100 text-purple-800",
     }
     return variants[type as keyof typeof variants] || "bg-gray-100 text-gray-800"
   }
@@ -115,9 +115,9 @@ export default function PeoplePage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los estados</SelectItem>
-                <SelectItem value="activo">Activo</SelectItem>
-                <SelectItem value="pausado">Pausado</SelectItem>
-                <SelectItem value="fuera">Fuera</SelectItem>
+                <SelectItem value="Active">Activo</SelectItem>
+                <SelectItem value="Paused">Pausado</SelectItem>
+                <SelectItem value="Terminated">Terminado</SelectItem>
               </SelectContent>
             </Select>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -126,8 +126,8 @@ export default function PeoplePage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los tipos</SelectItem>
-                <SelectItem value="interno">Interno</SelectItem>
-                <SelectItem value="externo">Externo</SelectItem>
+                <SelectItem value="Internal">Interno</SelectItem>
+                <SelectItem value="External">Externo</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -168,10 +168,20 @@ export default function PeoplePage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={getStatusBadge(person.status)}>{person.status}</Badge>
+                    <Badge className={getStatusBadge(person.status)}>
+                      {person.status === "Active"
+                        ? "Activo"
+                        : person.status === "Paused"
+                          ? "Pausado"
+                          : person.status === "Terminated"
+                            ? "Terminado"
+                            : person.status}
+                    </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge className={getTypeBadge(person.type)}>{person.type}</Badge>
+                    <Badge className={getTypeBadge(person.type)}>
+                      {person.type === "Internal" ? "Interno" : "Externo"}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

@@ -51,11 +51,22 @@ export default function ProjectsPage() {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      activo: "bg-green-100 text-green-800",
-      "en pausa": "bg-yellow-100 text-yellow-800",
-      cerrado: "bg-gray-100 text-gray-800",
+      "In Progress": "bg-green-100 text-green-800",
+      "On Hold": "bg-yellow-100 text-yellow-800",
+      Finished: "bg-gray-100 text-gray-800",
+      "Not Started": "bg-blue-100 text-blue-800",
     }
     return variants[status as keyof typeof variants] || "bg-gray-100 text-gray-800"
+  }
+
+  const getStatusLabel = (status: string) => {
+    const labels = {
+      "In Progress": "En Progreso",
+      "On Hold": "En Pausa",
+      Finished: "Finalizado",
+      "Not Started": "No Iniciado",
+    }
+    return labels[status as keyof typeof labels] || status
   }
 
   const getDuration = (startDate: string, endDate: string | null) => {
@@ -121,9 +132,10 @@ export default function ProjectsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los estados</SelectItem>
-                <SelectItem value="activo">Activo</SelectItem>
-                <SelectItem value="en pausa">En Pausa</SelectItem>
-                <SelectItem value="cerrado">Cerrado</SelectItem>
+                <SelectItem value="In Progress">En Progreso</SelectItem>
+                <SelectItem value="On Hold">En Pausa</SelectItem>
+                <SelectItem value="Finished">Finalizado</SelectItem>
+                <SelectItem value="Not Started">No Iniciado</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -161,7 +173,7 @@ export default function ProjectsPage() {
                     <div className="text-sm">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {new Date(project.start_date).toLocaleDateString("es-ES")}
+                        {project.start_date ? new Date(project.start_date).toLocaleDateString("es-ES") : "No definido"}
                       </div>
                       {project.end_date && (
                         <div className="text-muted-foreground">
@@ -171,10 +183,14 @@ export default function ProjectsPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{getDuration(project.start_date, project.end_date)}</Badge>
+                    <Badge variant="outline">
+                      {project.start_date && project.end_date
+                        ? getDuration(project.start_date, project.end_date)
+                        : "No definido"}
+                    </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge className={getStatusBadge(project.status)}>{project.status}</Badge>
+                    <Badge className={getStatusBadge(project.status)}>{getStatusLabel(project.status)}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
