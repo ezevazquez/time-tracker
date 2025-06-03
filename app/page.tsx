@@ -86,8 +86,6 @@ export default function Dashboard() {
         dateRange={dateRange}
         setDateRange={setDateRange}
       />
-
-      {/* Quick Actions */}
     </main>
   )
 }
