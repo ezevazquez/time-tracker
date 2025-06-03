@@ -69,14 +69,22 @@ export default function Dashboard() {
   }
 
   return (
-    <main className="flex-1 container mx-auto px-4 py-6">
-      {/* Data Source Notice */}
-      {!supabaseConfigured && <DataSourceNotice />}
+    <main className="flex-1 w-full">
+      {/* Data Source Notice - only show if not using Supabase */}
+      {!supabaseConfigured && (
+        <div className="container mx-auto px-4 py-4">
+          <DataSourceNotice />
+        </div>
+      )}
 
-      {/* Stats Cards */}
-      <DashboardStats people={people} projects={projects} assignments={assignments} />
+      {/* Stats Cards - only show if using mock data */}
+      {!supabaseConfigured && (
+        <div className="container mx-auto px-4 pb-4">
+          <DashboardStats people={people} projects={projects} assignments={assignments} />
+        </div>
+      )}
 
-      {/* Resource Timeline */}
+      {/* Resource Timeline - Full width */}
       <ResourceTimeline
         people={people}
         projects={projects}
