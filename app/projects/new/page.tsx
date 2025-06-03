@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { ArrowLeft, Save, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -17,26 +17,45 @@ import { cn } from "@/lib/utils"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useProjects } from "@/hooks/use-data"
+import { useProjects, clientsService } from "@/hooks/use-data"
 import { useToast } from "@/hooks/use-toast"
+import type { Client } from "@/lib/supabase"
 
 export default function NewProjectPage() {
   const router = useRouter()
   const { createProject } = useProjects()
   const { toast } = useToast()
 
+  const [clients, setClients] = useState<Client[]>([])
+  const [loadingClients, setLoadingClients] = useState(true)
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    status: "activo" as "activo" | "en pausa" | "cerrado",
+    status: "In Progress" as "In Progress" | "Finished" | "On Hold" | "Not Started",
     start_date: undefined as Date | undefined,
     end_date: undefined as Date | undefined,
-    budget: "",
-    client: "",
+    client_id: "" as string | null,
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [warnings, setWarnings] = useState<string[]>([])
+
+  // Fetch clients
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const clientsData = await clientsService.getAll()
+        setClients(clientsData)
+      } catch (error) {
+        console.error("Error fetching clients:", error)
+      } finally {
+        setLoadingClients(false)
+      }
+    }
+
+    fetchClients()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,19 +65,15 @@ export default function NewProjectPage() {
       return
     }
 
-    if (!formData.start_date) {
-      setWarnings(["La fecha de inicio es obligatoria"])
-      return
-    }
-
     try {
       setIsSubmitting(true)
       await createProject({
         name: formData.name.trim(),
         description: formData.description.trim() || null,
         status: formData.status,
-        start_date: formData.start_date.toISOString().split("T")[0],
+        start_date: formData.start_date?.toISOString().split("T")[0] || null,
         end_date: formData.end_date?.toISOString().split("T")[0] || null,
+        client_id: formData.client_id || null,
       })
 
       toast({
@@ -89,16 +104,14 @@ export default function NewProjectPage() {
       newWarnings.push("La fecha de inicio debe ser anterior a la fecha de fin")
     }
 
-    if (formData.budget && isNaN(Number.parseFloat(formData.budget))) {
-      newWarnings.push("El presupuesto debe ser un número válido")
-    }
-
     setWarnings(newWarnings)
   }
 
   React.useEffect(() => {
     checkForWarnings()
   }, [formData])
+
+  const selectedClient = clients.find((client) => client.id === formData.client_id)
 
   return (
     <main className="flex-1 container mx-auto px-4 py-6">
@@ -148,19 +161,29 @@ export default function NewProjectPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="client">Cliente</Label>
-                  <Input
-                    id="client"
-                    value={formData.client}
-                    onChange={(e) => setFormData({ ...formData, client: e.target.value })}
-                    placeholder="Ej: Acme Corp"
-                  />
+                  <Select
+                    value={formData.client_id || ""}
+                    onValueChange={(value) => setFormData({ ...formData, client_id: value || null })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="no-client">Sin cliente</SelectItem>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="status">Estado</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value: "activo" | "en pausa" | "cerrado") =>
+                    onValueChange={(value: "In Progress" | "Finished" | "On Hold" | "Not Started") =>
                       setFormData({ ...formData, status: value })
                     }
                   >
@@ -168,23 +191,12 @@ export default function NewProjectPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="activo">Activo</SelectItem>
-                      <SelectItem value="en pausa">En Pausa</SelectItem>
-                      <SelectItem value="cerrado">Cerrado</SelectItem>
+                      <SelectItem value="In Progress">En Progreso</SelectItem>
+                      <SelectItem value="Not Started">No Iniciado</SelectItem>
+                      <SelectItem value="On Hold">En Pausa</SelectItem>
+                      <SelectItem value="Finished">Finalizado</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="budget">Presupuesto</Label>
-                  <Input
-                    id="budget"
-                    type="number"
-                    step="0.01"
-                    value={formData.budget}
-                    onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                    placeholder="0.00"
-                  />
                 </div>
 
                 <div className="space-y-2">
@@ -267,19 +279,21 @@ export default function NewProjectPage() {
                       <div>
                         <strong>Nombre:</strong> {formData.name}
                       </div>
-                      {formData.client && (
+                      {selectedClient && (
                         <div>
-                          <strong>Cliente:</strong> {formData.client}
+                          <strong>Cliente:</strong> {selectedClient.name}
                         </div>
                       )}
                       <div>
-                        <strong>Estado:</strong> {formData.status}
+                        <strong>Estado:</strong>{" "}
+                        {formData.status === "In Progress"
+                          ? "En Progreso"
+                          : formData.status === "Not Started"
+                            ? "No Iniciado"
+                            : formData.status === "On Hold"
+                              ? "En Pausa"
+                              : "Finalizado"}
                       </div>
-                      {formData.budget && (
-                        <div>
-                          <strong>Presupuesto:</strong> €{formData.budget}
-                        </div>
-                      )}
                       {formData.start_date && formData.end_date && (
                         <div>
                           <strong>Período:</strong> {format(formData.start_date, "dd/MM/yyyy")} -{" "}

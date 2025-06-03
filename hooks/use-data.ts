@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { peopleService, projectsService, assignmentsService } from "@/lib/database"
+import { peopleService, projectsService, assignmentsService, clientsService } from "@/lib/database"
 import type { Person, Project, AssignmentWithRelations } from "@/lib/supabase"
+
+export { clientsService }
 
 // People hook
 export function usePeople() {

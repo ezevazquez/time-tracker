@@ -14,6 +14,7 @@ import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { Slider } from "@/components/ui/slider"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { usePeople, useProjects, useAssignments } from "@/hooks/use-data"
@@ -32,6 +33,7 @@ export default function NewAssignmentPage() {
     start_date: undefined as Date | undefined,
     end_date: undefined as Date | undefined,
     allocation: [80], // Using array for Slider component
+    assigned_role: "",
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -52,7 +54,8 @@ export default function NewAssignmentPage() {
         project_id: formData.project_id,
         start_date: formData.start_date.toISOString().split("T")[0],
         end_date: formData.end_date.toISOString().split("T")[0],
-        allocation: formData.allocation[0] / 100,
+        allocation: formData.allocation[0] / 100, // Convert to 0-1 range
+        assigned_role: formData.assigned_role || null,
       })
 
       toast({
@@ -99,8 +102,8 @@ export default function NewAssignmentPage() {
   const selectedProject = projects.find((p) => p.id === formData.project_id)
 
   // Filter active people and projects
-  const activePeople = people.filter((p) => p.status === "activo")
-  const activeProjects = projects.filter((p) => p.status === "activo")
+  const activePeople = people.filter((p) => p.status === "Active")
+  const activeProjects = projects.filter((p) => p.status === "In Progress" || p.status === "Not Started")
 
   if (peopleLoading || projectsLoading) {
     return (
@@ -289,6 +292,16 @@ export default function NewAssignmentPage() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="assigned_role">Rol Asignado</Label>
+                <Input
+                  id="assigned_role"
+                  value={formData.assigned_role}
+                  onChange={(e) => setFormData({ ...formData, assigned_role: e.target.value })}
+                  placeholder="Ej: Frontend Developer"
+                />
+              </div>
+
               {/* Summary */}
               {selectedPerson && selectedProject && (
                 <Card className="bg-muted/50">
@@ -304,6 +317,11 @@ export default function NewAssignmentPage() {
                       <div>
                         <strong>Dedicación:</strong> {formData.allocation[0]}%
                       </div>
+                      {formData.assigned_role && (
+                        <div>
+                          <strong>Rol:</strong> {formData.assigned_role}
+                        </div>
+                      )}
                       {formData.start_date && formData.end_date && (
                         <div>
                           <strong>Período:</strong> {format(formData.start_date, "dd/MM/yyyy")} -{" "}

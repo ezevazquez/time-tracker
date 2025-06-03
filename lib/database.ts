@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from "./supabase"
 import { mockPeople, mockProjects, mockAssignments } from "./mock-data"
-import type { Person, Project, Assignment, AssignmentWithRelations } from "./supabase"
+import type { Person, Project, Assignment, AssignmentWithRelations, Client, ProjectWithClient } from "./supabase"
 
 // People Service
 export const peopleService = {
@@ -25,18 +25,55 @@ export const peopleService = {
     }
   },
 
-  async create(person: Omit<Person, "id" | "created_at" | "updated_at">): Promise<Person> {
-    const { data, error } = await supabase
-      .from("people")
-      .insert([person])
-      .select()
-      .single()
-
-    if (error) {
-      throw new Error(`Error creating person: ${error.message}`)
+  async getById(id: string): Promise<Person | null> {
+    if (!isSupabaseConfigured()) {
+      return mockPeople.find((p) => p.id === id) || null
     }
 
-    return data
+    try {
+      const { data, error } = await supabase.from("people").select("*").eq("id", id).single()
+
+      if (error) {
+        console.error("Error fetching person:", error)
+        throw new Error(`Error loading person: ${error.message}`)
+      }
+      return data
+    } catch (err) {
+      console.error("Service error:", err)
+      throw err
+    }
+  },
+
+  async create(person: Omit<Person, "id" | "created_at" | "updated_at">): Promise<Person> {
+    if (!isSupabaseConfigured()) {
+      const newPerson: Person = {
+        ...person,
+        id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      return newPerson
+    }
+
+    try {
+      // Generate UUID for new person
+      const newId = crypto.randomUUID()
+
+      const { data, error } = await supabase
+        .from("people")
+        .insert([{ ...person, id: newId }])
+        .select()
+        .single()
+
+      if (error) {
+        console.error("Error creating person:", error)
+        throw new Error(`Error creating person: ${error.message}`)
+      }
+      return data
+    } catch (err) {
+      console.error("Service error:", err)
+      throw err
+    }
   },
 
   async update(id: string, updates: Partial<Person>): Promise<Person> {
@@ -44,18 +81,23 @@ export const peopleService = {
       throw new Error("Update not supported with mock data")
     }
 
-    const { data, error } = await supabase
-      .from("people")
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .select()
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from("people")
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .select()
+        .single()
 
-    if (error) {
-      throw new Error(`Error updating person: ${error.message}`)
+      if (error) {
+        console.error("Error updating person:", error)
+        throw new Error(`Error updating person: ${error.message}`)
+      }
+      return data
+    } catch (err) {
+      console.error("Service error:", err)
+      throw err
     }
-
-    return data
   },
 
   async delete(id: string): Promise<void> {
@@ -63,23 +105,77 @@ export const peopleService = {
       throw new Error("Delete not supported with mock data")
     }
 
-    const { error } = await supabase.from("people").delete().eq("id", id)
+    try {
+      const { error } = await supabase.from("people").delete().eq("id", id)
 
-    if (error) {
-      throw new Error(`Error deleting person: ${error.message}`)
+      if (error) {
+        console.error("Error deleting person:", error)
+        throw new Error(`Error deleting person: ${error.message}`)
+      }
+    } catch (err) {
+      console.error("Service error:", err)
+      throw err
+    }
+  },
+}
+
+// Clients Service
+export const clientsService = {
+  async getAll(): Promise<Client[]> {
+    if (!isSupabaseConfigured()) {
+      return []
+    }
+
+    try {
+      const { data, error } = await supabase.from("clients").select("*").order("name")
+
+      if (error) {
+        console.error("Error fetching clients:", error)
+        throw new Error(`Error fetching clients: ${error.message}`)
+      }
+
+      return data || []
+    } catch (error) {
+      console.error("Error in clientsService.getAll:", error)
+      return []
+    }
+  },
+
+  async getById(id: string): Promise<Client | null> {
+    if (!isSupabaseConfigured()) {
+      return null
+    }
+
+    try {
+      const { data, error } = await supabase.from("clients").select("*").eq("id", id).single()
+
+      if (error) {
+        console.error("Error fetching client:", error)
+        throw new Error(`Error loading client: ${error.message}`)
+      }
+      return data
+    } catch (err) {
+      console.error("Service error:", err)
+      throw err
     }
   },
 }
 
 // Projects Service
 export const projectsService = {
-  async getAll(): Promise<Project[]> {
+  async getAll(): Promise<ProjectWithClient[]> {
     if (!isSupabaseConfigured()) {
       return mockProjects
     }
 
     try {
-      const { data, error } = await supabase.from("projects").select("*").order("name")
+      const { data, error } = await supabase
+        .from("projects")
+        .select(`
+          *,
+          clients:client_id (*)
+        `)
+        .order("name")
 
       if (error) {
         console.error("Error fetching projects:", error)
@@ -94,24 +190,62 @@ export const projectsService = {
     }
   },
 
+  async getById(id: string): Promise<ProjectWithClient | null> {
+    if (!isSupabaseConfigured()) {
+      return mockProjects.find((p) => p.id === id) || null
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("projects")
+        .select(`
+          *,
+          clients:client_id (*)
+        `)
+        .eq("id", id)
+        .single()
+
+      if (error) {
+        console.error("Error fetching project:", error)
+        throw new Error(`Error loading project: ${error.message}`)
+      }
+      return data
+    } catch (err) {
+      console.error("Service error:", err)
+      throw err
+    }
+  },
+
   async create(project: Omit<Project, "id" | "created_at" | "updated_at">): Promise<Project> {
     if (!isSupabaseConfigured()) {
       const newProject: Project = {
         ...project,
-        id: Math.random().toString(36).substr(2, 9),
+        id: crypto.randomUUID(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
       return newProject
     }
 
-    const { data, error } = await supabase.from("projects").insert([project]).select().single()
+    try {
+      // Generate UUID for new project
+      const newId = crypto.randomUUID()
 
-    if (error) {
-      throw new Error(`Error creating project: ${error.message}`)
+      const { data, error } = await supabase
+        .from("projects")
+        .insert([{ ...project, id: newId }])
+        .select()
+        .single()
+
+      if (error) {
+        console.error("Error creating project:", error)
+        throw new Error(`Error creating project: ${error.message}`)
+      }
+      return data
+    } catch (err) {
+      console.error("Service error:", err)
+      throw err
     }
-
-    return data
   },
 
   async update(id: string, updates: Partial<Project>): Promise<Project> {
@@ -119,18 +253,23 @@ export const projectsService = {
       throw new Error("Update not supported with mock data")
     }
 
-    const { data, error } = await supabase
-      .from("projects")
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .select()
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from("projects")
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .select()
+        .single()
 
-    if (error) {
-      throw new Error(`Error updating project: ${error.message}`)
+      if (error) {
+        console.error("Error updating project:", error)
+        throw new Error(`Error updating project: ${error.message}`)
+      }
+      return data
+    } catch (err) {
+      console.error("Service error:", err)
+      throw err
     }
-
-    return data
   },
 
   async delete(id: string): Promise<void> {
@@ -138,10 +277,16 @@ export const projectsService = {
       throw new Error("Delete not supported with mock data")
     }
 
-    const { error } = await supabase.from("projects").delete().eq("id", id)
+    try {
+      const { error } = await supabase.from("projects").delete().eq("id", id)
 
-    if (error) {
-      throw new Error(`Error deleting project: ${error.message}`)
+      if (error) {
+        console.error("Error deleting project:", error)
+        throw new Error(`Error deleting project: ${error.message}`)
+      }
+    } catch (err) {
+      console.error("Service error:", err)
+      throw err
     }
   },
 }
@@ -169,8 +314,8 @@ export const assignmentsService = {
           projects:project_id (
             id,
             name,
-            client,
-            status
+            status,
+            client_id
           )
         `,
         )
@@ -181,7 +326,14 @@ export const assignmentsService = {
         throw new Error(`Error fetching assignments: ${error.message}`)
       }
 
-      return data || []
+      // Convert allocation from 0-100 to 0-1 for compatibility with existing code
+      const formattedData =
+        data?.map((assignment) => ({
+          ...assignment,
+          allocation: assignment.allocation / 100,
+        })) || []
+
+      return formattedData
     } catch (error) {
       console.error("Error in assignmentsService.getAll:", error)
       // Fallback to mock data if there's an error
@@ -193,20 +345,40 @@ export const assignmentsService = {
     if (!isSupabaseConfigured()) {
       const newAssignment: Assignment = {
         ...assignment,
-        id: Math.random().toString(36).substr(2, 9),
+        id: crypto.randomUUID(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
       return newAssignment
     }
 
-    const { data, error } = await supabase.from("assignments").insert([assignment]).select().single()
+    try {
+      // Generate UUID for new assignment
+      const newId = crypto.randomUUID()
 
-    if (error) {
-      throw new Error(`Error creating assignment: ${error.message}`)
+      // Convert allocation from 0-1 to 0-100 for database storage
+      const dbAssignment = {
+        ...assignment,
+        id: newId,
+        allocation: assignment.allocation * 100, // Convert to percentage for DB
+      }
+
+      const { data, error } = await supabase.from("assignments").insert([dbAssignment]).select().single()
+
+      if (error) {
+        console.error("Error creating assignment:", error)
+        throw new Error(`Error creating assignment: ${error.message}`)
+      }
+
+      // Convert back to 0-1 scale for app use
+      return {
+        ...data,
+        allocation: data.allocation / 100,
+      }
+    } catch (err) {
+      console.error("Service error:", err)
+      throw err
     }
-
-    return data
   },
 
   async update(id: string, updates: Partial<Assignment>): Promise<Assignment> {
@@ -214,18 +386,30 @@ export const assignmentsService = {
       throw new Error("Update not supported with mock data")
     }
 
-    const { data, error } = await supabase
-      .from("assignments")
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .select()
-      .single()
+    try {
+      // Convert allocation if present
+      const dbUpdates = {
+        ...updates,
+        allocation: updates.allocation !== undefined ? updates.allocation * 100 : undefined,
+        updated_at: new Date().toISOString(),
+      }
 
-    if (error) {
-      throw new Error(`Error updating assignment: ${error.message}`)
+      const { data, error } = await supabase.from("assignments").update(dbUpdates).eq("id", id).select().single()
+
+      if (error) {
+        console.error("Error updating assignment:", error)
+        throw new Error(`Error updating assignment: ${error.message}`)
+      }
+
+      // Convert back to 0-1 scale
+      return {
+        ...data,
+        allocation: data.allocation / 100,
+      }
+    } catch (err) {
+      console.error("Service error:", err)
+      throw err
     }
-
-    return data
   },
 
   async delete(id: string): Promise<void> {
@@ -233,10 +417,16 @@ export const assignmentsService = {
       throw new Error("Delete not supported with mock data")
     }
 
-    const { error } = await supabase.from("assignments").delete().eq("id", id)
+    try {
+      const { error } = await supabase.from("assignments").delete().eq("id", id)
 
-    if (error) {
-      throw new Error(`Error deleting assignment: ${error.message}`)
+      if (error) {
+        console.error("Error deleting assignment:", error)
+        throw new Error(`Error deleting assignment: ${error.message}`)
+      }
+    } catch (err) {
+      console.error("Service error:", err)
+      throw err
     }
   },
 
@@ -266,7 +456,6 @@ export const assignmentsService = {
           projects:project_id (
             id,
             name,
-            client,
             status
           )
         `,
@@ -284,7 +473,11 @@ export const assignmentsService = {
         throw new Error(`Error checking allocation conflicts: ${error.message}`)
       }
 
-      return data || []
+      // Convert allocation from 0-100 to 0-1
+      return (data || []).map((assignment) => ({
+        ...assignment,
+        allocation: assignment.allocation / 100,
+      }))
     } catch (error) {
       console.error("Error checking allocation conflicts:", error)
       return []
