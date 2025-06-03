@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import {
   format,
@@ -74,10 +75,11 @@ export function ResourceTimeline({
   const isScrollingRef = useRef(false)
 
   // Constants for layout
-  const DAY_WIDTH = 40 // Increased width for better readability
-  const ROW_HEIGHT = 80 // Increased height for larger assignment blocks
-  const SIDEBAR_WIDTH = 240 // Wider sidebar for better readability
-  const HEADER_HEIGHT = 50 // Taller header for better readability
+  const DAY_WIDTH = 40
+  const ROW_HEIGHT = 80
+  const SIDEBAR_WIDTH = 240
+  const HEADER_HEIGHT = 60
+  const INFO_SECTION_HEIGHT = 120
 
   // Generate all days in the visible date range
   const days = useMemo(() => {
@@ -87,8 +89,9 @@ export function ResourceTimeline({
     })
   }, [visibleDateRange])
 
-  // Get active people
+  // Get active people and projects
   const activePeople = people.filter((p) => p.status === "Active")
+  const activeProjects = projects.filter((p) => p.status === "In Progress")
 
   // Handle scroll to dynamically load more months
   useEffect(() => {
@@ -166,7 +169,7 @@ export function ResourceTimeline({
 
     return {
       left: startDayIndex * DAY_WIDTH,
-      width: Math.max(duration * DAY_WIDTH, 40), // Minimum width for very short assignments
+      width: Math.max(duration * DAY_WIDTH, 40),
       startDate,
       endDate,
       clampedStart,
@@ -212,237 +215,259 @@ export function ResourceTimeline({
     const scrollPosition = todayIndex * DAY_WIDTH - scrollContainer.clientWidth / 2
 
     scrollContainer.scrollLeft = Math.max(0, scrollPosition)
-  }, []) // Empty dependency array ensures this only runs once
+  }, [])
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] w-full bg-white">
-      {/* Timeline header with view selector */}
-      <div className="flex justify-between items-center p-4 border-b bg-white z-40">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Resource Timeline</h2>
-          <p className="text-sm text-gray-500">
-            {format(startOfMonth(visibleDateRange.start), "MMM yyyy")} -{" "}
-            {format(endOfMonth(visibleDateRange.end), "MMM yyyy")}
-          </p>
-        </div>
-
-        <div className="flex items-center space-x-3">
-          <label className="text-sm font-medium text-gray-700">View:</label>
-          <Select value={viewMode} onValueChange={setViewMode}>
-            <SelectTrigger className="w-40 h-9">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="people">By Person</SelectItem>
-              <SelectItem value="projects">By Project</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Timeline container with unified scrolling */}
-      <div className="relative flex-1 overflow-hidden">
-        {/* Fixed top-left corner */}
-        <div
-          className="absolute top-0 left-0 z-30 bg-gray-50 border-b border-r border-gray-200 flex items-center"
-          style={{ width: `${SIDEBAR_WIDTH}px`, height: `${HEADER_HEIGHT}px` }}
-        >
-          <div className="font-medium text-gray-700 text-sm uppercase tracking-wide p-4">Team Member</div>
-        </div>
-
-        {/* Sticky header - scrolls horizontally */}
-        <div
-          className="absolute top-0 left-0 right-0 z-20 overflow-hidden border-b border-gray-200"
-          style={{ paddingLeft: `${SIDEBAR_WIDTH}px`, height: `${HEADER_HEIGHT}px` }}
-        >
-          <div className="flex" style={{ width: `${totalWidth}px` }}>
-            {/* Month labels */}
-            <div className="absolute top-0 left-0 right-0 flex h-6 border-b border-gray-100">
-              {monthGroups.map((group, i) => (
-                <div
-                  key={i}
-                  className="flex-shrink-0 bg-gray-50/80 border-r border-gray-200 px-2 text-xs font-medium text-gray-700"
-                  style={{ width: `${group.days.length * DAY_WIDTH}px` }}
-                >
-                  {format(group.month, "MMMM yyyy", { locale: es })}
-                </div>
-              ))}
+    <div className="w-full h-[calc(100vh-64px)] bg-white flex flex-col">
+      {/* Info Section - Filters and Summary */}
+      <div className="flex-shrink-0 bg-white border-b border-gray-200" style={{ height: `${INFO_SECTION_HEIGHT}px` }}>
+        <div className="p-6">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Resource Timeline</h2>
+              <p className="text-gray-600 mt-1">
+                Viewing {format(startOfMonth(visibleDateRange.start), "MMM yyyy")} -{" "}
+                {format(endOfMonth(visibleDateRange.end), "MMM yyyy")}
+              </p>
             </div>
 
-            {/* Day columns */}
-            <div className="flex pt-6">
-              {days.map((day, i) => (
-                <div
-                  key={i}
-                  className={`
-                    flex flex-col items-center justify-center text-sm border-r border-gray-100
-                    ${isWeekend(day) ? "bg-gray-100/70" : "bg-white"}
-                    ${isSameDay(day, today) ? "bg-blue-50 border-blue-200" : ""}
-                  `}
-                  style={{ width: `${DAY_WIDTH}px`, height: `${HEADER_HEIGHT - 6}px` }}
-                >
-                  <div className={`font-medium ${isSameDay(day, today) ? "text-blue-600" : "text-gray-900"}`}>
-                    {format(day, "dd")}
-                  </div>
-                  <div className={`text-xs ${isSameDay(day, today) ? "text-blue-500" : "text-gray-400"}`}>
-                    {format(day, "EEE", { locale: es })}
-                  </div>
-                </div>
-              ))}
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-medium text-gray-700">View:</label>
+                <Select value={viewMode} onValueChange={setViewMode}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="people">By Person</SelectItem>
+                    <SelectItem value="projects">By Project</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Summary Stats */}
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2">
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                {activePeople.length} Active People
+              </Badge>
+              <Badge variant="secondary" className="bg-green-100 text-green-800">
+                {activeProjects.length} Active Projects
+              </Badge>
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                {assignments.length} Assignments
+              </Badge>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Sticky sidebar - scrolls vertically */}
-        <div
-          className="absolute top-0 left-0 bottom-0 z-10 overflow-hidden border-r border-gray-200"
-          style={{ width: `${SIDEBAR_WIDTH}px`, paddingTop: `${HEADER_HEIGHT}px` }}
-        >
-          {activePeople.map((person, personIndex) => (
+      {/* Timeline container - takes remaining height */}
+      <div className="flex-1 relative overflow-hidden">
+        {/* Main scrollable area - scrolls both horizontally and vertically */}
+        <div ref={scrollContainerRef} className="absolute inset-0 overflow-auto">
+          <div className="flex">
+            {/* Sidebar - sticky horizontally, scrolls vertically */}
             <div
-              key={person.id}
-              className={`
-                border-b border-gray-100 bg-white
-                ${personIndex % 2 === 0 ? "" : "bg-gray-50/10"}
-              `}
-              style={{ height: `${ROW_HEIGHT}px` }}
+              className="sticky left-0 z-20 bg-white border-r border-gray-200 flex-shrink-0"
+              style={{ width: `${SIDEBAR_WIDTH}px` }}
             >
-              <div className="p-4 flex items-center space-x-3 h-full">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="text-sm bg-gray-100 text-gray-600">
-                    {person.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .slice(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-900 truncate">{person.name}</div>
-                  <div className="text-sm text-gray-500 truncate">{person.profile}</div>
-                  <div className="text-xs text-gray-400">{person.type}</div>
+              {/* Sidebar header */}
+              <div
+                className="sticky top-0 z-30 bg-gray-50 border-b border-gray-200 flex items-center px-4"
+                style={{ height: `${HEADER_HEIGHT}px` }}
+              >
+                <div className="font-medium text-gray-700 text-sm uppercase tracking-wide">Team Member</div>
+              </div>
+
+              {/* Person rows */}
+              {activePeople.map((person, personIndex) => (
+                <div
+                  key={person.id}
+                  className={`
+                    border-b border-gray-100 bg-white
+                    ${personIndex % 2 === 0 ? "" : "bg-gray-50/10"}
+                  `}
+                  style={{ height: `${ROW_HEIGHT}px` }}
+                >
+                  <div className="p-4 flex items-center space-x-3 h-full">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="text-sm bg-gray-100 text-gray-600">
+                        {person.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-gray-900 truncate">{person.name}</div>
+                      <div className="text-sm text-gray-500 truncate">{person.profile}</div>
+                      <div className="text-xs text-gray-400">{person.type}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Timeline content area - scrolls horizontally */}
+            <div style={{ width: `${totalWidth}px` }}>
+              {/* Header - sticky vertically, scrolls horizontally */}
+              <div
+                className="sticky top-0 z-10 bg-white border-b border-gray-200"
+                style={{ height: `${HEADER_HEIGHT}px` }}
+              >
+                {/* Month labels */}
+                <div className="flex h-6 border-b border-gray-100">
+                  {monthGroups.map((group, i) => (
+                    <div
+                      key={i}
+                      className="flex-shrink-0 bg-gray-50/80 border-r border-gray-200 px-2 text-xs font-medium text-gray-700 flex items-center"
+                      style={{ width: `${group.days.length * DAY_WIDTH}px` }}
+                    >
+                      {format(group.month, "MMMM yyyy", { locale: es })}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Day columns */}
+                <div className="flex">
+                  {days.map((day, i) => (
+                    <div
+                      key={i}
+                      className={`
+                        flex flex-col items-center justify-center text-sm border-r border-gray-100
+                        ${isWeekend(day) ? "bg-gray-100/70" : "bg-white"}
+                        ${isSameDay(day, today) ? "bg-blue-50 border-blue-200" : ""}
+                      `}
+                      style={{ width: `${DAY_WIDTH}px`, height: `${HEADER_HEIGHT - 24}px` }}
+                    >
+                      <div className={`font-medium ${isSameDay(day, today) ? "text-blue-600" : "text-gray-900"}`}>
+                        {format(day, "dd")}
+                      </div>
+                      <div className={`text-xs ${isSameDay(day, today) ? "text-blue-500" : "text-gray-400"}`}>
+                        {format(day, "EEE", { locale: es })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
 
-        {/* Main scrollable area - scrolls both horizontally and vertically */}
-        <div
-          ref={scrollContainerRef}
-          className="absolute inset-0 overflow-auto"
-          style={{ paddingTop: `${HEADER_HEIGHT}px`, paddingLeft: `${SIDEBAR_WIDTH}px` }}
-        >
-          <div style={{ width: `${totalWidth}px` }}>
-            <TooltipProvider>
-              {activePeople.map((person, personIndex) => {
-                const personAssignments = getPersonAssignments(person.id)
+              {/* Assignment rows */}
+              <TooltipProvider>
+                {activePeople.map((person, personIndex) => {
+                  const personAssignments = getPersonAssignments(person.id)
 
-                return (
-                  <div
-                    key={person.id}
-                    className={`
-                      relative border-b border-gray-100 hover:bg-gray-50/30 transition-colors
-                      ${personIndex % 2 === 0 ? "bg-white" : "bg-gray-50/20"}
-                    `}
-                    style={{ height: `${ROW_HEIGHT}px` }}
-                  >
-                    {/* Weekend background */}
-                    {days.map((day, i) => (
-                      <div
-                        key={i}
-                        className={`
-                          absolute top-0 bottom-0 border-r border-gray-50
-                          ${isWeekend(day) ? "bg-gray-50/50" : ""}
-                          ${isSameDay(day, today) ? "bg-blue-50/30" : ""}
-                        `}
-                        style={{
-                          left: `${i * DAY_WIDTH}px`,
-                          width: `${DAY_WIDTH}px`,
-                        }}
-                      />
-                    ))}
+                  return (
+                    <div
+                      key={person.id}
+                      className={`
+                        relative border-b border-gray-100 hover:bg-gray-50/30 transition-colors
+                        ${personIndex % 2 === 0 ? "bg-white" : "bg-gray-50/20"}
+                      `}
+                      style={{ height: `${ROW_HEIGHT}px` }}
+                    >
+                      {/* Weekend background */}
+                      {days.map((day, i) => (
+                        <div
+                          key={i}
+                          className={`
+                            absolute top-0 bottom-0 border-r border-gray-50
+                            ${isWeekend(day) ? "bg-gray-50/50" : ""}
+                            ${isSameDay(day, today) ? "bg-blue-50/30" : ""}
+                          `}
+                          style={{
+                            left: `${i * DAY_WIDTH}px`,
+                            width: `${DAY_WIDTH}px`,
+                          }}
+                        />
+                      ))}
 
-                    {/* Assignment bars */}
-                    {personAssignments.map((assignment, idx) => {
-                      const project = projects.find((p) => p.id === assignment.project_id)
-                      if (!project) return null
+                      {/* Assignment bars */}
+                      {personAssignments.map((assignment, idx) => {
+                        const project = projects.find((p) => p.id === assignment.project_id)
+                        if (!project) return null
 
-                      const dimensions = calculateBarDimensions(assignment)
-                      const bgColor = stringToColor(project.name)
+                        const dimensions = calculateBarDimensions(assignment)
+                        const bgColor = stringToColor(project.name)
 
-                      // Calculate vertical position - distribute evenly in the row
-                      const totalAssignments = personAssignments.length
-                      const assignmentHeight = Math.min(ROW_HEIGHT * 0.7, 36) // Max 70% of row height or 36px
-                      const verticalGap = (ROW_HEIGHT - assignmentHeight * totalAssignments) / (totalAssignments + 1)
-                      const top = verticalGap + idx * (assignmentHeight + verticalGap)
+                        // Calculate vertical position - distribute evenly in the row
+                        const totalAssignments = personAssignments.length
+                        const assignmentHeight = Math.min(ROW_HEIGHT * 0.7, 36)
+                        const verticalGap = (ROW_HEIGHT - assignmentHeight * totalAssignments) / (totalAssignments + 1)
+                        const top = verticalGap + idx * (assignmentHeight + verticalGap)
 
-                      return (
-                        <Tooltip key={assignment.id}>
-                          <TooltipTrigger asChild>
-                            <Link href={`/assignments/${assignment.id}/edit`} className="block">
-                              <div
-                                className="absolute rounded-lg shadow-md cursor-pointer transition-all hover:shadow-lg hover:translate-y-[-2px] group border border-white/20"
-                                style={{
-                                  backgroundColor: bgColor,
-                                  left: `${dimensions.left}px`,
-                                  width: `${dimensions.width}px`,
-                                  top: `${top}px`,
-                                  height: `${assignmentHeight}px`,
-                                  zIndex: 5,
-                                }}
-                              >
-                                <div className="px-3 py-2 text-white font-medium truncate h-full flex items-center">
-                                  <span className="truncate">{project.name}</span>
+                        return (
+                          <Tooltip key={assignment.id}>
+                            <TooltipTrigger asChild>
+                              <Link href={`/assignments/${assignment.id}/edit`} className="block">
+                                <div
+                                  className="absolute rounded-lg shadow-md cursor-pointer transition-all hover:shadow-lg hover:translate-y-[-2px] group border border-white/20"
+                                  style={{
+                                    backgroundColor: bgColor,
+                                    left: `${dimensions.left}px`,
+                                    width: `${dimensions.width}px`,
+                                    top: `${top}px`,
+                                    height: `${assignmentHeight}px`,
+                                    zIndex: 5,
+                                  }}
+                                >
+                                  <div className="px-3 py-2 text-white font-medium truncate h-full flex items-center">
+                                    <span className="truncate">{project.name}</span>
 
-                                  {/* Allocation badge */}
-                                  {assignment.allocation < 100 && (
-                                    <span className="ml-2 bg-black/30 text-white text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                                      {assignment.allocation}%
-                                    </span>
-                                  )}
+                                    {/* Allocation badge */}
+                                    {assignment.allocation < 100 && (
+                                      <span className="ml-2 bg-black/30 text-white text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                        {assignment.allocation}%
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
+                              </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="bg-gray-900 text-white border-gray-700 p-3 max-w-xs">
+                              <div className="space-y-2">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: bgColor }}></div>
+                                  <p className="font-medium">{project.name}</p>
+                                </div>
+                                <p className="text-sm">
+                                  {format(dimensions.startDate, "dd MMM")} - {format(dimensions.endDate, "dd MMM yyyy")}
+                                </p>
+                                <p className="text-sm">{assignment.allocation}% allocation</p>
+                                {assignment.assigned_role && (
+                                  <p className="text-sm">Role: {assignment.assigned_role}</p>
+                                )}
+                                {project.description && <p className="text-xs opacity-75">{project.description}</p>}
                               </div>
-                            </Link>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="bg-gray-900 text-white border-gray-700 p-3 max-w-xs">
-                            <div className="space-y-2">
-                              <div className="flex items-center space-x-2">
-                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: bgColor }}></div>
-                                <p className="font-medium">{project.name}</p>
-                              </div>
-                              <p className="text-sm">
-                                {format(dimensions.startDate, "dd MMM")} - {format(dimensions.endDate, "dd MMM yyyy")}
-                              </p>
-                              <p className="text-sm">{assignment.allocation}% allocation</p>
-                              {assignment.assigned_role && <p className="text-sm">Role: {assignment.assigned_role}</p>}
-                              {project.description && <p className="text-xs opacity-75">{project.description}</p>}
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      )
-                    })}
+                            </TooltipContent>
+                          </Tooltip>
+                        )
+                      })}
 
-                    {/* Today indicator line */}
-                    {days.some((day) => isSameDay(day, today)) && (
-                      <div
-                        className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-10 pointer-events-none opacity-70"
-                        style={{
-                          left: `${differenceInDays(today, startOfMonth(visibleDateRange.start)) * DAY_WIDTH + DAY_WIDTH / 2}px`,
-                        }}
-                      />
-                    )}
+                      {/* Today indicator line */}
+                      {days.some((day) => isSameDay(day, today)) && (
+                        <div
+                          className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-10 pointer-events-none opacity-70"
+                          style={{
+                            left: `${differenceInDays(today, startOfMonth(visibleDateRange.start)) * DAY_WIDTH + DAY_WIDTH / 2}px`,
+                          }}
+                        />
+                      )}
+                    </div>
+                  )
+                })}
+
+                {activePeople.length === 0 && (
+                  <div className="p-12 text-center text-gray-500">
+                    <div className="text-lg font-medium mb-2">No active team members</div>
+                    <div className="text-sm">Add people with "Active" status to see their assignments</div>
                   </div>
-                )
-              })}
-
-              {activePeople.length === 0 && (
-                <div className="p-12 text-center text-gray-500">
-                  <div className="text-lg font-medium mb-2">No active team members</div>
-                  <div className="text-sm">Add people with "Active" status to see their assignments</div>
-                </div>
-              )}
-            </TooltipProvider>
+                )}
+              </TooltipProvider>
+            </div>
           </div>
         </div>
       </div>
