@@ -115,25 +115,7 @@ export default function AssignmentsPage() {
 
   return (
     <main className="flex-1 container mx-auto px-4 py-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Asignaciones</h1>
-          <p className="text-muted-foreground">Gestiona las asignaciones de personas a proyectos</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Filtros
-          </Button>
-          <Button asChild>
-            <Link href="/assignments/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Asignación
-            </Link>
-          </Button>
-        </div>
-      </div>
+
 
       {/* Filters */}
       {showFilters && (
