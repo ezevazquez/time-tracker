@@ -104,7 +104,7 @@ export const mockAssignments: AssignmentWithRelations[] = [
     project_id: "1",
     start_date: "2023-01-15",
     end_date: "2023-04-30",
-    allocation: 0.8, // 80%
+    allocation: 0.75, // 75%
     created_at: "2023-01-10T00:00:00Z",
     updated_at: "2023-01-10T00:00:00Z",
     assigned_role: "Frontend Developer",
@@ -130,7 +130,7 @@ export const mockAssignments: AssignmentWithRelations[] = [
     project_id: "1",
     start_date: "2023-01-15",
     end_date: "2023-06-30",
-    allocation: 0.6, // 60%
+    allocation: 0.5, // 50%
     created_at: "2023-01-12T00:00:00Z",
     updated_at: "2023-01-12T00:00:00Z",
     assigned_role: "Backend Developer",
@@ -143,7 +143,7 @@ export const mockAssignments: AssignmentWithRelations[] = [
     project_id: "2",
     start_date: "2023-03-01",
     end_date: "2023-05-31",
-    allocation: 0.5, // 50%
+    allocation: 0.25, // 25%
     created_at: "2023-02-25T00:00:00Z",
     updated_at: "2023-02-25T00:00:00Z",
     assigned_role: "Frontend Developer",

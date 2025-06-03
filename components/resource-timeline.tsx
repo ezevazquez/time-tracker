@@ -197,7 +197,7 @@ export function ResourceTimeline({
     const todayIndex = differenceInDays(today, visibleStart)
 
     // Position today at 25% of the visible width (left-aligned) instead of centered
-    const scrollPosition = todayIndex * DAY_WIDTH - scrollContainer.clientWidth * 0.20
+    const scrollPosition = todayIndex * DAY_WIDTH - scrollContainer.clientWidth * 0.25
 
     scrollContainer.scrollTo({
       left: Math.max(0, scrollPosition),
@@ -310,7 +310,7 @@ export function ResourceTimeline({
                       {summaryStats.unassignedPeople}
                     </Badge>
                   )}
-                  {/* <Badge
+                  <Badge
                     variant="outline"
                     className={`text-xs h-6 ${
                       summaryStats.avgUtilization > 100
@@ -322,7 +322,7 @@ export function ResourceTimeline({
                   >
                     <TrendingUp className="h-3 w-3 mr-1" />
                     {summaryStats.avgUtilization}%
-                  </Badge> */}
+                  </Badge>
                 </div>
               </div>
 
@@ -368,59 +368,32 @@ export function ResourceTimeline({
 
       {/* Timeline container - takes remaining height */}
       <div className="flex-1 relative overflow-hidden">
-        {/* Main scrollable area - scrolls both horizontally and vertically */}
-        <div ref={scrollContainerRef} className="absolute inset-0 overflow-auto">
-          <div className="flex">
-            {/* Sidebar - sticky horizontally, scrolls vertically */}
+        {/* Main scrollable container */}
+        <div
+          ref={scrollContainerRef}
+          className="h-full overflow-auto"
+          style={{
+            overflowX: "auto",
+            overflowY: "auto",
+          }}
+        >
+          {/* Timeline grid container */}
+          <div className="relative" style={{ minWidth: `${SIDEBAR_WIDTH + totalWidth}px` }}>
+            {/* Sticky header row */}
             <div
-              className="sticky left-0 z-20 bg-white border-r border-gray-200 flex-shrink-0"
-              style={{ width: `${SIDEBAR_WIDTH}px` }}
+              className="sticky top-0 z-20 bg-white border-b border-gray-200 flex"
+              style={{ height: `${HEADER_HEIGHT}px` }}
             >
-              {/* Sidebar header */}
+              {/* Header left corner - Team Member label */}
               <div
-                className="sticky top-0 z-30 bg-gray-50 border-b border-gray-200 flex items-center px-4"
-                style={{ height: `${HEADER_HEIGHT}px` }}
+                className="sticky left-0 z-30 bg-gray-50 border-r border-gray-200 flex items-center px-4"
+                style={{ width: `${SIDEBAR_WIDTH}px` }}
               >
                 <div className="font-medium text-gray-700 text-sm uppercase tracking-wide">Team Member</div>
               </div>
 
-              {/* Person rows */}
-              {activePeople.map((person, personIndex) => (
-                <div
-                  key={person.id}
-                  className={`
-                    border-b border-gray-100 bg-white
-                    ${personIndex % 2 === 0 ? "" : "bg-gray-50/10"}
-                  `}
-                  style={{ height: `${ROW_HEIGHT}px` }}
-                >
-                  <div className="p-4 flex items-center space-x-3 h-full">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="text-sm bg-gray-100 text-gray-600">
-                        {person.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .slice(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-900 truncate">{person.name}</div>
-                      <div className="text-sm text-gray-500 truncate">{person.profile}</div>
-                      <div className="text-xs text-gray-400">{person.type}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Timeline content area - scrolls horizontally */}
-            <div style={{ width: `${totalWidth}px` }}>
-              {/* Header - sticky vertically, scrolls horizontally */}
-              <div
-                className="sticky top-0 z-10 bg-white border-b border-gray-200"
-                style={{ height: `${HEADER_HEIGHT}px` }}
-              >
+              {/* Header timeline section */}
+              <div style={{ width: `${totalWidth}px` }}>
                 {/* Month labels */}
                 <div className="flex h-6 border-b border-gray-100">
                   {monthGroups.map((group, i) => (
@@ -440,10 +413,10 @@ export function ResourceTimeline({
                     <div
                       key={i}
                       className={`
-                        flex flex-col items-center justify-center text-sm border-r border-gray-100
-                        ${isWeekend(day) ? "bg-gray-100/70" : "bg-white"}
-                        ${isSameDay(day, today) ? "bg-blue-50 border-blue-200" : ""}
-                      `}
+                  flex flex-col items-center justify-center text-sm border-r border-gray-100
+                  ${isWeekend(day) ? "bg-gray-100/70" : "bg-white"}
+                  ${isSameDay(day, today) ? "bg-blue-50 border-blue-200" : ""}
+                `}
                       style={{ width: `${DAY_WIDTH}px`, height: `${HEADER_HEIGHT - 24}px` }}
                     >
                       <div className={`font-medium ${isSameDay(day, today) ? "text-blue-600" : "text-gray-900"}`}>
@@ -456,30 +429,56 @@ export function ResourceTimeline({
                   ))}
                 </div>
               </div>
+            </div>
 
-              {/* Assignment rows */}
-              <TooltipProvider>
-                {activePeople.map((person, personIndex) => {
-                  const personAssignments = getPersonAssignments(person.id)
+            {/* Content rows */}
+            <TooltipProvider>
+              {activePeople.map((person, personIndex) => {
+                const personAssignments = getPersonAssignments(person.id)
 
-                  return (
+                return (
+                  <div
+                    key={person.id}
+                    className={`
+                flex border-b border-gray-100 hover:bg-gray-50/30 transition-colors
+                ${personIndex % 2 === 0 ? "bg-white" : "bg-gray-50/20"}
+              `}
+                    style={{ height: `${ROW_HEIGHT}px` }}
+                  >
+                    {/* Person info sidebar - sticky left */}
                     <div
-                      key={person.id}
-                      className={`
-                        relative border-b border-gray-100 hover:bg-gray-50/30 transition-colors
-                        ${personIndex % 2 === 0 ? "bg-white" : "bg-gray-50/20"}
-                      `}
-                      style={{ height: `${ROW_HEIGHT}px` }}
+                      className="sticky left-0 z-10 bg-white border-r border-gray-200 flex items-center"
+                      style={{ width: `${SIDEBAR_WIDTH}px` }}
                     >
+                      <div className="p-4 flex items-center space-x-3 w-full">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="text-sm bg-gray-100 text-gray-600">
+                            {person.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900 truncate">{person.name}</div>
+                          <div className="text-sm text-gray-500 truncate">{person.profile}</div>
+                          <div className="text-xs text-gray-400">{person.type}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Timeline content area */}
+                    <div className="relative flex-1" style={{ width: `${totalWidth}px` }}>
                       {/* Weekend background */}
                       {days.map((day, i) => (
                         <div
                           key={i}
                           className={`
-                            absolute top-0 bottom-0 border-r border-gray-50
-                            ${isWeekend(day) ? "bg-gray-50/50" : ""}
-                            ${isSameDay(day, today) ? "bg-blue-50/30" : ""}
-                          `}
+                      absolute top-0 bottom-0 border-r border-gray-50
+                      ${isWeekend(day) ? "bg-gray-50/50" : ""}
+                      ${isSameDay(day, today) ? "bg-blue-50/30" : ""}
+                    `}
                           style={{
                             left: `${i * DAY_WIDTH}px`,
                             width: `${DAY_WIDTH}px`,
@@ -559,17 +558,17 @@ export function ResourceTimeline({
                         />
                       )}
                     </div>
-                  )
-                })}
-
-                {activePeople.length === 0 && (
-                  <div className="p-12 text-center text-gray-500">
-                    <div className="text-lg font-medium mb-2">No active team members</div>
-                    <div className="text-sm">Add people with "Active" status to see their assignments</div>
                   </div>
-                )}
-              </TooltipProvider>
-            </div>
+                )
+              })}
+
+              {activePeople.length === 0 && (
+                <div className="p-12 text-center text-gray-500">
+                  <div className="text-lg font-medium mb-2">No active team members</div>
+                  <div className="text-sm">Add people with "Active" status to see their assignments</div>
+                </div>
+              )}
+            </TooltipProvider>
           </div>
         </div>
       </div>
