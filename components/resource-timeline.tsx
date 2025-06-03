@@ -312,13 +312,12 @@ export function ResourceTimeline({
                   )}
                   <Badge
                     variant="outline"
-                    className={`text-xs h-6 ${
-                      summaryStats.avgUtilization > 100
+                    className={`text-xs h-6 ${summaryStats.avgUtilization > 100
                         ? "border-red-200 text-red-700"
                         : summaryStats.avgUtilization > 80
                           ? "border-orange-200 text-orange-700"
                           : "border-green-200 text-green-700"
-                    }`}
+                      }`}
                   >
                     <TrendingUp className="h-3 w-3 mr-1" />
                     {summaryStats.avgUtilization}%
@@ -551,11 +550,12 @@ export function ResourceTimeline({
                       {/* Today indicator line */}
                       {days.some((day) => isSameDay(day, today)) && (
                         <div
-                          className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-10 pointer-events-none opacity-70"
+                          className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-0 pointer-events-none opacity-70"
                           style={{
-                            left: `${differenceInDays(today, startOfMonth(visibleDateRange.start)) * DAY_WIDTH + DAY_WIDTH / 2}px`,
+                            left: `${differenceInDays(today, startOfMonth(visibleDateRange.start)) * DAY_WIDTH + SIDEBAR_WIDTH + DAY_WIDTH / 2}px`,
                           }}
                         />
+
                       )}
                     </div>
                   </div>
