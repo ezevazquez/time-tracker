@@ -79,33 +79,6 @@ export default function NewAssignmentPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Header */}
-      <header className="border-b bg-background">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="text-2xl font-bold text-primary">
-                ResourceFlow
-              </Link>
-              <nav className="hidden md:flex space-x-6">
-                <Link href="/" className="text-sm font-medium text-muted-foreground hover:text-primary">
-                  Dashboard
-                </Link>
-                <Link href="/people" className="text-sm font-medium text-muted-foreground hover:text-primary">
-                  Personas
-                </Link>
-                <Link href="/projects" className="text-sm font-medium text-muted-foreground hover:text-primary">
-                  Proyectos
-                </Link>
-                <Link href="/assignments" className="text-sm font-medium text-primary">
-                  Asignaciones
-                </Link>
-              </nav>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="flex-1 container mx-auto px-4 py-6">
         <div className="max-w-2xl mx-auto">

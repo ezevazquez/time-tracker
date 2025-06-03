@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
 // For client-side access, we need to use NEXT_PUBLIC_ prefix
 // But since we have DB_URL and API_KEY, let's try both approaches
@@ -15,7 +15,7 @@ console.log("NEXT_PUBLIC_SUPABASE_ANON_KEY available:", !!process.env.NEXT_PUBLI
 console.log("Final supabaseUrl:", supabaseUrl ? "Present" : "Missing")
 console.log("Final supabaseAnonKey:", supabaseAnonKey ? "Present" : "Missing")
 
-let supabase // Declare supabase here
+let supabase: SupabaseClient // Declare supabase here with type
 
 // Validate that we have the required values
 if (!supabaseUrl || !supabaseAnonKey) {

@@ -1,4 +1,6 @@
-export const mockPeople = [
+import type { Person, Project, Assignment, AssignmentWithRelations } from "./supabase"
+
+export const mockPeople: Person[] = [
   {
     id: "1",
     name: "Ana García",
@@ -45,7 +47,7 @@ export const mockPeople = [
   },
 ]
 
-export const mockProjects = [
+export const mockProjects: Project[] = [
   {
     id: "1",
     name: "E-commerce Platform",
@@ -78,7 +80,7 @@ export const mockProjects = [
   },
 ]
 
-export const mockAssignments = [
+export const mockAssignments: Assignment[] = [
   {
     id: "1",
     person_id: "1",
@@ -121,7 +123,7 @@ export const mockAssignments = [
   },
 ]
 
-export const mockAssignmentsWithRelations = mockAssignments.map((assignment) => ({
+export const mockAssignmentsWithRelations: AssignmentWithRelations[] = mockAssignments.map((assignment) => ({
   ...assignment,
   people: mockPeople.find((p) => p.id === assignment.person_id),
   projects: mockProjects.find((p) => p.id === assignment.project_id),
