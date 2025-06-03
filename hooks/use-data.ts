@@ -14,9 +14,12 @@ export function usePeople() {
     try {
       setLoading(true)
       setError(null)
+      console.log("Fetching people...")
       const data = await peopleService.getAll()
+      console.log("People fetched:", data.length, "items")
       setPeople(data)
     } catch (err) {
+      console.error("Error in usePeople:", err)
       setError(err instanceof Error ? err.message : "Error loading people")
     } finally {
       setLoading(false)
@@ -77,9 +80,12 @@ export function useProjects() {
     try {
       setLoading(true)
       setError(null)
+      console.log("Fetching projects...")
       const data = await projectsService.getAll()
+      console.log("Projects fetched:", data.length, "items")
       setProjects(data)
     } catch (err) {
+      console.error("Error in useProjects:", err)
       setError(err instanceof Error ? err.message : "Error loading projects")
     } finally {
       setLoading(false)
@@ -140,9 +146,12 @@ export function useAssignments() {
     try {
       setLoading(true)
       setError(null)
+      console.log("Fetching assignments...")
       const data = await assignmentsService.getAll()
+      console.log("Assignments fetched:", data.length, "items")
       setAssignments(data)
     } catch (err) {
+      console.error("Error in useAssignments:", err)
       setError(err instanceof Error ? err.message : "Error loading assignments")
     } finally {
       setLoading(false)
