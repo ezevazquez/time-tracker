@@ -1,9 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { peopleService, projectsService, assignmentsService } from "@/lib/database"
+import { peopleService, projectsService, assignmentsService, clientsService } from "@/lib/database"
 import type { Person, Project, AssignmentWithRelations } from "@/lib/supabase"
 
+export { clientsService }
+
+// People hook
 export function usePeople() {
   const [people, setPeople] = useState<Person[]>([])
   const [loading, setLoading] = useState(true)
@@ -12,19 +15,18 @@ export function usePeople() {
   const fetchPeople = async () => {
     try {
       setLoading(true)
-      const data = await peopleService.getAll()
-      setPeople(data)
       setError(null)
+      console.log("Fetching people...")
+      const data = await peopleService.getAll()
+      console.log("People fetched:", data.length, "items")
+      setPeople(data)
     } catch (err) {
+      console.error("Error in usePeople:", err)
       setError(err instanceof Error ? err.message : "Error loading people")
     } finally {
       setLoading(false)
     }
   }
-
-  useEffect(() => {
-    fetchPeople()
-  }, [])
 
   const createPerson = async (person: Omit<Person, "id" | "created_at" | "updated_at">) => {
     try {
@@ -32,7 +34,7 @@ export function usePeople() {
       setPeople((prev) => [...prev, newPerson])
       return newPerson
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "Error creating person")
+      throw err
     }
   }
 
@@ -42,7 +44,7 @@ export function usePeople() {
       setPeople((prev) => prev.map((p) => (p.id === id ? updatedPerson : p)))
       return updatedPerson
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "Error updating person")
+      throw err
     }
   }
 
@@ -51,9 +53,13 @@ export function usePeople() {
       await peopleService.delete(id)
       setPeople((prev) => prev.filter((p) => p.id !== id))
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "Error deleting person")
+      throw err
     }
   }
+
+  useEffect(() => {
+    fetchPeople()
+  }, [])
 
   return {
     people,
@@ -66,6 +72,7 @@ export function usePeople() {
   }
 }
 
+// Projects hook
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
@@ -74,19 +81,18 @@ export function useProjects() {
   const fetchProjects = async () => {
     try {
       setLoading(true)
-      const data = await projectsService.getAll()
-      setProjects(data)
       setError(null)
+      console.log("Fetching projects...")
+      const data = await projectsService.getAll()
+      console.log("Projects fetched:", data.length, "items")
+      setProjects(data)
     } catch (err) {
+      console.error("Error in useProjects:", err)
       setError(err instanceof Error ? err.message : "Error loading projects")
     } finally {
       setLoading(false)
     }
   }
-
-  useEffect(() => {
-    fetchProjects()
-  }, [])
 
   const createProject = async (project: Omit<Project, "id" | "created_at" | "updated_at">) => {
     try {
@@ -94,7 +100,7 @@ export function useProjects() {
       setProjects((prev) => [...prev, newProject])
       return newProject
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "Error creating project")
+      throw err
     }
   }
 
@@ -104,7 +110,7 @@ export function useProjects() {
       setProjects((prev) => prev.map((p) => (p.id === id ? updatedProject : p)))
       return updatedProject
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "Error updating project")
+      throw err
     }
   }
 
@@ -113,9 +119,13 @@ export function useProjects() {
       await projectsService.delete(id)
       setProjects((prev) => prev.filter((p) => p.id !== id))
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "Error deleting project")
+      throw err
     }
   }
+
+  useEffect(() => {
+    fetchProjects()
+  }, [])
 
   return {
     projects,
@@ -128,6 +138,7 @@ export function useProjects() {
   }
 }
 
+// Assignments hook
 export function useAssignments() {
   const [assignments, setAssignments] = useState<AssignmentWithRelations[]>([])
   const [loading, setLoading] = useState(true)
@@ -136,39 +147,38 @@ export function useAssignments() {
   const fetchAssignments = async () => {
     try {
       setLoading(true)
-      const data = await assignmentsService.getAll()
-      setAssignments(data)
       setError(null)
+      console.log("Fetching assignments...")
+      const data = await assignmentsService.getAll()
+      console.log("Assignments fetched:", data.length, "items")
+      setAssignments(data)
     } catch (err) {
+      console.error("Error in useAssignments:", err)
       setError(err instanceof Error ? err.message : "Error loading assignments")
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => {
-    fetchAssignments()
-  }, [])
-
   const createAssignment = async (
     assignment: Omit<AssignmentWithRelations, "id" | "created_at" | "updated_at" | "people" | "projects">,
   ) => {
     try {
       const newAssignment = await assignmentsService.create(assignment)
-      await fetchAssignments() // Refetch to get relations
+      await fetchAssignments() // Refetch to get the relations
       return newAssignment
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "Error creating assignment")
+      throw err
     }
   }
 
   const updateAssignment = async (id: string, updates: Partial<AssignmentWithRelations>) => {
     try {
       const updatedAssignment = await assignmentsService.update(id, updates)
-      await fetchAssignments() // Refetch to get relations
+      await fetchAssignments() // Refetch to get the relations
       return updatedAssignment
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "Error updating assignment")
+      throw err
     }
   }
 
@@ -177,22 +187,13 @@ export function useAssignments() {
       await assignmentsService.delete(id)
       setAssignments((prev) => prev.filter((a) => a.id !== id))
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "Error deleting assignment")
+      throw err
     }
   }
 
-  const checkAllocationConflicts = async (
-    personId: string,
-    startDate: string,
-    endDate: string,
-    excludeAssignmentId?: string,
-  ) => {
-    try {
-      return await assignmentsService.checkAllocationConflicts(personId, startDate, endDate, excludeAssignmentId)
-    } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "Error checking allocation conflicts")
-    }
-  }
+  useEffect(() => {
+    fetchAssignments()
+  }, [])
 
   return {
     assignments,
@@ -202,6 +203,5 @@ export function useAssignments() {
     createAssignment,
     updateAssignment,
     deleteAssignment,
-    checkAllocationConflicts,
   }
 }
