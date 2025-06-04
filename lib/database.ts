@@ -159,6 +159,81 @@ export const clientsService = {
       throw err
     }
   },
+
+  async create(client: Omit<Client, "id" | "created_at">): Promise<Client> {
+    if (!isSupabaseConfigured()) {
+      throw new Error("Supabase is not configured")
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("clients")
+        .insert([client])
+        .select()
+        .single()
+
+      if (error) {
+        console.error("Error creating client:", error)
+        throw new Error(`Error creating client: ${error.message}`)
+      }
+
+      if (!data) {
+        throw new Error("No data returned after creating client")
+      }
+
+      return data
+    } catch (err) {
+      console.error("Error in clientsService.create:", err)
+      throw err
+    }
+  },
+
+  async update(id: string, updates: Partial<Omit<Client, "id" | "created_at">>): Promise<Client> {
+    if (!isSupabaseConfigured()) {
+      throw new Error("Supabase is not configured")
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("clients")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error("Error updating client:", error)
+        throw new Error(`Error updating client: ${error.message}`)
+      }
+
+      if (!data) {
+        throw new Error("No data returned after updating client")
+      }
+
+      return data
+    } catch (err) {
+      console.error("Error in clientsService.update:", err)
+      throw err
+    }
+  },
+
+  async delete(id: string): Promise<void> {
+    if (!isSupabaseConfigured()) {
+      throw new Error("Supabase is not configured")
+    }
+
+    try {
+      const { error } = await supabase.from("clients").delete().eq("id", id)
+
+      if (error) {
+        console.error("Error deleting client:", error)
+        throw new Error(`Error deleting client: ${error.message}`)
+      }
+    } catch (err) {
+      console.error("Error in clientsService.delete:", err)
+      throw err
+    }
+  },
 }
 
 // Projects Service
