@@ -71,6 +71,9 @@ export function ResourceTimeline({
     end: addMonths(new Date(), 2),
   })
 
+  // State for tracking scroll position to show sticky labels
+  const [scrollLeft, setScrollLeft] = useState(0)
+
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const lastScrollPosition = useRef(0)
   const isScrollingRef = useRef(false)
@@ -81,6 +84,21 @@ export function ResourceTimeline({
   const SIDEBAR_WIDTH = 240
   const HEADER_HEIGHT = 60
   const INFO_SECTION_HEIGHT = 80 // Reduced height for compact summary
+
+  // Track scroll position
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current
+    if (!scrollContainer) return
+
+    const handleScrollUpdate = () => {
+      setScrollLeft(scrollContainer.scrollLeft)
+    }
+
+    scrollContainer.addEventListener("scroll", handleScrollUpdate)
+    return () => {
+      scrollContainer.removeEventListener("scroll", handleScrollUpdate)
+    }
+  }, [])
 
   // Generate all days in the visible date range
   const days = useMemo(() => {
@@ -197,7 +215,7 @@ export function ResourceTimeline({
     const todayIndex = differenceInDays(today, visibleStart)
 
     // Position today at 25% of the visible width (left-aligned) instead of centered
-    const scrollPosition = todayIndex * DAY_WIDTH - scrollContainer.clientWidth * 0.001
+    const scrollPosition = todayIndex * DAY_WIDTH - scrollContainer.clientWidth * 0.25
 
     scrollContainer.scrollTo({
       left: Math.max(0, scrollPosition),
@@ -241,6 +259,21 @@ export function ResourceTimeline({
     }
   }
 
+  // Helper function to get visible assignments that need sticky labels
+  const getVisibleAssignments = (personAssignments: AssignmentWithRelations[]) => {
+    const viewportLeft = scrollLeft
+    const viewportRight = scrollLeft + (scrollContainerRef.current?.clientWidth || 0) - SIDEBAR_WIDTH
+
+    return personAssignments.filter((assignment) => {
+      const dimensions = calculateBarDimensions(assignment)
+      const barLeft = dimensions.left
+      const barRight = dimensions.left + dimensions.width
+
+      // Show sticky label if bar extends beyond the left edge of viewport
+      return barLeft < viewportLeft && barRight > viewportLeft
+    })
+  }
+
   // Group days by month for header display
   const monthGroups = useMemo(() => {
     const groups: { month: Date; days: Date[] }[] = []
@@ -282,7 +315,7 @@ export function ResourceTimeline({
   }, [])
 
   return (
-    <div className="w-full h-[calc(95vh-64px)] bg-white flex flex-col">
+    <div className="w-full h-[calc(100vh-64px)] bg-white flex flex-col">
       {/* Compact Summary Section */}
       <div
         className="flex-shrink-0 bg-gray-50/30 border-b border-gray-200"
@@ -312,12 +345,13 @@ export function ResourceTimeline({
                   )}
                   <Badge
                     variant="outline"
-                    className={`text-xs h-6 ${summaryStats.avgUtilization > 100
+                    className={`text-xs h-6 ${
+                      summaryStats.avgUtilization > 100
                         ? "border-red-200 text-red-700"
                         : summaryStats.avgUtilization > 80
                           ? "border-orange-200 text-orange-700"
                           : "border-green-200 text-green-700"
-                      }`}
+                    }`}
                   >
                     <TrendingUp className="h-3 w-3 mr-1" />
                     {summaryStats.avgUtilization}%
@@ -547,15 +581,59 @@ export function ResourceTimeline({
                         )
                       })}
 
+                      {/* Sticky project labels overlay */}
+                      {(() => {
+                        const visibleAssignments = getVisibleAssignments(personAssignments)
+
+                        return visibleAssignments.map((assignment, idx) => {
+                          const project = projects.find((p) => p.id === assignment.project_id)
+                          if (!project) return null
+
+                          const bgColor = stringToColor(project.name)
+                          const totalAssignments = personAssignments.length
+                          const assignmentHeight = Math.min(ROW_HEIGHT * 0.7, 36)
+                          const verticalGap =
+                            (ROW_HEIGHT - assignmentHeight * totalAssignments) / (totalAssignments + 1)
+
+                          // Find the original assignment index to get correct vertical position
+                          const originalIdx = personAssignments.findIndex((a) => a.id === assignment.id)
+                          const top = verticalGap + originalIdx * (assignmentHeight + verticalGap)
+
+                          return (
+                            <div
+                              key={`sticky-${assignment.id}`}
+                              className="absolute rounded-l-lg border border-white/20 pointer-events-none"
+                              style={{
+                                backgroundColor: bgColor,
+                                left: `${scrollLeft}px`,
+                                top: `${top}px`,
+                                height: `${assignmentHeight}px`,
+                                zIndex: 15,
+                                minWidth: "120px",
+                                maxWidth: "200px",
+                              }}
+                            >
+                              <div className="px-3 py-2 text-white font-medium truncate h-full flex items-center text-sm">
+                                <span className="truncate">{project.name}</span>
+                                {assignment.allocation < 100 && (
+                                  <span className="ml-2 bg-black/30 text-white text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                    {assignment.allocation}%
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })
+                      })()}
+
                       {/* Today indicator line */}
                       {days.some((day) => isSameDay(day, today)) && (
                         <div
-                          className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-0 pointer-events-none opacity-70"
+                          className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-10 pointer-events-none opacity-70"
                           style={{
-                            left: `${differenceInDays(today, startOfMonth(visibleDateRange.start)) * DAY_WIDTH + SIDEBAR_WIDTH + DAY_WIDTH / 2}px`,
+                            left: `${differenceInDays(today, startOfMonth(visibleDateRange.start)) * DAY_WIDTH + DAY_WIDTH / 2}px`,
                           }}
                         />
-
                       )}
                     </div>
                   </div>

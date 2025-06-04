@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -31,7 +31,8 @@ const formSchema = z.object({
   client_id: z.string().nullable().optional(),
 })
 
-export default function EditProjectPage({ params }: { params: { id: string } }) {
+export default function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
+  const unwrappedParams = use(params)
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [project, setProject] = useState<Project | null>(null)
@@ -75,7 +76,7 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
     async function fetchProject() {
       try {
         setIsLoadingProject(true)
-        const projectData = await projectsService.getById(params.id)
+        const projectData = await projectsService.getById(unwrappedParams.id)
         if (projectData) {
           setProject(projectData)
           // Set form values
@@ -99,12 +100,12 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
     }
 
     fetchProject()
-  }, [params.id, form])
+  }, [unwrappedParams.id, form])
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsLoading(true)
-      await projectsService.update(params.id, {
+      await projectsService.update(unwrappedParams.id, {
         ...values,
         start_date: values.start_date ? values.start_date.toISOString() : null,
         end_date: values.end_date ? values.end_date.toISOString() : null,

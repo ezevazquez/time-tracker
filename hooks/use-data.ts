@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { peopleService, projectsService, assignmentsService, clientsService } from "@/lib/database"
-import type { Person, Project, AssignmentWithRelations } from "@/lib/supabase"
+import type { Person, Project, AssignmentWithRelations, Client } from "@/lib/supabase"
 
 export { clientsService }
 
@@ -203,5 +203,71 @@ export function useAssignments() {
     createAssignment,
     updateAssignment,
     deleteAssignment,
+  }
+}
+
+// Clients hook
+export function useClients() {
+  const [clients, setClients] = useState<Client[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchClients = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      console.log("Fetching clients...")
+      const data = await clientsService.getAll()
+      console.log("Clients fetched:", data.length, "items")
+      setClients(data)
+    } catch (err) {
+      console.error("Error in useClients:", err)
+      setError(err instanceof Error ? err.message : "Error loading clients")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const createClient = async (client: Omit<Client, "id" | "created_at">) => {
+    try {
+      const newClient = await clientsService.create(client)
+      setClients((prev) => [...prev, newClient])
+      return newClient
+    } catch (err) {
+      throw err
+    }
+  }
+
+  const updateClient = async (id: string, updates: Partial<Omit<Client, "id" | "created_at">>) => {
+    try {
+      const updatedClient = await clientsService.update(id, updates)
+      setClients((prev) => prev.map((c) => (c.id === id ? updatedClient : c)))
+      return updatedClient
+    } catch (err) {
+      throw err
+    }
+  }
+
+  const deleteClient = async (id: string) => {
+    try {
+      await clientsService.delete(id)
+      setClients((prev) => prev.filter((c) => c.id !== id))
+    } catch (err) {
+      throw err
+    }
+  }
+
+  useEffect(() => {
+    fetchClients()
+  }, [])
+
+  return {
+    clients,
+    loading,
+    error,
+    refetch: fetchClients,
+    createClient,
+    updateClient,
+    deleteClient,
   }
 }
