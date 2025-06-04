@@ -197,7 +197,7 @@ export function ResourceTimeline({
     const todayIndex = differenceInDays(today, visibleStart)
 
     // Position today at 25% of the visible width (left-aligned) instead of centered
-    const scrollPosition = todayIndex * DAY_WIDTH - scrollContainer.clientWidth * 0.25
+    const scrollPosition = todayIndex * DAY_WIDTH - scrollContainer.clientWidth * 0.001
 
     scrollContainer.scrollTo({
       left: Math.max(0, scrollPosition),
@@ -282,7 +282,7 @@ export function ResourceTimeline({
   }, [])
 
   return (
-    <div className="w-full h-[calc(100vh-64px)] bg-white flex flex-col">
+    <div className="w-full h-[calc(95vh-64px)] bg-white flex flex-col">
       {/* Compact Summary Section */}
       <div
         className="flex-shrink-0 bg-gray-50/30 border-b border-gray-200"
