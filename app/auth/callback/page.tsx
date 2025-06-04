@@ -1,0 +1,33 @@
+'use client'
+
+import { useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+
+export default function AuthCallbackPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const exchangeCode = async () => {
+      const code = searchParams.get('code')
+      if (!code) {
+        router.replace('/auth/auth-code-error')
+        return
+      }
+
+      const { error } = await supabase.auth.exchangeCodeForSession(code)
+
+      if (error) {
+        router.replace('/auth/auth-code-error')
+        return
+      }
+
+      router.replace('/')
+    }
+
+    exchangeCode()
+  }, [searchParams, router])
+
+  return <p className="text-center p-6">Signing in...</p>
+}

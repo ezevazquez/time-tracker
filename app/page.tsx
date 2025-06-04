@@ -1,24 +1,25 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { Card } from "@/components/ui/card"
-import { usePeople, useProjects, useAssignments } from "@/hooks/use-data"
-import { isSupabaseConfigured } from "@/lib/supabase"
-import { DashboardStats } from "@/components/dashboard-stats"
-import { DataSourceNotice } from "@/components/data-source-notice"
-import { ResourceTimeline } from "@/components/resource-timeline"
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+
+import { Card } from '@/components/ui/card'
+import { usePeople, useProjects, useAssignments } from '@/hooks/use-data'
+import { DashboardStats } from '@/components/dashboard-stats'
+import { DataSourceNotice } from '@/components/data-source-notice'
+import { ResourceTimeline } from '@/components/resource-timeline'
 
 export default function Dashboard() {
-  const [viewMode, setViewMode] = useState("people")
+  const router = useRouter()
+  const [authorized, setAuthorized] = useState<boolean | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  const [viewMode, setViewMode] = useState('people')
   const [dateRange, setDateRange] = useState({
     from: new Date(2024, 0, 1),
     to: new Date(2024, 11, 31),
   })
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   const { people, loading: peopleLoading, error: peopleError } = usePeople()
   const { projects, loading: projectsLoading, error: projectsError } = useProjects()
@@ -28,17 +29,46 @@ export default function Dashboard() {
   const error = peopleError || projectsError || assignmentsError
   const supabaseConfigured = isSupabaseConfigured()
 
-  if (!mounted) {
+  // 🔐 Validación de sesión y email autorizado
+  useEffect(() => {
+    setMounted(true)
+
+    const validateUser = async () => {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      const session = sessionData?.session
+
+      if (!session || sessionError) {
+        router.push('/login')
+        return
+      }
+
+      const { data: allowed } = await supabase
+        .from('auth_users')
+        .select('email')
+        .eq('email', session.user.email)
+        .maybeSingle()
+
+      if (!allowed) {
+        router.push('/unauthorized')
+        return
+      }
+
+      setAuthorized(true)
+    }
+
+    validateUser()
+  }, [router])
+
+  // 🔄 Pantalla de carga inicial (montado o validación)
+  if (!mounted || authorized === null) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Inicializando aplicación...</p>
-        </div>
+        <p className="text-center">Validando sesión...</p>
       </div>
     )
   }
 
+  // ❌ Error cargando datos
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -57,6 +87,7 @@ export default function Dashboard() {
     )
   }
 
+  // 🔃 Cargando datos
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -68,23 +99,21 @@ export default function Dashboard() {
     )
   }
 
+  // ✅ Dashboard completo
   return (
     <main className="flex-1 w-full">
-      {/* Data Source Notice - only show if not using Supabase */}
       {!supabaseConfigured && (
         <div className="container mx-auto px-4 py-4">
           <DataSourceNotice />
         </div>
       )}
 
-      {/* Stats Cards - only show if using mock data */}
       {!supabaseConfigured && (
         <div className="container mx-auto px-4 pb-4">
           <DashboardStats people={people} projects={projects} assignments={assignments} />
         </div>
       )}
 
-      {/* Resource Timeline - Full width */}
       <ResourceTimeline
         people={people}
         projects={projects}
