@@ -1,36 +1,37 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 export default function AuthCallbackHandler() {
   const router = useRouter()
-  const searchParams = useSearchParams()
 
   useEffect(() => {
-    const exchangeCode = async () => {
-      const code = searchParams.get('code')
+    const hash = window.location.hash
+    const params = new URLSearchParams(hash.substring(1)) // quita el #
 
-      if (!code) {
-        console.warn('No code in URL')
-        router.replace('/auth/auth-code-error')
-        return
-      }
+    const access_token = params.get('access_token')
+    const refresh_token = params.get('refresh_token')
 
-      const { error } = await supabase.auth.exchangeCodeForSession(code)
+    console.log('🔑 Access Token:', access_token)
+    console.log('🔄 Refresh Token:', refresh_token)
 
-      if (error) {
-        console.error('Error exchanging code:', error.message)
-        router.replace('/auth/auth-code-error')
-        return
-      }
-
-      router.replace('/')
+    if (!access_token || !refresh_token) {
+      router.replace('/auth/auth-code-error')
+      return
     }
 
-    exchangeCode()
-  }, [searchParams, router])
+    supabase.auth.setSession({ access_token, refresh_token })
+      .then(({ error }) => {
+        if (error) {
+          console.error('❌ Failed to set session:', error.message)
+          router.replace('/auth/auth-code-error')
+        } else {
+          router.replace('/')
+        }
+      })
+  }, [router])
 
-  return null
+  return <p className="p-6">Processing login...</p>
 }
