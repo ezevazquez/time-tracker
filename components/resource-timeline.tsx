@@ -345,13 +345,12 @@ export function ResourceTimeline({
                   )}
                   <Badge
                     variant="outline"
-                    className={`text-xs h-6 ${
-                      summaryStats.avgUtilization > 100
-                        ? "border-red-200 text-red-700"
-                        : summaryStats.avgUtilization > 80
-                          ? "border-orange-200 text-orange-700"
-                          : "border-green-200 text-green-700"
-                    }`}
+                    className={`text-xs h-6 ${summaryStats.avgUtilization > 100
+                      ? "border-red-200 text-red-700"
+                      : summaryStats.avgUtilization > 80
+                        ? "border-orange-200 text-orange-700"
+                        : "border-green-200 text-green-700"
+                      }`}
                   >
                     <TrendingUp className="h-3 w-3 mr-1" />
                     {summaryStats.avgUtilization}%
@@ -469,16 +468,27 @@ export function ResourceTimeline({
               {activePeople.map((person, personIndex) => {
                 const personAssignments = getPersonAssignments(person.id)
 
+                const renderAssignmentLabel = (project: Project, assignment: AssignmentWithRelations) => (
+                  <div className="px-3 py-2 text-white font-medium truncate h-full flex items-center text-sm">
+                    <span className="truncate">{project.name}</span>
+                    {assignment.allocation < 100 && (
+                      <span className="ml-2 bg-black/30 text-white text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                        {assignment.allocation}%
+                      </span>
+                    )}
+                  </div>
+                )
+
                 return (
                   <div
                     key={person.id}
                     className={`
-                flex border-b border-gray-100 hover:bg-gray-50/30 transition-colors
-                ${personIndex % 2 === 0 ? "bg-white" : "bg-gray-50/20"}
-              `}
+          flex border-b border-gray-100 hover:bg-gray-50/30 transition-colors
+          ${personIndex % 2 === 0 ? "bg-white" : "bg-gray-50/20"}
+        `}
                     style={{ height: `${ROW_HEIGHT}px` }}
                   >
-                    {/* Person info sidebar - sticky left */}
+                    {/* Sidebar */}
                     <div
                       className="sticky left-0 z-10 bg-white border-r border-gray-200 flex items-center"
                       style={{ width: `${SIDEBAR_WIDTH}px` }}
@@ -501,17 +511,17 @@ export function ResourceTimeline({
                       </div>
                     </div>
 
-                    {/* Timeline content area */}
+                    {/* Timeline */}
                     <div className="relative flex-1" style={{ width: `${totalWidth}px` }}>
-                      {/* Weekend background */}
+                      {/* Background days */}
                       {days.map((day, i) => (
                         <div
                           key={i}
                           className={`
-                      absolute top-0 bottom-0 border-r border-gray-50
-                      ${isWeekend(day) ? "bg-gray-50/50" : ""}
-                      ${isSameDay(day, today) ? "bg-blue-50/30" : ""}
-                    `}
+                absolute top-0 bottom-0 border-r border-gray-50
+                ${isWeekend(day) ? "bg-gray-50/50" : ""}
+                ${isSameDay(day, today) ? "bg-blue-50/30" : ""}
+              `}
                           style={{
                             left: `${i * DAY_WIDTH}px`,
                             width: `${DAY_WIDTH}px`,
@@ -527,18 +537,23 @@ export function ResourceTimeline({
                         const dimensions = calculateBarDimensions(assignment)
                         const bgColor = stringToColor(project.name)
 
-                        // Calculate vertical position - distribute evenly in the row
                         const totalAssignments = personAssignments.length
                         const assignmentHeight = Math.min(ROW_HEIGHT * 0.7, 36)
                         const verticalGap = (ROW_HEIGHT - assignmentHeight * totalAssignments) / (totalAssignments + 1)
                         const top = verticalGap + idx * (assignmentHeight + verticalGap)
+
+                        // Calcula si debe activarse sticky y en qué punto
+                        const barStart = dimensions.left
+                        const barEnd = dimensions.left + dimensions.width
+                        const labelMaxWidth = barEnd - scrollLeft
+                        const isSticky = scrollLeft > barStart && scrollLeft < barEnd
 
                         return (
                           <Tooltip key={assignment.id}>
                             <TooltipTrigger asChild>
                               <Link href={`/assignments/${assignment.id}/edit`} className="block">
                                 <div
-                                  className="absolute rounded-lg shadow-md cursor-pointer transition-all hover:shadow-lg hover:translate-y-[-2px] group border border-white/20"
+                                  className="absolute rounded-lg shadow-md cursor-pointer transition-all hover:shadow-lg hover:translate-y-[-2px] group border border-white/20 overflow-hidden"
                                   style={{
                                     backgroundColor: bgColor,
                                     left: `${dimensions.left}px`,
@@ -548,15 +563,16 @@ export function ResourceTimeline({
                                     zIndex: 5,
                                   }}
                                 >
-                                  <div className="px-3 py-2 text-white font-medium truncate h-full flex items-center">
-                                    <span className="truncate">{project.name}</span>
+                                  <div
+                                    className={`${isSticky ? "sticky" : ""}`}
+                                    style={{
+                                      left: `${SIDEBAR_WIDTH}px`,
+                                      maxWidth: `${labelMaxWidth}px`,
+                                      background: isSticky ? "inherit" : "none",
+                                    }}
+                                  >
 
-                                    {/* Allocation badge */}
-                                    {assignment.allocation < 100 && (
-                                      <span className="ml-2 bg-black/30 text-white text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                                        {assignment.allocation}%
-                                      </span>
-                                    )}
+                                    {renderAssignmentLabel(project, assignment)}
                                   </div>
                                 </div>
                               </Link>
@@ -581,52 +597,7 @@ export function ResourceTimeline({
                         )
                       })}
 
-                      {/* Sticky project labels overlay */}
-                      {(() => {
-                        const visibleAssignments = getVisibleAssignments(personAssignments)
-
-                        return visibleAssignments.map((assignment, idx) => {
-                          const project = projects.find((p) => p.id === assignment.project_id)
-                          if (!project) return null
-
-                          const bgColor = stringToColor(project.name)
-                          const totalAssignments = personAssignments.length
-                          const assignmentHeight = Math.min(ROW_HEIGHT * 0.7, 36)
-                          const verticalGap =
-                            (ROW_HEIGHT - assignmentHeight * totalAssignments) / (totalAssignments + 1)
-
-                          // Find the original assignment index to get correct vertical position
-                          const originalIdx = personAssignments.findIndex((a) => a.id === assignment.id)
-                          const top = verticalGap + originalIdx * (assignmentHeight + verticalGap)
-
-                          return (
-                            <div
-                              key={`sticky-${assignment.id}`}
-                              className="absolute rounded-l-lg border border-white/20 pointer-events-none"
-                              style={{
-                                backgroundColor: bgColor,
-                                left: `${scrollLeft}px`,
-                                top: `${top}px`,
-                                height: `${assignmentHeight}px`,
-                                zIndex: 15,
-                                minWidth: "120px",
-                                maxWidth: "200px",
-                              }}
-                            >
-                              <div className="px-3 py-2 text-white font-medium truncate h-full flex items-center text-sm">
-                                <span className="truncate">{project.name}</span>
-                                {assignment.allocation < 100 && (
-                                  <span className="ml-2 bg-black/30 text-white text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                                    {assignment.allocation}%
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        })
-                      })()}
-
-                      {/* Today indicator line */}
+                      {/* Today marker */}
                       {days.some((day) => isSameDay(day, today)) && (
                         <div
                           className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-10 pointer-events-none opacity-70"
@@ -647,6 +618,10 @@ export function ResourceTimeline({
                 </div>
               )}
             </TooltipProvider>
+
+
+
+
           </div>
         </div>
       </div>
