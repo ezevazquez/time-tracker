@@ -1,29 +1,41 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
 
-const PUBLIC_PATHS = ['/', '/login', '/auth/callback']
+// middleware.ts
+import { NextRequest, NextResponse } from "next/server"
+import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p))
-  const token = request.cookies.get('sb-access-token')
-  const isDev = process.env.NODE_ENV === 'development'
+export async function middleware(req: NextRequest) {
+  const adminPath = "/app"
+  const apiAdminPath = "/api/app"
 
-  if (isDev) return NextResponse.next()
+  const res = NextResponse.next()
+  const supabase = createMiddlewareClient({ req, res })
 
-  if (!isPublic && !token) {
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('redirectedFrom', pathname)
-    return NextResponse.redirect(loginUrl)
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  if (!session) {
+    console.log("middleware: no session found")
+
+    if (req.nextUrl.pathname.startsWith(apiAdminPath)) {
+      return new NextResponse(
+        JSON.stringify({ message: "authorization failed" }),
+        {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        }
+      )
+    }
+
+    if (req.nextUrl.pathname.startsWith(adminPath)) {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = "/login"
+      return NextResponse.redirect(redirectUrl)
+    }
   }
 
-  if (pathname === '/login' && token) {
-    return NextResponse.redirect(new URL('/', request.url))
-  }
-
-  return NextResponse.next()
+  return res
 }
 
 export const config = {
-  matcher: ['/((?!_next|favicon.ico|.*\\..*).*)'],
-}
+  matcher: ["/api/app/:path*", "/app/:path*"],
