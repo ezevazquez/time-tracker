@@ -11,7 +11,9 @@ export default function AuthCallbackHandler() {
   useEffect(() => {
     const exchangeCode = async () => {
       const code = searchParams.get('code')
+
       if (!code) {
+        console.warn('No code in URL')
         router.replace('/auth/auth-code-error')
         return
       }
@@ -19,6 +21,7 @@ export default function AuthCallbackHandler() {
       const { error } = await supabase.auth.exchangeCodeForSession(code)
 
       if (error) {
+        console.error('Error exchanging code:', error.message)
         router.replace('/auth/auth-code-error')
         return
       }

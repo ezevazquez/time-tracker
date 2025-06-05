@@ -1,3 +1,4 @@
+
 // middleware.ts
 import { NextRequest, NextResponse } from "next/server"
 import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
@@ -38,4 +39,3 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: ["/api/app/:path*", "/app/:path*"],
-}
