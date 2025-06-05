@@ -16,13 +16,22 @@ export function LoginForm({
   ...props
 }: React.ComponentPropsWithoutRef<'div'>) {
   const handleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
+    const origin =
+      typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
+
+    supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          access_type: 'offline', // para obtener refresh_token
+          prompt: 'consent',
+        },
       },
     })
+    
   }
+
 
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>

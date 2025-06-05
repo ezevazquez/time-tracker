@@ -1,42 +1,28 @@
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-// middleware.ts
-import { NextRequest, NextResponse } from "next/server"
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
+const PROTECTED_PATHS = ['/app', '/people', '/admin']
 
-export async function middleware(req: NextRequest) {
-  const adminPath = "/app"
-  const apiAdminPath = "/api/app"
+export function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl
 
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req, res })
+  // Detectar si la ruta está protegida
+  const isProtected = PROTECTED_PATHS.some(path => pathname.startsWith(path))
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  // ⚠️ Supabase guarda cookies como sb-access-token y sb-refresh-token
+  const access_token = req.cookies.get('sb-access-token')
 
-  if (!session) {
-    console.log("middleware: no session found")
-
-    if (req.nextUrl.pathname.startsWith(apiAdminPath)) {
-      return new NextResponse(
-        JSON.stringify({ message: "authorization failed" }),
-        {
-          status: 403,
-          headers: { "Content-Type": "application/json" },
-        }
-      )
-    }
-
-    if (req.nextUrl.pathname.startsWith(adminPath)) {
-      const redirectUrl = req.nextUrl.clone()
-      redirectUrl.pathname = "/login"
-      return NextResponse.redirect(redirectUrl)
-    }
+  if (isProtected && !access_token) {
+    const loginUrl = req.nextUrl.clone()
+    loginUrl.pathname = '/login'
+    loginUrl.searchParams.set('redirectedFrom', pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
-  return res
+  return NextResponse.next()
 }
 
+// Configuración del matcher
 export const config = {
-  matcher: ["/api/app/:path*", "/app/:path*"],
+  matcher: ['/app/:path*', '/people/:path*', '/admin/:path*'],
 }
