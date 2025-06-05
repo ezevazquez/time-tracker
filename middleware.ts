@@ -1,18 +1,23 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const PROTECTED_PATHS = ['/app', '/people', '/admin']
+const PUBLIC_PATHS = [
+  '/', // si querés que la raíz sea pública
+  '/login',
+  '/auth/callback',
+  '/auth/auth-code-error',
+  '/unauthorized'
+]
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // Detectar si la ruta está protegida
-  const isProtected = PROTECTED_PATHS.some(path => pathname.startsWith(path))
+  // Excluir rutas públicas
+  const isPublic = PUBLIC_PATHS.some(path => pathname === path || pathname.startsWith(`${path}/`))
 
-  // ⚠️ Supabase guarda cookies como sb-access-token y sb-refresh-token
   const access_token = req.cookies.get('sb-access-token')
 
-  if (isProtected && !access_token) {
+  if (!isPublic && !access_token) {
     const loginUrl = req.nextUrl.clone()
     loginUrl.pathname = '/login'
     loginUrl.searchParams.set('redirectedFrom', pathname)
@@ -22,7 +27,6 @@ export function middleware(req: NextRequest) {
   return NextResponse.next()
 }
 
-// Configuración del matcher
 export const config = {
-  matcher: ['/app/:path*', '/people/:path*', '/admin/:path*'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'], // proteger todo excepto archivos internos
 }
