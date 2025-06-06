@@ -100,7 +100,6 @@ export default function ClientsPage() {
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Descripción</TableHead>
-                <TableHead>Fecha de Creación</TableHead>
                 <TableHead className="w-[100px]">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -116,7 +115,6 @@ export default function ClientsPage() {
                   <TableRow key={client.id}>
                     <TableCell className="font-medium">{client.name}</TableCell>
                     <TableCell>{client.description || "-"}</TableCell>
-                    <TableCell>{new Date(client.created_at).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
