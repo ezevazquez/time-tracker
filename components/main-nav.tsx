@@ -5,12 +5,11 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { href: "/", label: "Dashboard" },
+  { href: "/", label: "Home" },
   { href: "/people", label: "Personas" },
   { href: "/clients", label: "Clientes" },
   { href: "/projects", label: "Proyectos" },
   { href: "/assignments", label: "Asignaciones" },
-  { href: "/settings", label: "Configuración" },
 ]
 
 export function MainNav() {
