@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -32,8 +32,9 @@ const formSchema = z.object({
   }),
 })
 
-export default function EditPersonPage({ params }: { params: { id: string } }) {
+export default function EditPersonPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
+  const { id } = use(params)
   const [isLoading, setIsLoading] = useState(false)
   const [person, setPerson] = useState<Person | null>(null)
   const [isLoadingPerson, setIsLoadingPerson] = useState(true)
@@ -56,7 +57,7 @@ export default function EditPersonPage({ params }: { params: { id: string } }) {
     async function fetchPerson() {
       try {
         setIsLoadingPerson(true)
-        const personData = await peopleService.getById(params.id)
+        const personData = await peopleService.getById(id)
         if (personData) {
           setPerson(personData)
           // Set form values
@@ -80,12 +81,12 @@ export default function EditPersonPage({ params }: { params: { id: string } }) {
     }
 
     fetchPerson()
-  }, [params.id, form])
+  }, [id, form])
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsLoading(true)
-      await peopleService.update(params.id, {
+      await peopleService.update(id, {
         ...values,
         start_date: values.start_date.toISOString(),
         end_date: values.end_date ? values.end_date.toISOString() : null,
@@ -231,6 +232,16 @@ export default function EditPersonPage({ params }: { params: { id: string } }) {
                             initialFocus
                           />
                         </PopoverContent>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2 self-start"
+                          onClick={() => form.setValue("end_date", null)}
+                        >
+                          Limpiar fecha
+                        </Button>
+
                       </Popover>
                       <FormMessage />
                     </FormItem>
