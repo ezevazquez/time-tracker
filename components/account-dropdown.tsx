@@ -13,17 +13,25 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { LogOut, Settings } from "lucide-react"
 import Link from "next/link"
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage
+} from "@/components/ui/avatar"
 
 export function AccountDropdown() {
   const [userName, setUserName] = useState("")
+  const [avatarUrl, setAvatarUrl] = useState("")
 
   useEffect(() => {
     const fetchUser = async () => {
       const { data } = await supabase.auth.getUser()
       const user = data?.user
       if (user) {
-        const fullName = user.user_metadata?.full_name || user.email || "Cuenta"
-        setUserName(fullName)
+        const name = user.user_metadata?.full_name || user.email || "Cuenta"
+        const avatar = user.user_metadata?.avatar_url || ""
+        setUserName(name)
+        setAvatarUrl(avatar)
       }
     }
 
@@ -38,13 +46,15 @@ export function AccountDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="text-sm font-medium px-3">
+        <Button variant="ghost" className="px-2 py-1 rounded-full border border-gray-300">
           {userName}
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={avatarUrl} alt={userName} />
+            <AvatarFallback>{userName?.charAt(0)}</AvatarFallback>
+          </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Cuenta</DropdownMenuLabel>
-        <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/settings" className="flex items-center">
             <Settings className="w-4 h-4 mr-2" />
