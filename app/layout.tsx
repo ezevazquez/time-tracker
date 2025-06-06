@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { isSupabaseConfigured, supabase } from "@/lib/supabase"
 import Script from "next/script"
 import { MainNav } from "@/components/main-nav"
-import { LogoutButton } from "@/components/logout-button"
+import { AccountDropdown } from "@/components/account-dropdown"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -58,7 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       <MainNav />
                     </div>
                     <div className="flex items-center space-x-2">
-                      <LogoutButton />
+                      <AccountDropdown />
                     </div>
                   </div>
                 </div>
