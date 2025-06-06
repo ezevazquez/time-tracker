@@ -4,4 +4,5 @@ export type ResourceNames =
   | "tasks"
   | "teams"
   | "reports"
-  | "settings";
+  | "settings"
+  | "clients";
