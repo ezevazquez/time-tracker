@@ -15,7 +15,7 @@ import Link from "next/link"
 
 export default function PeoplePage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState("Active")
   const [typeFilter, setTypeFilter] = useState("all")
 
   const { people, loading, error, deletePerson } = usePeople()
@@ -146,7 +146,7 @@ export default function PeoplePage() {
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Perfil</TableHead>
-                <TableHead>Disponibilidad</TableHead>
+                <TableHead>Fecha de ingreso</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
