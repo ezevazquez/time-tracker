@@ -1,13 +1,15 @@
 "use client";
 import React, { useEffect } from "react";
 import { ResourceLayout } from "@/components/ui/layouts/resource-layout";
-import { RESOURCES } from "@/app/constants/resources";
+import { RESOURCES } from "@/constants/resources";
 import { useProjects } from "@/hooks/use-data";
 import { useParams } from "next/navigation";
-import { Project } from "@/lib/supabase";
+import { Project, ProjectWithClient } from "@/lib/supabase";
+import { ButtonCreateResource } from "@/components/ui/button-create";
+
 export default function ProjectShowPage() {
   const { loading, error, deleteProject, getProject } = useProjects();
-  const [project, setProject] = React.useState<Project | null>(null);
+  const [project, setProject] = React.useState<ProjectWithClient | null>(null);
   const { id } = useParams();
 
   if (typeof id !== "string") {
@@ -29,9 +31,18 @@ export default function ProjectShowPage() {
   return (
     <ResourceLayout
       title={project ? project.name : "Cargando proyecto..."}
-      description="Esta página mostrará los detalles del proyecto seleccionado."
+      description={project?.description || "No hay descripción disponible"}
       resource={RESOURCES.projects}
       isLoading={loading}
+      status={project?.status}
+      headerContent={
+        project && (
+          <div className="font-semibold">
+            {project?.clients ? project?.clients.name : "Sin cliente"}
+          </div>
+        )
+      }
+      action={project && <ButtonCreateResource resource={RESOURCES.projects} />}
     >
       <></>
     </ResourceLayout>

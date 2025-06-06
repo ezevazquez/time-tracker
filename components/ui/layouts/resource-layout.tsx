@@ -1,9 +1,12 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React from "react";
-import { Loader2, Plus } from "lucide-react";
 import { Resource } from "@/types";
 import { Loader } from "../loader";
+import { getStatusBadge } from "@/utils/getStatusBadge";
+import { getStatusLabel } from "@/utils/getStatusLabel";
+import { Badge } from "@/components/ui/badge";
+import { Plus } from "lucide-react";
 
 interface ResourceLayoutProps {
   children: React.ReactNode;
@@ -11,13 +14,20 @@ interface ResourceLayoutProps {
   description?: string;
   resource?: Resource;
   isLoading?: boolean;
+  status?: string;
+  headerContent?: React.ReactNode;
+  action?: React.ReactNode;
 }
+
 export const ResourceLayout = ({
   children,
   title,
   description,
   resource,
   isLoading,
+  status,
+  headerContent,
+  action,
 }: ResourceLayoutProps) => {
   if (isLoading) {
     return (
@@ -37,13 +47,18 @@ export const ResourceLayout = ({
           {description && (
             <p className="text-muted-foreground">{description}</p>
           )}
+          <div className="flex items-center space-x-4 mt-2">
+            {headerContent && (
+              <div className="flex items-center space-x-2">{headerContent}</div>
+            )}
+            {status && (
+              <Badge className={getStatusBadge(status)}>
+                {getStatusLabel(status)}
+              </Badge>
+            )}
+          </div>
         </div>
-        <Button asChild>
-          <Link href={`/${resource?.slug}/new`}>
-            <Plus className="h-4 w-4 mr-2" />
-            Crear {resource?.singularLabel}
-          </Link>
-        </Button>
+        {action && action}
       </div>
       {children}
     </main>
