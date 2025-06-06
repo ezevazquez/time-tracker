@@ -52,29 +52,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <div className="container mx-auto px-4 py-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <h1 className="text-2xl font-bold text-primary">Revolt Headquarters</h1>
+                      <h1 className="text-2xl font-bold text-primary">
+                        <Link href="/">Revolt</Link>
+                      </h1>
                       <MainNav />
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="hidden sm:flex">
-                        {supabaseConfigured ? (
-                          <>
-                            <Wifi className="h-3 w-3 mr-1" />
-                            Supabase
-                          </>
-                        ) : (
-                          <>
-                            <Database className="h-3 w-3 mr-1" />
-                            Datos Demo
-                          </>
-                        )}
-                      </Badge>
-                      <Button asChild>
-                        <Link href="/assignments/new">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Nueva Asignación
-                        </Link>
-                      </Button>
                       <LogoutButton />
                     </div>
                   </div>
