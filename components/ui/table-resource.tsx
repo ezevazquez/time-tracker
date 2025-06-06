@@ -14,20 +14,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ResourceColumn } from "@/types";
+import { ResourceAction, ResourceColumn } from "@/types";
 
-interface TableResourceProps<T> {
+import { MenuActionsResource } from "./menu-actions-resource";
+
+interface TableResourceProps<T extends { id: string }> {
   items: T[];
   columns: ResourceColumn<T>[];
   title?: string;
   description?: string;
+  actions?: ResourceAction[];
 }
 
-export const TableResource = <T,>({
+export const TableResource = <T extends { id: string }>({
   items,
   columns,
   title,
   description,
+  actions,
 }: TableResourceProps<T>) => {
   console.log("TableResource items:", items);
 
@@ -50,14 +54,22 @@ export const TableResource = <T,>({
               {columns.map((column, i) => (
                 <TableHead key={i}>{column.title}</TableHead>
               ))}
+              {actions && <TableHead>Acciones</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {items.map((item, rowIndex) => (
               <TableRow key={rowIndex}>
-                {columns.map((column, colIndex) => (
-                  <TableCell key={colIndex}>{column.render(item)}</TableCell>
-                ))}
+                {columns.map((column: ResourceColumn<T>, colIndex) => {
+                  return (
+                    <TableCell key={colIndex}>{column.render(item)}</TableCell>
+                  );
+                })}
+                {actions && (
+                  <TableCell>
+                    <MenuActionsResource actions={actions} id={item.id} />
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

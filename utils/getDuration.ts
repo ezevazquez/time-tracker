@@ -1,4 +1,4 @@
-const getDuration = (startDate: string, endDate: string | null) => {
+export const getDuration = (startDate: string, endDate: string | null) => {
   if (!endDate) return "En curso";
 
   const start = new Date(startDate);
