@@ -48,16 +48,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="flex flex-col min-h-screen">
             {/* Header */}
             {sessionExists && (
-              <header className="border-b bg-background sticky top-0 z-30">
-                <div className="container mx-auto px-4 py-4">
-                  <div className="flex items-center justify-between">
+              <header className="bg-white dark:bg-zinc-900 shadow-sm sticky top-0 z-30">
+                <div className="container mx-auto px-6 py-3">
+                  <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center space-x-4">
-                      <h1 className="text-2xl font-bold text-primary">
+                      <h1 className="text-xl font-semibold text-primary tracking-tight">
                         <Link href="/">Revolt</Link>
                       </h1>
+                      <div className="h-6 w-px bg-border mx-4 hidden sm:block" />
                       <MainNav />
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-4 ml-auto">
                       <AccountDropdown />
                     </div>
                   </div>
