@@ -1,32 +1,36 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from "react"
-import "@/app/globals.css"
-import { Inter } from "next/font/google"
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
-import Link from "next/link"
-import { Database, Wifi, Plus } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { isSupabaseConfigured, supabase } from "@/lib/supabase"
-import Script from "next/script"
-import { MainNav } from "@/components/main-nav"
-import { LogoutButton } from "@/components/logout-button"
+import { useEffect, useState } from "react";
+import "@/app/globals.css";
+import { Inter } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
+import Link from "next/link";
+import { Database, Wifi, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import Script from "next/script";
+import { MainNav } from "@/components/main-nav";
+import { LogoutButton } from "@/components/logout-button";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const [sessionExists, setSessionExists] = useState(false)
-  const supabaseConfigured = isSupabaseConfigured()
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [sessionExists, setSessionExists] = useState(false);
+  const supabaseConfigured = isSupabaseConfigured();
 
   useEffect(() => {
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession()
-      setSessionExists(!!data.session)
-    }
-    checkSession()
-  }, [])
+      const { data } = await supabase.auth.getSession();
+      setSessionExists(!!data.session);
+    };
+    checkSession();
+  }, []);
 
   return (
     <html lang="es" suppressHydrationWarning>
@@ -48,11 +52,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="flex flex-col min-h-screen">
             {/* Header */}
             {sessionExists && (
-              <header className="border-b bg-background sticky top-0 z-30">
+              <header className="border-b bg-background sticky top-0 z-30 h-[--header-height]">
                 <div className="container mx-auto px-4 py-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <h1 className="text-2xl font-bold text-primary">Revolt Headquarters</h1>
+                      <h1 className="text-2xl font-bold text-primary">
+                        Revolt Headquarters
+                      </h1>
                       <MainNav />
                     </div>
                     <div className="flex items-center space-x-2">
@@ -88,5 +94,5 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }

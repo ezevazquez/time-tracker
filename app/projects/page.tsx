@@ -1,23 +1,55 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Plus, Search, MoreHorizontal, Edit, Trash2, Calendar } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useProjects } from "@/hooks/use-data"
-import { toast } from "sonner"
-import Link from "next/link"
+import { useState } from "react";
+import {
+  Plus,
+  Search,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  Calendar,
+  Eye,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useProjects } from "@/hooks/use-data";
+import { toast } from "sonner";
+import Link from "next/link";
 
 export default function ProjectsPage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  const { projects, loading, error, deleteProject } = useProjects()
+  const { projects, loading, error, deleteProject } = useProjects();
 
   if (loading) {
     return (
@@ -27,7 +59,7 @@ export default function ProjectsPage() {
           <p>Cargando proyectos...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -37,17 +69,19 @@ export default function ProjectsPage() {
           <p>Error: {error}</p>
         </div>
       </div>
-    )
+    );
   }
 
   const filteredProjects = projects.filter((project) => {
     const matchesSearch =
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesStatus = statusFilter === "all" || project.status === statusFilter
+      (project.description &&
+        project.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesStatus =
+      statusFilter === "all" || project.status === statusFilter;
 
-    return matchesSearch && matchesStatus
-  })
+    return matchesSearch && matchesStatus;
+  });
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -55,9 +89,11 @@ export default function ProjectsPage() {
       "On Hold": "bg-yellow-100 text-yellow-800",
       Finished: "bg-gray-100 text-gray-800",
       "Not Started": "bg-blue-100 text-blue-800",
-    }
-    return variants[status as keyof typeof variants] || "bg-gray-100 text-gray-800"
-  }
+    };
+    return (
+      variants[status as keyof typeof variants] || "bg-gray-100 text-gray-800"
+    );
+  };
 
   const getStatusLabel = (status: string) => {
     const labels = {
@@ -65,43 +101,47 @@ export default function ProjectsPage() {
       "On Hold": "En Pausa",
       Finished: "Finalizado",
       "Not Started": "No Iniciado",
-    }
-    return labels[status as keyof typeof labels] || status
-  }
+    };
+    return labels[status as keyof typeof labels] || status;
+  };
 
   const getDuration = (startDate: string, endDate: string | null) => {
-    if (!endDate) return "En curso"
+    if (!endDate) return "En curso";
 
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    const diffTime = Math.abs(end.getTime() - start.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    const months = Math.floor(diffDays / 30)
-    const days = diffDays % 30
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const months = Math.floor(diffDays / 30);
+    const days = diffDays % 30;
 
     if (months > 0) {
-      return `${months}m ${days}d`
+      return `${months}m ${days}d`;
     }
-    return `${days}d`
-  }
+    return `${days}d`;
+  };
 
   const handleDelete = async (id: string, name: string) => {
-    if (confirm(`¿Estás seguro de que quieres eliminar el proyecto "${name}"?`)) {
+    if (
+      confirm(`¿Estás seguro de que quieres eliminar el proyecto "${name}"?`)
+    ) {
       try {
-        await deleteProject(id)
-        toast.success("Proyecto eliminado correctamente")
+        await deleteProject(id);
+        toast.success("Proyecto eliminado correctamente");
       } catch (error) {
-        toast.error("Error al eliminar el proyecto")
+        toast.error("Error al eliminar el proyecto");
       }
     }
-  }
+  };
 
   return (
     <main className="flex-1 container mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Proyectos</h1>
-          <p className="text-muted-foreground">Gestiona proyectos y su planificación</p>
+          <p className="text-muted-foreground">
+            Gestiona proyectos y su planificación
+          </p>
         </div>
         <Button asChild>
           <Link href="/projects/new">
@@ -173,11 +213,18 @@ export default function ProjectsPage() {
                     <div className="text-sm">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {project.start_date ? new Date(project.start_date).toLocaleDateString("es-ES") : "No definido"}
+                        {project.start_date
+                          ? new Date(project.start_date).toLocaleDateString(
+                              "es-ES"
+                            )
+                          : "No definido"}
                       </div>
                       {project.end_date && (
                         <div className="text-muted-foreground">
-                          hasta {new Date(project.end_date).toLocaleDateString("es-ES")}
+                          hasta{" "}
+                          {new Date(project.end_date).toLocaleDateString(
+                            "es-ES"
+                          )}
                         </div>
                       )}
                     </div>
@@ -190,7 +237,9 @@ export default function ProjectsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge className={getStatusBadge(project.status)}>{getStatusLabel(project.status)}</Badge>
+                    <Badge className={getStatusBadge(project.status)}>
+                      {getStatusLabel(project.status)}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -200,6 +249,12 @@ export default function ProjectsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/projects/${project.id}/show`}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            Ver Detalles
+                          </Link>
+                        </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href={`/projects/${project.id}/edit`}>
                             <Edit className="h-4 w-4 mr-2" />
@@ -223,5 +278,5 @@ export default function ProjectsPage() {
         </CardContent>
       </Card>
     </main>
-  )
+  );
 }
