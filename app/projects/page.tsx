@@ -1,66 +1,31 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import {
-  Plus,
-  Search,
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  Calendar,
-  Eye,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { getStatusBadge } from "@/utils/getStatusBadge";
-import { getStatusLabel } from "@/utils/getStatusLabel";
-import { getDuration } from "@/utils/getDuration";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useState } from "react"
+import { Plus, Search, Edit, Trash2, Eye } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { TableResource } from "@/components/ui/table-resource"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useProjects } from "@/hooks/use-data";
-import { toast } from "sonner";
-import Link from "next/link";
-import { ResourceLayout } from "@/components/ui/layouts/resource-layout";
-import { RESOURCES } from "@/constants/resources";
-import { ButtonCreateResource } from "@/components/ui/button-create";
-import { TableResource } from "@/components/ui/table-resource";
-import { projectColumns } from "@/constants/resource-columns/projectColumns";
-import { ResourceAction, ResourceColumn } from "@/types";
-import { Project } from "@/lib/supabase";
-import path from "path";
+} from "@/components/ui/select"
+import { useProjects } from "@/hooks/use-data"
+import { toast } from "sonner"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { projectColumns } from "@/constants/resource-columns/projectColumns"
+import { ResourceAction, ResourceColumn } from "@/types"
+import { Project } from "@/lib/supabase"
 
 export default function ProjectsPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-
-  const { projects, loading, error, deleteProject } = useProjects();
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const { projects, loading, error, deleteProject } = useProjects()
+  const router = useRouter()
 
   if (loading) {
     return (
@@ -70,7 +35,7 @@ export default function ProjectsPage() {
           <p>Cargando proyectos...</p>
         </div>
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -80,34 +45,28 @@ export default function ProjectsPage() {
           <p>Error: {error}</p>
         </div>
       </div>
-    );
+    )
   }
 
   const filteredProjects = projects.filter((project) => {
     const matchesSearch =
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (project.description &&
-        project.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesStatus =
-      statusFilter === "all" || project.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
+      (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    const matchesStatus = statusFilter === "all" || project.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
 
   const handleDelete = async (id: string) => {
-    if (
-      confirm(
-        `¿Estás seguro de que quieres eliminar el proyecto este proyecto?`
-      )
-    ) {
+    if (window.confirm("¿Estás seguro de que deseas eliminar este proyecto?")) {
       try {
-        await deleteProject(id);
-        toast.success("Proyecto eliminado correctamente");
+        await deleteProject(id)
+        toast.success("Proyecto eliminado correctamente")
       } catch (error) {
-        toast.error("Error al eliminar el proyecto");
+        toast.error("Error al eliminar el proyecto")
+        console.error("Error deleting project:", error)
       }
     }
-  };
+  }
 
   const actions: ResourceAction[] = [
     {
@@ -128,49 +87,54 @@ export default function ProjectsPage() {
       icon: Trash2,
       onClick: (id) => handleDelete(id),
     },
-  ];
+  ]
 
   return (
-    <ResourceLayout
-      resource={RESOURCES.projects}
-      isLoading={loading}
-      action={<ButtonCreateResource resource={RESOURCES.projects} />}
-    >
-      {/* Filters */}
+    <main className="flex-1 container mx-auto px-4 py-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Proyectos</h1>
+          <p className="text-muted-foreground">Gestiona los proyectos en curso</p>
+        </div>
+        <Button asChild>
+          <Link href="/projects/new">
+            <Plus className="h-4 w-4 mr-2" />
+            Crear Proyecto
+          </Link>
+        </Button>
+      </div>
+
+      {/* Filtros */}
       <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nombre o descripción..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los estados</SelectItem>
-                <SelectItem value="In Progress">En Progreso</SelectItem>
-                <SelectItem value="On Hold">En Pausa</SelectItem>
-                <SelectItem value="Finished">Finalizado</SelectItem>
-                <SelectItem value="Not Started">No Iniciado</SelectItem>
-              </SelectContent>
-            </Select>
+        <CardContent className="pt-6 flex flex-col sm:flex-row gap-4">
+          <div className="relative w-full sm:w-2/3">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nombre o descripción..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los estados</SelectItem>
+              <SelectItem value="In Progress">En Progreso</SelectItem>
+              <SelectItem value="On Hold">En Pausa</SelectItem>
+              <SelectItem value="Finished">Finalizado</SelectItem>
+              <SelectItem value="Not Started">No Iniciado</SelectItem>
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 
-      {/* Projects Table */}
+      {/* Tabla */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Proyectos ({filteredProjects.length})</CardTitle>
+          <CardTitle>Lista de Proyectos</CardTitle>
           <CardDescription>Proyectos registrados en el sistema</CardDescription>
         </CardHeader>
         <CardContent>
@@ -178,9 +142,9 @@ export default function ProjectsPage() {
             items={filteredProjects}
             columns={projectColumns as ResourceColumn<Project>[]}
             actions={actions}
-          ></TableResource>
+          />
         </CardContent>
       </Card>
-    </ResourceLayout>
-  );
+    </main>
+  )
 }

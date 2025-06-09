@@ -1,22 +1,21 @@
-import { Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import React from "react";
+import { Loader2 } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-type LoaderProps = {
-  size?: "sm" | "md" | "lg";
-  className?: string;
-};
+interface LoaderProps {
+  className?: string
+  size?: "sm" | "md" | "lg"
+}
 
-const sizeClasses = {
-  sm: "h-4 w-4",
-  md: "h-10 w-10",
-  lg: "h-14 w-14",
-};
+export function Loader({ className, size = "md" }: LoaderProps) {
+  const sizeClasses = {
+    sm: "h-4 w-4",
+    md: "h-8 w-8", 
+    lg: "h-12 w-12"
+  }
 
-export const Loader: React.FC<LoaderProps> = ({ size = "md", className }) => {
   return (
     <div className={cn("flex items-center justify-center", className)}>
-      <Loader2 className={cn("mr-2 animate-spin", sizeClasses[size])} />
+      <Loader2 className={cn("animate-spin", sizeClasses[size])} />
     </div>
-  );
-};
+  )
+} 

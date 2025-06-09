@@ -1,49 +1,61 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { MoreHorizontal } from "lucide-react";
+"use client"
+
+import { MoreHorizontal } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Resource, ResourceAction } from "@/types";
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+import { ResourceAction } from "@/types"
+import Link from "next/link"
 
 interface MenuActionsResourceProps {
-  actions?: ResourceAction[];
-  id: string;
+  actions: ResourceAction[]
+  id: string
 }
 
-export const MenuActionsResource = ({
-  actions,
-  id,
-}: MenuActionsResourceProps) => {
+export function MenuActionsResource({ actions, id }: MenuActionsResourceProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Abrir menú</span>
           <MoreHorizontal className="h-4 w-4" />
-          <span className="sr-only">Acciones</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {actions?.map((action) => {
-          const href = action.path ? `/${action.path(id)}` : "#";
-          return (
-            <Link
-              key={action.label}
-              href={href}
-              onClick={() => action.onClick?.(id)}
-            >
-              <DropdownMenuItem>
-                {action.icon && <action.icon className="mr-2 h-4 w-4" />}
+        {actions.map((action, index) => {
+          const Icon = action.icon
+          
+          if (action.onClick) {
+            return (
+              <DropdownMenuItem
+                key={index}
+                onClick={() => action.onClick?.(id)}
+                className="cursor-pointer"
+              >
+                <Icon className="mr-2 h-4 w-4" />
                 {action.label}
               </DropdownMenuItem>
-            </Link>
-          );
+            )
+          }
+          
+          if (action.path) {
+            return (
+              <DropdownMenuItem key={index} asChild>
+                <Link href={action.path(id)} className="flex items-center">
+                  <Icon className="mr-2 h-4 w-4" />
+                  {action.label}
+                </Link>
+              </DropdownMenuItem>
+            )
+          }
+          
+          return null
         })}
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-};
+  )
+} 
