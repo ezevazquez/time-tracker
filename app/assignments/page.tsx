@@ -9,23 +9,42 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DatePickerWithRange } from "@/components/date-range-picker"
 import { usePeople, useProjects, useAssignments } from "@/hooks/use-data"
 import { ReportModal } from "@/components/report-modal"
 
+const defaultDateRange = {
+  from: new Date(),
+  to: (() => {
+    const to = new Date()
+    to.setFullYear(to.getFullYear() + 1)
+    return to
+  })(),
+}
+
 export default function AssignmentsPage() {
   const [mounted, setMounted] = useState(false)
   const [filters, setFilters] = useState({
     person: "",
     project: "",
-    dateRange: {
-      from: new Date(2025, 0, 1),
-      to: new Date(2026, 11, 31),
-    },
+    dateRange: defaultDateRange,
     overallocatedOnly: false,
   })
   const [showFilters, setShowFilters] = useState(false)
@@ -67,21 +86,13 @@ export default function AssignmentsPage() {
   }
 
   const clearFilters = () => {
-    const today = new Date()
-    const oneYearFromNow = new Date()
-    oneYearFromNow.setFullYear(today.getFullYear() + 1)
-
     setFilters({
       person: "",
       project: "",
-      dateRange: {
-        from: today,
-        to: oneYearFromNow,
-      },
+      dateRange: defaultDateRange,
       overallocatedOnly: false,
     })
   }
-
 
   if (!mounted) {
     return (
@@ -107,110 +118,113 @@ export default function AssignmentsPage() {
 
   return (
     <main className="flex-1 container mx-auto px-4 py-6">
-
-      {/* Header: Título + botones */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Asignaciones</h1>
-        <div className="flex gap-2">
-          <ReportModal />
-          <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
-            <Filter className="mr-2 h-4 w-4" />
-            {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
-          </Button>
-          <Link href="/assignments/new">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Nueva asignación
+      {/* Header + filtros como dropdown */}
+      <div className="relative mb-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Asignaciones</h1>
+          <div className="flex gap-2">
+            <ReportModal />
+            <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
+              <Filter className="mr-2 h-4 w-4" />
+              {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
             </Button>
-          </Link>
+            <Link href="/assignments/new">
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Nueva asignación
+              </Button>
+            </Link>
+          </div>
         </div>
+
+        {/* Dropdown Filters Panel */}
+        {showFilters && (
+          <div className="absolute z-50 mt-2 w-full">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-lg">Filtros</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label>Persona</Label>
+                    <Select
+                      value={filters.person}
+                      onValueChange={(value) => setFilters((prev) => ({ ...prev, person: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todas las personas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {people.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Proyecto</Label>
+                    <Select
+                      value={filters.project}
+                      onValueChange={(value) => setFilters((prev) => ({ ...prev, project: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todos los proyectos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projects.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Rango de Fechas</Label>
+                    <DatePickerWithRange
+                      date={filters.dateRange}
+                      setDate={(dateRange) => setFilters((prev) => ({ ...prev, dateRange }))}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Filtros Especiales</Label>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="overallocated"
+                        checked={filters.overallocatedOnly}
+                        onCheckedChange={(checked) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            overallocatedOnly: checked as boolean,
+                          }))
+                        }
+                      />
+                      <Label htmlFor="overallocated" className="text-sm">
+                        Solo sobreasignados
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end mt-4">
+                  <Button variant="outline" onClick={clearFilters}>
+                    Limpiar Filtros
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
 
-      {/* Filtros */}
-      {showFilters && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg">Filtros</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label>Persona</Label>
-                <Select
-                  value={filters.person}
-                  onValueChange={(value) => setFilters((prev) => ({ ...prev, person: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todas las personas" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {people.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Proyecto</Label>
-                <Select
-                  value={filters.project}
-                  onValueChange={(value) => setFilters((prev) => ({ ...prev, project: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos los proyectos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Rango de Fechas</Label>
-                <DatePickerWithRange
-                  date={filters.dateRange}
-                  setDate={(dateRange) => setFilters((prev) => ({ ...prev, dateRange }))}
-                  className="w-full"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Filtros Especiales</Label>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="overallocated"
-                    checked={filters.overallocatedOnly}
-                    onCheckedChange={(checked) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        overallocatedOnly: checked as boolean,
-                      }))
-                    }
-                  />
-                  <Label htmlFor="overallocated" className="text-sm">
-                    Solo sobreasignados
-                  </Label>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end mt-4">
-              <Button variant="outline" onClick={clearFilters}>
-                Limpiar Filtros
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Tabla */}
+      {/* Tabla de asignaciones */}
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
