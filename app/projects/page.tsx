@@ -6,20 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { TableResource } from "@/components/ui/table-resource"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useProjects } from "@/hooks/use-data"
 import { toast } from "sonner"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { projectColumns } from "@/constants/resource-columns/projectColumns"
-import { ResourceAction, ResourceColumn } from "@/types"
-import { Project } from "@/lib/supabase"
+import type { ResourceAction, ResourceColumn } from "@/types"
+import type { Project } from "@/lib/supabase"
 
 export default function ProjectsPage() {
   const [searchTerm, setSearchTerm] = useState("")
