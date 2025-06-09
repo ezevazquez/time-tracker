@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DatePickerWithRange } from "@/components/date-range-picker"
 import { usePeople, useProjects, useAssignments } from "@/hooks/use-data"
+import { ReportModal } from "@/components/report-modal"
 
 export default function AssignmentsPage() {
   const [mounted, setMounted] = useState(false)
@@ -39,30 +40,16 @@ export default function AssignmentsPage() {
 
   const loading = peopleLoading || projectsLoading || assignmentsLoading
 
-  // Filter assignments based on current filters
   const filteredAssignments = useMemo(() => {
     return assignments.filter((assignment) => {
-      // Person filter
-      if (filters.person && assignment.person_id !== filters.person) {
-        return false
-      }
+      if (filters.person && assignment.person_id !== filters.person) return false
+      if (filters.project && assignment.project_id !== filters.project) return false
 
-      // Project filter
-      if (filters.project && assignment.project_id !== filters.project) {
-        return false
-      }
+      const start = new Date(assignment.start_date)
+      const end = new Date(assignment.end_date)
+      if (end < filters.dateRange.from || start > filters.dateRange.to) return false
 
-      // Date range filter
-      const assignmentStart = new Date(assignment.start_date)
-      const assignmentEnd = new Date(assignment.end_date)
-      if (assignmentEnd < filters.dateRange.from || assignmentStart > filters.dateRange.to) {
-        return false
-      }
-
-      // Overallocated filter
-      if (filters.overallocatedOnly && assignment.allocation <= 100) {
-        return false
-      }
+      if (filters.overallocatedOnly && assignment.allocation <= 100) return false
 
       return true
     })
@@ -80,16 +67,21 @@ export default function AssignmentsPage() {
   }
 
   const clearFilters = () => {
+    const today = new Date()
+    const oneYearFromNow = new Date()
+    oneYearFromNow.setFullYear(today.getFullYear() + 1)
+
     setFilters({
       person: "",
       project: "",
       dateRange: {
-        from: new Date(2024, 0, 1),
-        to: new Date(2024, 11, 31),
+        from: today,
+        to: oneYearFromNow,
       },
       overallocatedOnly: false,
     })
   }
+
 
   if (!mounted) {
     return (
@@ -116,8 +108,25 @@ export default function AssignmentsPage() {
   return (
     <main className="flex-1 container mx-auto px-4 py-6">
 
+      {/* Header: Título + botones */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Asignaciones</h1>
+        <div className="flex gap-2">
+          <ReportModal />
+          <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
+            <Filter className="mr-2 h-4 w-4" />
+            {showFilters ? "Ocultar filtros" : "Mostrar filtros"}
+          </Button>
+          <Link href="/assignments/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Nueva asignación
+            </Button>
+          </Link>
+        </div>
+      </div>
 
-      {/* Filters */}
+      {/* Filtros */}
       {showFilters && (
         <Card className="mb-6">
           <CardHeader>
@@ -125,9 +134,8 @@ export default function AssignmentsPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Person Filter */}
               <div className="space-y-2">
-                <Label htmlFor="person-filter">Persona</Label>
+                <Label>Persona</Label>
                 <Select
                   value={filters.person}
                   onValueChange={(value) => setFilters((prev) => ({ ...prev, person: value }))}
@@ -136,19 +144,17 @@ export default function AssignmentsPage() {
                     <SelectValue placeholder="Todas las personas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todas las personas</SelectItem>
-                    {people.map((person) => (
-                      <SelectItem key={person.id} value={person.id}>
-                        {person.name}
+                    {people.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Project Filter */}
               <div className="space-y-2">
-                <Label htmlFor="project-filter">Proyecto</Label>
+                <Label>Proyecto</Label>
                 <Select
                   value={filters.project}
                   onValueChange={(value) => setFilters((prev) => ({ ...prev, project: value }))}
@@ -157,17 +163,15 @@ export default function AssignmentsPage() {
                     <SelectValue placeholder="Todos los proyectos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos los proyectos</SelectItem>
-                    {projects.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name}
+                    {projects.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Date Range Filter */}
               <div className="space-y-2">
                 <Label>Rango de Fechas</Label>
                 <DatePickerWithRange
@@ -177,7 +181,6 @@ export default function AssignmentsPage() {
                 />
               </div>
 
-              {/* Overallocated Filter */}
               <div className="space-y-2">
                 <Label>Filtros Especiales</Label>
                 <div className="flex items-center space-x-2">
@@ -207,14 +210,7 @@ export default function AssignmentsPage() {
         </Card>
       )}
 
-      {/* Results Summary */}
-      <div className="mb-4">
-        <p className="text-sm text-muted-foreground">
-          Mostrando {filteredAssignments.length} de {assignments.length} asignaciones
-        </p>
-      </div>
-
-      {/* Assignments Table */}
+      {/* Tabla */}
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -237,33 +233,27 @@ export default function AssignmentsPage() {
                       <div className="text-muted-foreground">
                         <p>No se encontraron asignaciones</p>
                         <p className="text-sm">
-                          Ajusta los filtros o{" "}
+                          Ajustá los filtros o{" "}
                           <Link href="/assignments/new" className="text-primary hover:underline">
-                            crea una nueva asignación
+                            creá una nueva asignación
                           </Link>
                         </p>
                       </div>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredAssignments.map((assignment) => {
-                    const person = people.find((p) => p.id === assignment.person_id)
-                    const project = projects.find((p) => p.id === assignment.project_id)
-                    const isOverallocated = assignment.allocation > 100
+                  filteredAssignments.map((a) => {
+                    const person = people.find((p) => p.id === a.person_id)
+                    const project = projects.find((p) => p.id === a.project_id)
+                    const isOverallocated = a.allocation > 100
 
                     return (
-                      <TableRow key={assignment.id}>
+                      <TableRow key={a.id}>
                         <TableCell>
                           <div className="text-sm">
-                            <div>
-                              {format(new Date(assignment.start_date), "dd MMM yyyy", {
-                                locale: es,
-                              })}
-                            </div>
+                            <div>{format(new Date(a.start_date), "dd MMM yyyy", { locale: es })}</div>
                             <div className="text-muted-foreground">
-                              {format(new Date(assignment.end_date), "dd MMM yyyy", {
-                                locale: es,
-                              })}
+                              {format(new Date(a.end_date), "dd MMM yyyy", { locale: es })}
                             </div>
                           </div>
                         </TableCell>
@@ -279,13 +269,11 @@ export default function AssignmentsPage() {
                             <div className="text-sm text-muted-foreground">{project?.status || ""}</div>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="text-sm">{assignment.assigned_role || "Sin especificar"}</div>
-                        </TableCell>
+                        <TableCell>{a.assigned_role || "Sin especificar"}</TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-2">
                             <Badge variant={isOverallocated ? "destructive" : "secondary"} className="text-xs">
-                              {assignment.allocation}%
+                              {a.allocation}%
                             </Badge>
                             {isOverallocated && <AlertTriangle className="h-4 w-4 text-destructive" />}
                           </div>
@@ -305,14 +293,14 @@ export default function AssignmentsPage() {
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0">
-                              <Link href={`/assignments/${assignment.id}/edit`}>
+                              <Link href={`/assignments/${a.id}/edit`}>
                                 <Edit className="h-4 w-4" />
                               </Link>
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleDeleteAssignment(assignment.id)}
+                              onClick={() => handleDeleteAssignment(a.id)}
                               className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                             >
                               <Trash2 className="h-4 w-4" />
