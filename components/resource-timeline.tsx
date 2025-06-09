@@ -114,7 +114,7 @@ export function ResourceTimeline({
   // Get active people and projects
   const activePeople = people.filter((p) => {
     if (p.status !== "Active") return false
-    if (filters.personProfile && p.profile !== filters.personProfile) return false
+    if (filters?.personProfile && p.profile !== filters.personProfile) return false
     return true
   })
 
@@ -261,7 +261,7 @@ export function ResourceTimeline({
   }, [])
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white">
+    <div className="flex-1 min-h-0 flex flex-col bg-white">
       {/* Fixed Top Bar */}
       <div
         className="flex-shrink-0 bg-white border-b border-gray-200 px-6 flex items-center justify-between"
@@ -285,11 +285,11 @@ export function ResourceTimeline({
       </div>
 
       {/* Timeline container - takes remaining height */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 min-h-0 relative">
         {/* Main scrollable container */}
         <div
           ref={scrollContainerRef}
-          className="h-full overflow-auto"
+          className="absolute inset-0 overflow-auto"
           style={{
             overflowX: "auto",
             overflowY: "auto",

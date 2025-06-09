@@ -46,7 +46,7 @@ export function FiltersPopover({
   // Get unique project statuses
   const uniqueStatuses = Array.from(new Set(projects.map(p => p.status))).filter(Boolean).sort();
 
-  const hasActiveFilters = filters.personProfile || filters.projectStatus || filters.overallocatedOnly;
+  const hasActiveFilters = filters?.personProfile || filters?.projectStatus || filters?.overallocatedOnly;
 
   const defaultTrigger = (
     <Button variant="outline" size="sm" className="h-8">
@@ -54,7 +54,7 @@ export function FiltersPopover({
       Filtros
       {hasActiveFilters && (
         <span className="ml-2 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full">
-          {[filters.personProfile, filters.projectStatus, filters.overallocatedOnly].filter(Boolean).length}
+          {[filters?.personProfile, filters?.projectStatus, filters?.overallocatedOnly].filter(Boolean).length}
         </span>
       )}
     </Button>
@@ -89,7 +89,7 @@ export function FiltersPopover({
             <div className="space-y-2">
               <Label>Perfil</Label>
               <Select
-                value={filters.personProfile}
+                value={filters?.personProfile || ""}
                 onValueChange={(value) => onFiltersChange({ ...filters, personProfile: value === "all" ? "" : value })}
               >
                 <SelectTrigger>
@@ -110,7 +110,7 @@ export function FiltersPopover({
             <div className="space-y-2">
               <Label>Estado del proyecto</Label>
               <Select
-                value={filters.projectStatus}
+                value={filters?.projectStatus || ""}
                 onValueChange={(value) => onFiltersChange({ ...filters, projectStatus: value === "all" ? "" : value })}
               >
                 <SelectTrigger>
@@ -138,22 +138,22 @@ export function FiltersPopover({
                         variant="outline"
                         className={cn(
                           "justify-start text-left font-normal",
-                          !filters.dateRange.from && "text-muted-foreground",
+                          !filters?.dateRange?.from && "text-muted-foreground",
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {filters.dateRange.from ? format(filters.dateRange.from, "dd/MM/yy") : "Desde"}
+                        {filters?.dateRange?.from ? format(filters.dateRange.from, "dd/MM/yy") : "Desde"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={filters.dateRange.from}
+                        selected={filters?.dateRange?.from}
                         onSelect={(date) =>
                           date &&
                           onFiltersChange({
                             ...filters,
-                            dateRange: { ...filters.dateRange, from: date },
+                            dateRange: { ...filters?.dateRange, from: date },
                           })
                         }
                         initialFocus
@@ -167,22 +167,22 @@ export function FiltersPopover({
                         variant="outline"
                         className={cn(
                           "justify-start text-left font-normal",
-                          !filters.dateRange.to && "text-muted-foreground",
+                          !filters?.dateRange?.to && "text-muted-foreground",
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {filters.dateRange.to ? format(filters.dateRange.to, "dd/MM/yy") : "Hasta"}
+                        {filters?.dateRange?.to ? format(filters.dateRange.to, "dd/MM/yy") : "Hasta"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={filters.dateRange.to}
+                        selected={filters?.dateRange?.to}
                         onSelect={(date) =>
                           date &&
                           onFiltersChange({
                             ...filters,
-                            dateRange: { ...filters.dateRange, to: date },
+                            dateRange: { ...filters?.dateRange, to: date },
                           })
                         }
                         initialFocus
@@ -197,7 +197,7 @@ export function FiltersPopover({
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="overallocated"
-                checked={filters.overallocatedOnly}
+                checked={filters?.overallocatedOnly || false}
                 onCheckedChange={(checked) => onFiltersChange({ ...filters, overallocatedOnly: !!checked })}
               />
               <Label htmlFor="overallocated" className="text-sm font-normal">
