@@ -3,9 +3,8 @@
 import { useState, useRef, useEffect, useMemo } from "react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Users, UserCheck, UserX, Briefcase, AlertTriangle, Calendar, TrendingUp, CalendarDays } from "lucide-react"
+import { CalendarDays } from "lucide-react"
 import Link from "next/link"
 import {
   format,
@@ -20,16 +19,21 @@ import {
   isSameMonth,
 } from "date-fns"
 import { es } from "date-fns/locale"
+import { FiltersPopover } from "./filters-popover"
 import type { Person, Project, AssignmentWithRelations } from "@/lib/supabase"
 
 interface ResourceTimelineProps {
   people: Person[]
   projects: Project[]
   assignments: AssignmentWithRelations[]
-  viewMode: string
-  setViewMode: (mode: string) => void
-  dateRange: { from: Date; to: Date }
-  setDateRange: (range: { from: Date; to: Date }) => void
+  filters: {
+    personProfile: string
+    projectStatus: string
+    dateRange: { from: Date; to: Date }
+    overallocatedOnly: boolean
+  }
+  onFiltersChange: (filters: any) => void
+  onClearFilters: () => void
 }
 
 // Generate a color based on a string (project name)
@@ -60,10 +64,9 @@ export function ResourceTimeline({
   people,
   projects,
   assignments,
-  viewMode,
-  setViewMode,
-  dateRange,
-  setDateRange,
+  filters,
+  onFiltersChange,
+  onClearFilters,
 }: ResourceTimelineProps) {
   // State for visible date range (for infinite scroll)
   const [visibleDateRange, setVisibleDateRange] = useState({
@@ -83,7 +86,7 @@ export function ResourceTimeline({
   const ROW_HEIGHT = 80
   const SIDEBAR_WIDTH = 240
   const HEADER_HEIGHT = 60
-  const INFO_SECTION_HEIGHT = 80 // Reduced height for compact summary
+  const TOP_BAR_HEIGHT = 48 // Reduced height
 
   // Track scroll position
   useEffect(() => {
@@ -109,53 +112,11 @@ export function ResourceTimeline({
   }, [visibleDateRange])
 
   // Get active people and projects
-  const activePeople = people.filter((p) => p.status === "Active")
-  const activeProjects = projects.filter((p) => p.status === "In Progress")
-
-  // Calculate summary statistics
-  const summaryStats = useMemo(() => {
-    // People with assignments
-    const peopleWithAssignments = new Set(assignments.map((a) => a.person_id))
-    const assignedPeople = activePeople.filter((p) => peopleWithAssignments.has(p.id))
-    const unassignedPeople = activePeople.filter((p) => !peopleWithAssignments.has(p.id))
-
-    // Calculate average utilization
-    const personUtilization = activePeople.map((person) => {
-      const personAssignments = assignments.filter((a) => a.person_id === person.id)
-      const totalAllocation = personAssignments.reduce((sum, a) => sum + a.allocation, 0)
-      return totalAllocation
-    })
-    const avgUtilization =
-      personUtilization.length > 0
-        ? personUtilization.reduce((sum, util) => sum + util, 0) / personUtilization.length
-        : 0
-
-    // Projects without people
-    const projectsWithPeople = new Set(assignments.map((a) => a.project_id))
-    const projectsWithoutPeople = activeProjects.filter((p) => !projectsWithPeople.has(p.id))
-
-    // Overallocated assignments (>100%)
-    const overallocatedAssignments = assignments.filter((a) => a.allocation > 100)
-
-    // Overallocated people (total allocation > 100%)
-    const overallocatedPeople = activePeople.filter((person) => {
-      const personAssignments = assignments.filter((a) => a.person_id === person.id)
-      const totalAllocation = personAssignments.reduce((sum, a) => sum + a.allocation, 0)
-      return totalAllocation > 100
-    })
-
-    return {
-      totalActivePeople: activePeople.length,
-      assignedPeople: assignedPeople.length,
-      unassignedPeople: unassignedPeople.length,
-      avgUtilization: Math.round(avgUtilization),
-      totalActiveProjects: activeProjects.length,
-      projectsWithoutPeople: projectsWithoutPeople.length,
-      totalAssignments: assignments.length,
-      overallocatedAssignments: overallocatedAssignments.length,
-      overallocatedPeople: overallocatedPeople.length,
-    }
-  }, [activePeople, activeProjects, assignments])
+  const activePeople = people.filter((p) => {
+    if (p.status !== "Active") return false
+    if (filters?.personProfile && p.profile !== filters.personProfile) return false
+    return true
+  })
 
   // Handle scroll to dynamically load more months
   useEffect(() => {
@@ -215,7 +176,7 @@ export function ResourceTimeline({
     const todayIndex = differenceInDays(today, visibleStart)
 
     // Position today at 25% of the visible width (left-aligned) instead of centered
-    const scrollPosition = todayIndex * DAY_WIDTH - scrollContainer.clientWidth * 0.25
+    const scrollPosition = todayIndex * DAY_WIDTH - scrollContainer.clientWidth * 0.2
 
     scrollContainer.scrollTo({
       left: Math.max(0, scrollPosition),
@@ -259,21 +220,6 @@ export function ResourceTimeline({
     }
   }
 
-  // Helper function to get visible assignments that need sticky labels
-  const getVisibleAssignments = (personAssignments: AssignmentWithRelations[]) => {
-    const viewportLeft = scrollLeft
-    const viewportRight = scrollLeft + (scrollContainerRef.current?.clientWidth || 0) - SIDEBAR_WIDTH
-
-    return personAssignments.filter((assignment) => {
-      const dimensions = calculateBarDimensions(assignment)
-      const barLeft = dimensions.left
-      const barRight = dimensions.left + dimensions.width
-
-      // Show sticky label if bar extends beyond the left edge of viewport
-      return barLeft < viewportLeft && barRight > viewportLeft
-    })
-  }
-
   // Group days by month for header display
   const monthGroups = useMemo(() => {
     const groups: { month: Date; days: Date[] }[] = []
@@ -315,95 +261,35 @@ export function ResourceTimeline({
   }, [])
 
   return (
-    <div className="w-full h-[calc(100vh-64px)] bg-white flex flex-col">
-      {/* Compact Summary Section */}
+    <div className="flex-1 min-h-0 flex flex-col bg-white">
+      {/* Fixed Top Bar */}
       <div
-        className="flex-shrink-0 bg-gray-50/30 border-b border-gray-200"
-        style={{ height: `${INFO_SECTION_HEIGHT}px` }}
+        className="flex-shrink-0 bg-white border-b border-gray-200 px-6 flex items-center justify-between"
+        style={{ height: `${TOP_BAR_HEIGHT}px` }}
       >
-        <div className="px-6 py-3">
-          <div className="flex items-center justify-between">
-            {/* Compact Summary Badges */}
-            <div className="flex items-center space-x-4">
-              {/* People Summary */}
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center space-x-1 bg-blue-50 px-2 py-1 rounded-md">
-                  <Users className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-900">{summaryStats.totalActivePeople}</span>
-                  <span className="text-xs text-blue-700">people</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Badge variant="outline" className="text-xs h-6 border-green-200 text-green-700">
-                    <UserCheck className="h-3 w-3 mr-1" />
-                    {summaryStats.assignedPeople}
-                  </Badge>
-                  {summaryStats.unassignedPeople > 0 && (
-                    <Badge variant="outline" className="text-xs h-6 border-gray-200 text-gray-600">
-                      <UserX className="h-3 w-3 mr-1" />
-                      {summaryStats.unassignedPeople}
-                    </Badge>
-                  )}
-                  <Badge
-                    variant="outline"
-                    className={`text-xs h-6 ${summaryStats.avgUtilization > 100
-                      ? "border-red-200 text-red-700"
-                      : summaryStats.avgUtilization > 80
-                        ? "border-orange-200 text-orange-700"
-                        : "border-green-200 text-green-700"
-                      }`}
-                  >
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    {summaryStats.avgUtilization}%
-                  </Badge>
-                </div>
-              </div>
+        {/* Left: Today Button */}
+        <Button onClick={scrollToToday} variant="outline" size="sm" className="h-8">
+          <CalendarDays className="h-4 w-4 mr-2" />
+          Hoy
+        </Button>
 
-              {/* Projects Summary */}
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center space-x-1 bg-green-50 px-2 py-1 rounded-md">
-                  <Briefcase className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-900">{summaryStats.totalActiveProjects}</span>
-                  <span className="text-xs text-green-700">projects</span>
-                </div>
-                {summaryStats.projectsWithoutPeople > 0 && (
-                  <Badge variant="outline" className="text-xs h-6 border-orange-200 text-orange-700">
-                    <AlertTriangle className="h-3 w-3 mr-1" />
-                    {summaryStats.projectsWithoutPeople} unstaffed
-                  </Badge>
-                )}
-              </div>
-
-              {/* Assignments Summary */}
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center space-x-1 bg-purple-50 px-2 py-1 rounded-md">
-                  <Calendar className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm font-medium text-purple-900">{summaryStats.totalAssignments}</span>
-                  <span className="text-xs text-purple-700">assignments</span>
-                </div>
-                {summaryStats.overallocatedAssignments > 0 && (
-                  <Badge variant="destructive" className="text-xs h-6">
-                    <AlertTriangle className="h-3 w-3 mr-1" />
-                    {summaryStats.overallocatedAssignments} over 100%
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* Today Button */}
-            <Button onClick={scrollToToday} variant="outline" size="sm" className="h-8">
-              <CalendarDays className="h-4 w-4 mr-2" />
-              Today
-            </Button>
-          </div>
-        </div>
+        {/* Right: Filters Button */}
+        <FiltersPopover
+          people={people}
+          projects={projects}
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+          onClearFilters={onClearFilters}
+          showDateRange={false}
+        />
       </div>
 
       {/* Timeline container - takes remaining height */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 min-h-0 relative">
         {/* Main scrollable container */}
         <div
           ref={scrollContainerRef}
-          className="h-full overflow-auto"
+          className="absolute inset-0 overflow-auto"
           style={{
             overflowX: "auto",
             overflowY: "auto",
@@ -421,7 +307,7 @@ export function ResourceTimeline({
                 className="sticky left-0 z-30 bg-gray-50 border-r border-gray-200 flex items-center px-4"
                 style={{ width: `${SIDEBAR_WIDTH}px` }}
               >
-                <div className="font-medium text-gray-700 text-sm uppercase tracking-wide">Team Member</div>
+                <div className="font-medium text-gray-700 text-sm uppercase tracking-wide">Miembro del equipo</div>
               </div>
 
               {/* Header timeline section */}
@@ -542,7 +428,7 @@ export function ResourceTimeline({
                         const verticalGap = (ROW_HEIGHT - assignmentHeight * totalAssignments) / (totalAssignments + 1)
                         const top = verticalGap + idx * (assignmentHeight + verticalGap)
 
-                        // Calcula si debe activarse sticky y en qué punto
+                        // Calculate sticky behavior
                         const barStart = dimensions.left
                         const barEnd = dimensions.left + dimensions.width
                         const labelMaxWidth = barEnd - scrollLeft
@@ -571,7 +457,6 @@ export function ResourceTimeline({
                                       background: isSticky ? "inherit" : "none",
                                     }}
                                   >
-
                                     {renderAssignmentLabel(project, assignment)}
                                   </div>
                                 </div>
@@ -586,10 +471,8 @@ export function ResourceTimeline({
                                 <p className="text-sm">
                                   {format(dimensions.startDate, "dd MMM")} - {format(dimensions.endDate, "dd MMM yyyy")}
                                 </p>
-                                <p className="text-sm">{assignment.allocation}% allocation</p>
-                                {assignment.assigned_role && (
-                                  <p className="text-sm">Role: {assignment.assigned_role}</p>
-                                )}
+                                <p className="text-sm">{assignment.allocation}% asignación</p>
+                                {assignment.assigned_role && <p className="text-sm">Rol: {assignment.assigned_role}</p>}
                                 {project.description && <p className="text-xs opacity-75">{project.description}</p>}
                               </div>
                             </TooltipContent>
@@ -613,15 +496,11 @@ export function ResourceTimeline({
 
               {activePeople.length === 0 && (
                 <div className="p-12 text-center text-gray-500">
-                  <div className="text-lg font-medium mb-2">No active team members</div>
-                  <div className="text-sm">Add people with "Active" status to see their assignments</div>
+                  <div className="text-lg font-medium mb-2">No hay miembros activos del equipo</div>
+                  <div className="text-sm">Agrega personas con estado "Activo" para ver sus asignaciones</div>
                 </div>
               )}
             </TooltipProvider>
-
-
-
-
           </div>
         </div>
       </div>

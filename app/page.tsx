@@ -1,35 +1,35 @@
-'use client'
+"use client"
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { supabase, isSupabaseConfigured } from "@/lib/supabase"
+import { usePeople, useProjects, useAssignments, useClients } from "@/hooks/use-data"
 
-import { Card } from '@/components/ui/card'
-import { usePeople, useProjects, useAssignments } from '@/hooks/use-data'
-import { DashboardStats } from '@/components/dashboard-stats'
-import { DataSourceNotice } from '@/components/data-source-notice'
-import { ResourceTimeline } from '@/components/resource-timeline'
+import { Card } from "@/components/ui/card"
+import { DashboardHeader } from "@/components/dashboard-header"
+import { StatsOverview } from "@/components/stats-overview"
+import { ProjectStatusChart } from "@/components/project-status-chart"
+import { TeamWorkloadChart } from "@/components/team-workload-chart"
+import { RecentActivity } from "@/components/recent-activity"
+import { UpcomingDeadlines } from "@/components/upcoming-deadlines"
+import { ResourceUtilization } from "@/components/resource-utilization"
+import { TopClients } from "@/components/top-clients"
 
 export default function Dashboard() {
   const router = useRouter()
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [mounted, setMounted] = useState(false)
 
-  const [viewMode, setViewMode] = useState('people')
-  const [dateRange, setDateRange] = useState({
-    from: new Date(2024, 0, 1),
-    to: new Date(2024, 11, 31),
-  })
-
   const { people, loading: peopleLoading, error: peopleError } = usePeople()
   const { projects, loading: projectsLoading, error: projectsError } = useProjects()
   const { assignments, loading: assignmentsLoading, error: assignmentsError } = useAssignments()
+  const { clients, loading: clientsLoading, error: clientsError } = useClients()
 
-  const loading = peopleLoading || projectsLoading || assignmentsLoading
-  const error = peopleError || projectsError || assignmentsError
+  const loading = peopleLoading || projectsLoading || assignmentsLoading || clientsLoading
+  const error = peopleError || projectsError || assignmentsError || clientsError
   const supabaseConfigured = isSupabaseConfigured()
 
-  // 🔐 Validación de sesión y email autorizado
+  // 🔐 Session validation
   useEffect(() => {
     setMounted(true)
 
@@ -38,18 +38,18 @@ export default function Dashboard() {
       const session = sessionData?.session
 
       if (!session || sessionError) {
-        router.push('/login')
+        router.push("/login")
         return
       }
 
       const { data: allowed } = await supabase
-        .from('auth_users')
-        .select('email')
-        .eq('email', session.user.email)
+        .from("auth_users")
+        .select("email")
+        .eq("email", session.user.email)
         .maybeSingle()
 
       if (!allowed) {
-        router.push('/unauthorized')
+        router.push("/unauthorized")
         return
       }
 
@@ -59,16 +59,19 @@ export default function Dashboard() {
     validateUser()
   }, [router])
 
-  // 🔄 Pantalla de carga inicial (montado o validación)
+  // 🔄 Loading states
   if (!mounted || authorized === null) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-center">Validando sesión...</p>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-center">Validando sesión...</p>
+        </div>
       </div>
     )
   }
 
-  // ❌ Error cargando datos
+  // ❌ Error state
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -87,42 +90,50 @@ export default function Dashboard() {
     )
   }
 
-  // 🔃 Cargando datos
+  // 🔃 Loading data
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Cargando datos...</p>
+          <p>Cargando dashboard...</p>
         </div>
       </div>
     )
   }
 
-  // ✅ Dashboard completo
+  // ✅ Main dashboard
   return (
-    <main className="flex-1 w-full">
-      {!supabaseConfigured && (
-        <div className="container mx-auto px-4 py-4">
-          <DataSourceNotice />
-        </div>
-      )}
+    <main className="flex-1 w-full min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Header */}
+        <DashboardHeader />
 
-      {!supabaseConfigured && (
-        <div className="container mx-auto px-4 pb-4">
-          <DashboardStats people={people} projects={projects} assignments={assignments} />
-        </div>
-      )}
+        {/* Stats Overview */}
+        <StatsOverview people={people} projects={projects} assignments={assignments} clients={clients} />
 
-      <ResourceTimeline
-        people={people}
-        projects={projects}
-        assignments={assignments}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        dateRange={dateRange}
-        setDateRange={setDateRange}
-      />
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - 2/3 width */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Charts Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ProjectStatusChart projects={projects} />
+              <TeamWorkloadChart people={people} assignments={assignments} />
+            </div>
+
+            {/* Resource Utilization */}
+            <ResourceUtilization people={people} assignments={assignments} />
+          </div>
+
+          {/* Right Column - 1/3 width */}
+          <div className="space-y-6">
+            <RecentActivity assignments={assignments} people={people} projects={projects} />
+            <UpcomingDeadlines projects={projects} assignments={assignments} />
+            <TopClients clients={clients} projects={projects} />
+          </div>
+        </div>
+      </div>
     </main>
   )
 }
