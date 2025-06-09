@@ -168,7 +168,7 @@ export default function AssignmentsPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col">
         {viewMode === "timeline" ? (
           <ResourceTimeline
             people={people}
@@ -179,7 +179,7 @@ export default function AssignmentsPage() {
             onClearFilters={clearFilters}
           />
         ) : (
-          <div className="h-full overflow-auto">
+          <div className="flex-1 min-h-0 overflow-auto">
             <div className="container mx-auto px-4 py-4">
               <ResourceTable
                 people={people}

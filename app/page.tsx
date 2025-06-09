@@ -7,8 +7,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { Card } from '@/components/ui/card'
 import { usePeople, useProjects, useAssignments } from '@/hooks/use-data'
 import { DashboardStats } from '@/components/dashboard-stats'
-import { DataSourceNotice } from '@/components/data-source-notice'
-import { ResourceTimeline } from '@/components/resource-timeline'
+
 
 export default function Dashboard() {
   const router = useRouter()
@@ -21,6 +20,14 @@ export default function Dashboard() {
     to: new Date(2024, 11, 31),
   })
 
+  // Add filters state to match ResourceTimeline interface
+  const [filters, setFilters] = useState({
+    personProfile: "",
+    projectStatus: "",
+    dateRange: dateRange,
+    overallocatedOnly: false,
+  })
+
   const { people, loading: peopleLoading, error: peopleError } = usePeople()
   const { projects, loading: projectsLoading, error: projectsError } = useProjects()
   const { assignments, loading: assignmentsLoading, error: assignmentsError } = useAssignments()
@@ -28,6 +35,16 @@ export default function Dashboard() {
   const loading = peopleLoading || projectsLoading || assignmentsLoading
   const error = peopleError || projectsError || assignmentsError
   const supabaseConfigured = isSupabaseConfigured()
+
+  // Clear filters function
+  const clearFilters = () => {
+    setFilters({
+      personProfile: "",
+      projectStatus: "",
+      dateRange: dateRange,
+      overallocatedOnly: false,
+    })
+  }
 
   // 🔐 Validación de sesión y email autorizado
   useEffect(() => {
@@ -103,26 +120,11 @@ export default function Dashboard() {
   return (
     <main className="flex-1 w-full">
       {!supabaseConfigured && (
-        <div className="container mx-auto px-4 py-4">
-          <DataSourceNotice />
-        </div>
-      )}
-
-      {!supabaseConfigured && (
         <div className="container mx-auto px-4 pb-4">
           <DashboardStats people={people} projects={projects} assignments={assignments} />
         </div>
       )}
 
-      <ResourceTimeline
-        people={people}
-        projects={projects}
-        assignments={assignments}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        dateRange={dateRange}
-        setDateRange={setDateRange}
-      />
     </main>
   )
 }

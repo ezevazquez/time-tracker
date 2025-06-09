@@ -28,7 +28,8 @@ export function ReportModal() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" size="sm"
+          className="h-8">
           <CalendarRange className="mr-2 h-4 w-4" />
           Nuevo reporte
         </Button>
@@ -41,9 +42,9 @@ export function ReportModal() {
 
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-4">
-            <DatePickerWithRange 
-              date={range || { from: new Date(), to: new Date() }} 
-              setDate={setRange} 
+            <DatePickerWithRange
+              date={range || { from: new Date(), to: new Date() }}
+              setDate={setRange}
             />
             <Button onClick={handleGenerate} disabled={loading || !range?.from || !range?.to}>
               {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
