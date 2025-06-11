@@ -2,11 +2,23 @@
 
 import type React from 'react'
 import { useState } from 'react'
-import { ArrowLeft, Save } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, Save, CalendarIcon } from 'lucide-react'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { toast } from 'sonner'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -16,14 +28,15 @@ import {
 } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { CalendarIcon } from 'lucide-react'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+
 import { cn } from '@/utils/classnames'
-import { usePeople } from '@/hooks/use-data'
-import { toast } from 'sonner'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { usePeople } from '@/hooks/use-people'
+import {
+  PERSON_STATUS_OPTIONS,
+  PERSON_TYPE_OPTIONS,
+} from '@/constants/people'
+import { PERSON_STATUS, PERSON_TYPE } from '@/constants/people'
+
 
 export default function NewPersonPage() {
   const router = useRouter()
@@ -32,10 +45,10 @@ export default function NewPersonPage() {
   const [formData, setFormData] = useState({
     name: '',
     profile: '',
-    start_date: undefined as Date | undefined,
+    start_date: new Date() as Date | undefined,
     end_date: undefined as Date | undefined,
-    status: 'Active' as 'Active' | 'Paused' | 'Terminated',
-    type: 'Internal' as 'Internal' | 'External',
+    status: PERSON_STATUS.ACTIVE,
+    type: PERSON_TYPE.INTERNAL,
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,6 +69,8 @@ export default function NewPersonPage() {
         end_date: formData.end_date ? formData.end_date.toISOString().split('T')[0] : null,
         status: formData.status,
         type: formData.type,
+        first_name: formData.name.split(' ')[0] || '',
+        last_name: formData.name.split(' ').slice(1).join(' ') || '',
       })
 
       toast.success('Persona creada correctamente')
@@ -177,37 +192,44 @@ export default function NewPersonPage() {
                   <Label htmlFor="status">Estado *</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value: 'Active' | 'Paused' | 'Terminated') =>
+                    onValueChange={(value: typeof formData.status) =>
                       setFormData({ ...formData, status: value })
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Selecciona un estado" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Active">Activo</SelectItem>
-                      <SelectItem value="Paused">Pausado</SelectItem>
-                      <SelectItem value="Terminated">Fuera</SelectItem>
+                      {PERSON_STATUS_OPTIONS.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="type">Tipo *</Label>
                   <Select
                     value={formData.type}
-                    onValueChange={(value: 'Internal' | 'External') =>
+                    onValueChange={(value: typeof formData.type) =>
                       setFormData({ ...formData, type: value })
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Selecciona un tipo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Internal">Interno</SelectItem>
-                      <SelectItem value="External">Externo</SelectItem>
+                      {PERSON_TYPE_OPTIONS.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+
                 </div>
               </div>
 

@@ -7,6 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { format } from 'date-fns'
 import { CalendarIcon, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -34,17 +36,20 @@ import {
 } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+
 import { cn } from '@/utils/classnames'
-import { toast } from 'sonner'
-import { peopleService } from '@/lib/database'
-import type { Person } from '@/lib/supabase'
+import { peopleService } from '@/lib/services/people.service'
+import type { Person } from '@/types/people'
+import { PERSON_STATUS_OPTIONS, PERSON_TYPE_OPTIONS } from '@/constants/people'
+
+
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),
   profile: z.string().min(2, { message: 'El perfil debe tener al menos 2 caracteres' }),
   start_date: z.date({ required_error: 'La fecha de inicio es requerida' }),
   end_date: z.date().nullable().optional(),
-  status: z.enum(['Active', 'Paused', 'Terminated'], {
+  status: z.enum(['Activo', 'Pausado', 'Terminado'], {
     required_error: 'El estado es requerido',
   }),
   type: z.enum(['Internal', 'External'], {
@@ -67,7 +72,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
       profile: '',
       start_date: new Date(),
       end_date: null,
-      status: 'Active',
+      status: 'Activo',
       type: 'Internal',
     },
   })
@@ -290,9 +295,11 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Active">Activo</SelectItem>
-                          <SelectItem value="Paused">Pausado</SelectItem>
-                          <SelectItem value="Terminated">Terminado</SelectItem>
+                          {PERSON_STATUS_OPTIONS.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -313,8 +320,11 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Internal">Interno</SelectItem>
-                          <SelectItem value="External">Externo</SelectItem>
+                          {PERSON_TYPE_OPTIONS.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
