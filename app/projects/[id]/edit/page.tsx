@@ -1,32 +1,52 @@
-"use client"
+'use client'
 
-import { useState, useEffect, use } from "react"
-import { useRouter } from "next/navigation"
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { format } from "date-fns"
-import { CalendarIcon, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
-import { toast } from "sonner"
-import { projectsService, clientsService } from "@/lib/database"
-import type { Project, Client } from "@/lib/supabase"
+import { useState, useEffect, use } from 'react'
+import { useRouter } from 'next/navigation'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { format } from 'date-fns'
+import { CalendarIcon, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
+import { projectsService, clientsService } from '@/lib/database'
+import type { Project, Client } from '@/lib/supabase'
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres" }),
+  name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),
   description: z.string().optional(),
   start_date: z.date().nullable().optional(),
   end_date: z.date().nullable().optional(),
-  status: z.enum(["In Progress", "Finished", "On Hold", "Not Started"], {
-    required_error: "El estado es requerido",
+  status: z.enum(['In Progress', 'Finished', 'On Hold', 'Not Started'], {
+    required_error: 'El estado es requerido',
   }),
   client_id: z.string().nullable().optional(),
 })
@@ -44,11 +64,11 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      description: "",
+      name: '',
+      description: '',
       start_date: null,
       end_date: null,
-      status: "In Progress",
+      status: 'In Progress',
       client_id: null,
     },
   })
@@ -61,7 +81,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         const clientsData = await clientsService.getAll()
         setClients(clientsData)
       } catch (err) {
-        console.error("Error fetching clients:", err)
+        console.error('Error fetching clients:', err)
         // Don't set error here, as we can still edit the project without clients
       } finally {
         setIsLoadingClients(false)
@@ -82,18 +102,18 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           // Set form values
           form.reset({
             name: projectData.name,
-            description: projectData.description || "",
+            description: projectData.description || '',
             start_date: projectData.start_date ? new Date(projectData.start_date) : null,
             end_date: projectData.end_date ? new Date(projectData.end_date) : null,
             status: projectData.status,
             client_id: projectData.client_id,
           })
         } else {
-          setError("Proyecto no encontrado")
+          setError('Proyecto no encontrado')
         }
       } catch (err) {
-        console.error("Error fetching project:", err)
-        setError(err instanceof Error ? err.message : "Error al cargar el proyecto")
+        console.error('Error fetching project:', err)
+        setError(err instanceof Error ? err.message : 'Error al cargar el proyecto')
       } finally {
         setIsLoadingProject(false)
       }
@@ -110,11 +130,11 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         start_date: values.start_date ? values.start_date.toISOString() : null,
         end_date: values.end_date ? values.end_date.toISOString() : null,
       })
-      toast.success("Proyecto actualizado correctamente")
-      router.push("/projects")
+      toast.success('Proyecto actualizado correctamente')
+      router.push('/projects')
     } catch (error) {
-      console.error("Error updating project:", error)
-      toast.error("Error al actualizar el proyecto")
+      console.error('Error updating project:', error)
+      toast.error('Error al actualizar el proyecto')
     } finally {
       setIsLoading(false)
     }
@@ -140,7 +160,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
             <CardDescription>{error}</CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button onClick={() => router.push("/projects")}>Volver a la lista</Button>
+            <Button onClick={() => router.push('/projects')}>Volver a la lista</Button>
           </CardFooter>
         </Card>
       </div>
@@ -183,7 +203,11 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                   <FormItem>
                     <FormLabel>Descripción</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Descripción del proyecto" {...field} value={field.value || ""} />
+                      <Textarea
+                        placeholder="Descripción del proyecto"
+                        {...field}
+                        value={field.value || ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -201,10 +225,15 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
-                              variant={"outline"}
-                              className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                              variant={'outline'}
+                              className={cn(
+                                'pl-3 text-left font-normal',
+                                !field.value && 'text-muted-foreground'
+                              )}
                             >
-                              {field.value ? format(field.value, "dd/MM/yyyy") : "Seleccionar fecha"}
+                              {field.value
+                                ? format(field.value, 'dd/MM/yyyy')
+                                : 'Seleccionar fecha'}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
@@ -214,7 +243,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                             mode="single"
                             selected={field.value || undefined}
                             onSelect={field.onChange}
-                            disabled={(date) => date < new Date("1900-01-01")}
+                            disabled={date => date < new Date('1900-01-01')}
                             initialFocus
                           />
                         </PopoverContent>
@@ -234,10 +263,13 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
-                              variant={"outline"}
-                              className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                              variant={'outline'}
+                              className={cn(
+                                'pl-3 text-left font-normal',
+                                !field.value && 'text-muted-foreground'
+                              )}
                             >
-                              {field.value ? format(field.value, "dd/MM/yyyy") : "Sin fecha de fin"}
+                              {field.value ? format(field.value, 'dd/MM/yyyy') : 'Sin fecha de fin'}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
@@ -247,8 +279,8 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                             mode="single"
                             selected={field.value || undefined}
                             onSelect={field.onChange}
-                            disabled={(date) => {
-                              const startDate = form.getValues("start_date")
+                            disabled={date => {
+                              const startDate = form.getValues('start_date')
                               return startDate ? date < startDate : false
                             }}
                             initialFocus
@@ -294,8 +326,8 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                       <FormLabel>Cliente</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value || "null"}
-                        value={field.value || "null"}
+                        defaultValue={field.value || 'null'}
+                        value={field.value || 'null'}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -304,7 +336,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="null">Sin cliente</SelectItem>
-                          {clients.map((client) => (
+                          {clients.map(client => (
                             <SelectItem key={client.id} value={client.id}>
                               {client.name}
                             </SelectItem>
@@ -318,7 +350,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
               </div>
 
               <div className="flex justify-end space-x-2">
-                <Button variant="outline" type="button" onClick={() => router.push("/projects")}>
+                <Button variant="outline" type="button" onClick={() => router.push('/projects')}>
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isLoading}>

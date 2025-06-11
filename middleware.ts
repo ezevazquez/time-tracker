@@ -6,7 +6,7 @@ const PUBLIC_PATHS = [
   '/login',
   '/auth/callback',
   '/auth/auth-code-error',
-  '/unauthorized'
+  '/unauthorized',
 ]
 
 export function middleware(req: NextRequest) {

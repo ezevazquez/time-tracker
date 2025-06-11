@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, FolderOpen, Calendar, TrendingUp } from "lucide-react"
-import type { Person, Project, AssignmentWithRelations } from "@/lib/supabase"
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Users, FolderOpen, Calendar, TrendingUp } from 'lucide-react'
+import type { Person, Project, AssignmentWithRelations } from '@/lib/supabase'
 
 interface DashboardStatsProps {
   people: Person[]
@@ -12,9 +12,9 @@ interface DashboardStatsProps {
 
 export function DashboardStats({ people, projects, assignments }: DashboardStatsProps) {
   // Calculate active counts
-  const activePeople = people.filter((p) => p.status === "activo").length
-  const activeProjects = projects.filter((p) => p.status === "activo").length
-  const activeAssignments = assignments.filter((a) => {
+  const activePeople = people.filter(p => p.status === 'activo').length
+  const activeProjects = projects.filter(p => p.status === 'activo').length
+  const activeAssignments = assignments.filter(a => {
     const endDate = new Date(a.end_date)
     const today = new Date()
     return endDate >= today
@@ -24,17 +24,18 @@ export function DashboardStats({ people, projects, assignments }: DashboardStats
   const totalPeople = people.length
   const peopleWithAssignments = new Set(
     assignments
-      .filter((a) => {
+      .filter(a => {
         const endDate = new Date(a.end_date)
         const today = new Date()
         return endDate >= today
       })
-      .map((a) => a.person_id),
+      .map(a => a.person_id)
   ).size
 
-  const utilizationRate = totalPeople > 0 ? Math.round((peopleWithAssignments / totalPeople) * 100) : 0
+  const utilizationRate =
+    totalPeople > 0 ? Math.round((peopleWithAssignments / totalPeople) * 100) : 0
 
-  console.log("Dashboard Stats:", {
+  console.log('Dashboard Stats:', {
     totalPeople,
     activePeople,
     totalProjects: projects.length,
@@ -86,7 +87,9 @@ export function DashboardStats({ people, projects, assignments }: DashboardStats
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{utilizationRate}%</div>
-          <p className="text-xs text-muted-foreground">{peopleWithAssignments} personas asignadas</p>
+          <p className="text-xs text-muted-foreground">
+            {peopleWithAssignments} personas asignadas
+          </p>
         </CardContent>
       </Card>
     </div>

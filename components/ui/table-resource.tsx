@@ -1,10 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 import {
   Table,
@@ -13,17 +7,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { ResourceAction, ResourceColumn } from "@/types";
+} from '@/components/ui/table'
+import { ResourceAction, ResourceColumn } from '@/types'
 
-import { MenuActionsResource } from "./menu-actions-resource";
+import { MenuActionsResource } from './menu-actions-resource'
 
 interface TableResourceProps<T extends { id: string }> {
-  items: T[];
-  columns: ResourceColumn<T>[];
-  title?: string;
-  description?: string;
-  actions?: ResourceAction[];
+  items: T[]
+  columns: ResourceColumn<T>[]
+  title?: string
+  description?: string
+  actions?: ResourceAction[]
 }
 
 export const TableResource = <T extends { id: string }>({
@@ -33,7 +27,7 @@ export const TableResource = <T extends { id: string }>({
   description,
   actions,
 }: TableResourceProps<T>) => {
-  console.log("TableResource items:", items);
+  console.log('TableResource items:', items)
 
   return (
     <Card>
@@ -61,9 +55,7 @@ export const TableResource = <T extends { id: string }>({
             {items.map((item, rowIndex) => (
               <TableRow key={rowIndex}>
                 {columns.map((column: ResourceColumn<T>, colIndex) => {
-                  return (
-                    <TableCell key={colIndex}>{column.render(item)}</TableCell>
-                  );
+                  return <TableCell key={colIndex}>{column.render(item)}</TableCell>
                 })}
                 {actions && (
                   <TableCell>
@@ -76,5 +68,5 @@ export const TableResource = <T extends { id: string }>({
         </Table>
       </CardContent>
     </Card>
-  );
-};
+  )
+}

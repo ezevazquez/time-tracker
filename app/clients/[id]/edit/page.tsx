@@ -1,22 +1,36 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { toast } from "sonner"
-import { useClients, clientsService } from "@/hooks/use-data"
-import type { Client } from "@/lib/supabase"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { toast } from 'sonner'
+import { useClients, clientsService } from '@/hooks/use-data'
+import type { Client } from '@/lib/supabase'
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres" }),
+  name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),
   description: z.string().optional(),
 })
 
@@ -31,8 +45,8 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      description: "",
+      name: '',
+      description: '',
     },
   })
 
@@ -43,17 +57,17 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
         setIsLoadingClient(true)
         const clientData = await clientsService.getById(params.id)
         if (!clientData) {
-          setError("Cliente no encontrado")
+          setError('Cliente no encontrado')
           return
         }
         setClient(clientData)
         form.reset({
           name: clientData.name,
-          description: clientData.description || "",
+          description: clientData.description || '',
         })
       } catch (err) {
-        console.error("Error fetching client:", err)
-        setError(err instanceof Error ? err.message : "Error al cargar el cliente")
+        console.error('Error fetching client:', err)
+        setError(err instanceof Error ? err.message : 'Error al cargar el cliente')
       } finally {
         setIsLoadingClient(false)
       }
@@ -70,11 +84,11 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
         description: values.description?.trim() || null,
       })
 
-      toast.success("Cliente actualizado correctamente")
-      router.push("/clients")
+      toast.success('Cliente actualizado correctamente')
+      router.push('/clients')
     } catch (error) {
-      toast.error("Error al actualizar el cliente")
-      console.error("Error updating client:", error)
+      toast.error('Error al actualizar el cliente')
+      console.error('Error updating client:', error)
     } finally {
       setIsLoading(false)
     }
@@ -100,7 +114,7 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
             <CardDescription>{error}</CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button onClick={() => router.push("/clients")}>Volver a la lista</Button>
+            <Button onClick={() => router.push('/clients')}>Volver a la lista</Button>
           </CardFooter>
         </Card>
       </div>
@@ -146,7 +160,7 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
                       <Textarea
                         placeholder="Descripción del cliente"
                         {...field}
-                        value={field.value || ""}
+                        value={field.value || ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -155,7 +169,7 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
               />
 
               <div className="flex justify-end space-x-2">
-                <Button variant="outline" type="button" onClick={() => router.push("/clients")}>
+                <Button variant="outline" type="button" onClick={() => router.push('/clients')}>
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isLoading}>
@@ -169,4 +183,4 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
       </Card>
     </main>
   )
-} 
+}

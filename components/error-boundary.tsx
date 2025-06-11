@@ -1,9 +1,9 @@
-"use client"
+'use client'
 
-import React from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { AlertTriangle, RefreshCw } from "lucide-react"
+import React from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { AlertTriangle, RefreshCw } from 'lucide-react'
 
 interface ErrorBoundaryProps {
   children: React.ReactNode
@@ -26,7 +26,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("Error caught by boundary:", error, errorInfo)
+    console.error('Error caught by boundary:', error, errorInfo)
   }
 
   render() {
@@ -43,11 +43,15 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                 <AlertTriangle className="h-6 w-6 text-red-600" />
               </div>
               <CardTitle className="text-red-900">Error de Configuración</CardTitle>
-              <CardDescription>Hay un problema con la configuración de la aplicación</CardDescription>
+              <CardDescription>
+                Hay un problema con la configuración de la aplicación
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-md bg-red-50 p-4">
-                <p className="text-sm text-red-800">{this.state.error?.message || "Error desconocido"}</p>
+                <p className="text-sm text-red-800">
+                  {this.state.error?.message || 'Error desconocido'}
+                </p>
               </div>
 
               <div className="text-sm text-gray-600">
@@ -74,7 +78,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 }
 
-export function withErrorBoundary<P extends object>(Component: React.ComponentType<P>): React.ComponentType<P> {
+export function withErrorBoundary<P extends object>(
+  Component: React.ComponentType<P>
+): React.ComponentType<P> {
   return function WrappedComponent(props: P) {
     return (
       <ErrorBoundary>

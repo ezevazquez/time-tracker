@@ -1,23 +1,23 @@
-"use client"
+'use client'
 
-import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Plus, List, CalendarDays } from "lucide-react"
+import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Plus, List, CalendarDays } from 'lucide-react'
 
-import { supabase } from "@/lib/supabase"
-import { useAssignments, usePeople, useProjects } from "@/hooks/use-data"
+import { supabase } from '@/lib/supabase'
+import { useAssignments, usePeople, useProjects } from '@/hooks/use-data'
 
-import { Button } from "@/components/ui/button"
-import { ResourceTimeline } from "@/components/resource-timeline"
-import { ResourceTable } from "@/components/resource-table"
-import { ReportModal } from "@/components/report-modal"
+import { Button } from '@/components/ui/button'
+import { ResourceTimeline } from '@/components/resource-timeline'
+import { ResourceTable } from '@/components/resource-table'
+import { ReportModal } from '@/components/report-modal'
 
 export default function AssignmentsPage() {
   const router = useRouter()
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [mounted, setMounted] = useState(false)
-  const [viewMode, setViewMode] = useState<"timeline" | "list">("timeline")
+  const [viewMode, setViewMode] = useState<'timeline' | 'list'>('timeline')
 
   const defaultDateRange = {
     from: new Date(),
@@ -29,8 +29,8 @@ export default function AssignmentsPage() {
   }
 
   const [filters, setFilters] = useState({
-    personProfile: "",
-    projectStatus: "",
+    personProfile: '',
+    projectStatus: '',
     dateRange: defaultDateRange,
     overallocatedOnly: false,
   })
@@ -48,15 +48,15 @@ export default function AssignmentsPage() {
       const { data: sessionData } = await supabase.auth.getSession()
       const session = sessionData?.session
 
-      if (!session) return router.push("/login")
+      if (!session) return router.push('/login')
 
       const { data: allowed } = await supabase
-        .from("auth_users")
-        .select("email")
-        .eq("email", session.user.email)
+        .from('auth_users')
+        .select('email')
+        .eq('email', session.user.email)
         .maybeSingle()
 
-      if (!allowed) return router.push("/unauthorized")
+      if (!allowed) return router.push('/unauthorized')
 
       setAuthorized(true)
     }
@@ -66,18 +66,18 @@ export default function AssignmentsPage() {
 
   const clearFilters = () => {
     setFilters({
-      personProfile: "",
-      projectStatus: "",
+      personProfile: '',
+      projectStatus: '',
       dateRange: defaultDateRange,
       overallocatedOnly: false,
     })
   }
 
   const filteredAssignments = useMemo(() => {
-    return assignments.filter((assignment) => {
+    return assignments.filter(assignment => {
       // Find the person and project for this assignment
-      const person = people.find((p) => p.id === assignment.person_id)
-      const project = projects.find((p) => p.id === assignment.project_id)
+      const person = people.find(p => p.id === assignment.person_id)
+      const project = projects.find(p => p.id === assignment.project_id)
 
       // Filter by person profile
       if (filters.personProfile && person?.profile !== filters.personProfile) return false
@@ -86,7 +86,7 @@ export default function AssignmentsPage() {
       if (filters.projectStatus && project?.status !== filters.projectStatus) return false
 
       // Date range filter (only for list view)
-      if (viewMode === "list") {
+      if (viewMode === 'list') {
         const start = new Date(assignment.start_date)
         const end = new Date(assignment.end_date)
         if (end < filters.dateRange.from || start > filters.dateRange.to) return false
@@ -100,12 +100,12 @@ export default function AssignmentsPage() {
   }, [assignments, filters, viewMode, people, projects])
 
   const handleDeleteAssignment = async (id: string) => {
-    if (confirm("¿Estás seguro de que querés eliminar esta asignación?")) {
+    if (confirm('¿Estás seguro de que querés eliminar esta asignación?')) {
       try {
         await deleteAssignment(id)
       } catch (error) {
-        console.error("Error al eliminar la asignación:", error)
-        alert("Error al eliminar la asignación")
+        console.error('Error al eliminar la asignación:', error)
+        alert('Error al eliminar la asignación')
       }
     }
   }
@@ -140,11 +140,11 @@ export default function AssignmentsPage() {
               <ReportModal />
               <Button
                 variant="outline"
-                onClick={() => setViewMode(viewMode === "timeline" ? "list" : "timeline")}
+                onClick={() => setViewMode(viewMode === 'timeline' ? 'list' : 'timeline')}
                 size="sm"
                 className="h-8"
               >
-                {viewMode === "timeline" ? (
+                {viewMode === 'timeline' ? (
                   <>
                     <List className="mr-2 h-4 w-4" />
                     Ver como lista
@@ -169,7 +169,7 @@ export default function AssignmentsPage() {
 
       {/* Content */}
       <div className="flex-1 min-h-0 flex flex-col">
-        {viewMode === "timeline" ? (
+        {viewMode === 'timeline' ? (
           <ResourceTimeline
             people={people}
             projects={projects}

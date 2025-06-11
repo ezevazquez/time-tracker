@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import type { Person, AssignmentWithRelations } from "@/lib/supabase"
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import type { Person, AssignmentWithRelations } from '@/lib/supabase'
 
 interface TeamWorkloadChartProps {
   people: Person[]
@@ -14,18 +14,21 @@ export function TeamWorkloadChart({ people, assignments }: TeamWorkloadChartProp
 
   // Calculate current workload for each active person
   const workloadData = people
-    .filter((person) => person.status === "Active")
-    .map((person) => {
-      const currentAssignments = assignments.filter((assignment) => {
+    .filter(person => person.status === 'Active')
+    .map(person => {
+      const currentAssignments = assignments.filter(assignment => {
         const start = new Date(assignment.start_date)
         const end = new Date(assignment.end_date)
         return assignment.person_id === person.id && start <= currentDate && end >= currentDate
       })
 
-      const totalAllocation = currentAssignments.reduce((sum, assignment) => sum + assignment.allocation * 100, 0)
+      const totalAllocation = currentAssignments.reduce(
+        (sum, assignment) => sum + assignment.allocation * 100,
+        0
+      )
 
       return {
-        name: person.name.split(" ")[0], // First name only
+        name: person.name.split(' ')[0], // First name only
         workload: Math.round(totalAllocation),
         isOverallocated: totalAllocation > 100,
       }
@@ -40,7 +43,8 @@ export function TeamWorkloadChart({ people, assignments }: TeamWorkloadChartProp
         <div className="bg-white p-3 border rounded-lg shadow-lg">
           <p className="font-medium">{label}</p>
           <p className="text-sm text-gray-600">
-            Carga: {data.workload}%{data.isOverallocated && <span className="text-red-600 ml-2">(Sobreasignado)</span>}
+            Carga: {data.workload}%
+            {data.isOverallocated && <span className="text-red-600 ml-2">(Sobreasignado)</span>}
           </p>
         </div>
       )
@@ -61,12 +65,22 @@ export function TeamWorkloadChart({ people, assignments }: TeamWorkloadChartProp
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={workloadData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={60} />
-              <YAxis tick={{ fontSize: 12 }} domain={[0, "dataMax"]} tickFormatter={(value) => `${value}%`} />
+              <XAxis
+                dataKey="name"
+                tick={{ fontSize: 12 }}
+                angle={-45}
+                textAnchor="end"
+                height={60}
+              />
+              <YAxis
+                tick={{ fontSize: 12 }}
+                domain={[0, 'dataMax']}
+                tickFormatter={value => `${value}%`}
+              />
               <Tooltip content={<CustomTooltip />} />
               <Bar
                 dataKey="workload"
-                fill={(entry) => (entry?.isOverallocated ? "#EF4444" : "#10B981")}
+                fill={entry => (entry?.isOverallocated ? '#EF4444' : '#10B981')}
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>

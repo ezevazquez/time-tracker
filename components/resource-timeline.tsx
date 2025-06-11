@@ -1,11 +1,11 @@
-"use client"
+'use client'
 
-import { useState, useRef, useEffect, useMemo } from "react"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { CalendarDays } from "lucide-react"
-import Link from "next/link"
+import { useState, useRef, useEffect, useMemo } from 'react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { CalendarDays } from 'lucide-react'
+import Link from 'next/link'
 import {
   format,
   eachDayOfInterval,
@@ -17,10 +17,11 @@ import {
   startOfMonth,
   endOfMonth,
   isSameMonth,
-} from "date-fns"
-import { es } from "date-fns/locale"
-import { FiltersPopover } from "./filters-popover"
-import type { Person, Project, AssignmentWithRelations } from "@/lib/supabase"
+} from 'date-fns'
+import { es } from 'date-fns/locale'
+import { FiltersPopover } from './filters-popover'
+import type { Person, Project, AssignmentWithRelations } from '@/lib/supabase'
+import { toUiAllocation } from '@/lib/assignments'
 
 interface ResourceTimelineProps {
   people: Person[]
@@ -45,16 +46,16 @@ function stringToColor(str: string) {
 
   // Resource Guru inspired color palette
   const colors = [
-    "#4F46E5", // indigo
-    "#059669", // emerald
-    "#DC2626", // red
-    "#7C3AED", // violet
-    "#DB2777", // pink
-    "#0891B2", // cyan
-    "#CA8A04", // yellow
-    "#EA580C", // orange
-    "#16A34A", // green
-    "#9333EA", // purple
+    '#4F46E5', // indigo
+    '#059669', // emerald
+    '#DC2626', // red
+    '#7C3AED', // violet
+    '#DB2777', // pink
+    '#0891B2', // cyan
+    '#CA8A04', // yellow
+    '#EA580C', // orange
+    '#16A34A', // green
+    '#9333EA', // purple
   ]
 
   return colors[Math.abs(hash) % colors.length]
@@ -97,9 +98,9 @@ export function ResourceTimeline({
       setScrollLeft(scrollContainer.scrollLeft)
     }
 
-    scrollContainer.addEventListener("scroll", handleScrollUpdate)
+    scrollContainer.addEventListener('scroll', handleScrollUpdate)
     return () => {
-      scrollContainer.removeEventListener("scroll", handleScrollUpdate)
+      scrollContainer.removeEventListener('scroll', handleScrollUpdate)
     }
   }, [])
 
@@ -112,8 +113,8 @@ export function ResourceTimeline({
   }, [visibleDateRange])
 
   // Get active people and projects
-  const activePeople = people.filter((p) => {
-    if (p.status !== "Active") return false
+  const activePeople = people.filter(p => {
+    if (p.status !== 'Active') return false
     if (filters?.personProfile && p.profile !== filters.personProfile) return false
     return true
   })
@@ -133,7 +134,7 @@ export function ResourceTimeline({
       if (scrollLeft < 300 && scrollLeft < lastScrollPosition.current) {
         isScrollingRef.current = true
         const newStart = subMonths(visibleDateRange.start, 1)
-        setVisibleDateRange((prev) => ({ ...prev, start: newStart }))
+        setVisibleDateRange(prev => ({ ...prev, start: newStart }))
 
         // Maintain scroll position when adding content to the left
         setTimeout(() => {
@@ -146,7 +147,7 @@ export function ResourceTimeline({
       // If we're near the right edge, add a month to the end
       if (scrollRight < 300 && scrollLeft > lastScrollPosition.current) {
         isScrollingRef.current = true
-        setVisibleDateRange((prev) => ({ ...prev, end: addMonths(prev.end, 1) }))
+        setVisibleDateRange(prev => ({ ...prev, end: addMonths(prev.end, 1) }))
         setTimeout(() => {
           isScrollingRef.current = false
         }, 10)
@@ -155,9 +156,9 @@ export function ResourceTimeline({
       lastScrollPosition.current = scrollLeft
     }
 
-    scrollContainer.addEventListener("scroll", handleScroll)
+    scrollContainer.addEventListener('scroll', handleScroll)
     return () => {
-      scrollContainer.removeEventListener("scroll", handleScroll)
+      scrollContainer.removeEventListener('scroll', handleScroll)
     }
   }, [visibleDateRange, DAY_WIDTH])
 
@@ -180,13 +181,13 @@ export function ResourceTimeline({
 
     scrollContainer.scrollTo({
       left: Math.max(0, scrollPosition),
-      behavior: "smooth",
+      behavior: 'smooth',
     })
   }
 
   // Get assignments for a person within the visible date range
   const getPersonAssignments = (personId: string) => {
-    return assignments.filter((assignment) => {
+    return assignments.filter(assignment => {
       const startDate = new Date(assignment.start_date)
       const endDate = new Date(assignment.end_date)
       return (
@@ -205,7 +206,8 @@ export function ResourceTimeline({
 
     // Clamp dates to visible range boundaries
     const clampedStart = startDate < visibleStart ? visibleStart : startDate
-    const clampedEnd = endDate > endOfMonth(visibleDateRange.end) ? endOfMonth(visibleDateRange.end) : endDate
+    const clampedEnd =
+      endDate > endOfMonth(visibleDateRange.end) ? endOfMonth(visibleDateRange.end) : endDate
 
     const startDayIndex = differenceInDays(clampedStart, visibleStart)
     const duration = differenceInDays(clampedEnd, clampedStart) + 1
@@ -226,7 +228,7 @@ export function ResourceTimeline({
     let currentMonth: Date | null = null
     let currentDays: Date[] = []
 
-    days.forEach((day) => {
+    days.forEach(day => {
       if (!currentMonth || !isSameMonth(day, currentMonth)) {
         if (currentMonth && currentDays.length) {
           groups.push({ month: currentMonth, days: [...currentDays] })
@@ -291,8 +293,8 @@ export function ResourceTimeline({
           ref={scrollContainerRef}
           className="absolute inset-0 overflow-auto"
           style={{
-            overflowX: "auto",
-            overflowY: "auto",
+            overflowX: 'auto',
+            overflowY: 'auto',
           }}
         >
           {/* Timeline grid container */}
@@ -307,7 +309,9 @@ export function ResourceTimeline({
                 className="sticky left-0 z-30 bg-gray-50 border-r border-gray-200 flex items-center px-4"
                 style={{ width: `${SIDEBAR_WIDTH}px` }}
               >
-                <div className="font-medium text-gray-700 text-sm uppercase tracking-wide">Miembro del equipo</div>
+                <div className="font-medium text-gray-700 text-sm uppercase tracking-wide">
+                  Miembro del equipo
+                </div>
               </div>
 
               {/* Header timeline section */}
@@ -320,7 +324,7 @@ export function ResourceTimeline({
                       className="flex-shrink-0 bg-gray-50/80 border-r border-gray-200 px-2 text-xs font-medium text-gray-700 flex items-center"
                       style={{ width: `${group.days.length * DAY_WIDTH}px` }}
                     >
-                      {format(group.month, "MMMM yyyy", { locale: es })}
+                      {format(group.month, 'MMMM yyyy', { locale: es })}
                     </div>
                   ))}
                 </div>
@@ -332,16 +336,20 @@ export function ResourceTimeline({
                       key={i}
                       className={`
                   flex flex-col items-center justify-center text-sm border-r border-gray-100
-                  ${isWeekend(day) ? "bg-gray-100/70" : "bg-white"}
-                  ${isSameDay(day, today) ? "bg-blue-50 border-blue-200" : ""}
+                  ${isWeekend(day) ? 'bg-gray-100/70' : 'bg-white'}
+                  ${isSameDay(day, today) ? 'bg-blue-50 border-blue-200' : ''}
                 `}
                       style={{ width: `${DAY_WIDTH}px`, height: `${HEADER_HEIGHT - 24}px` }}
                     >
-                      <div className={`font-medium ${isSameDay(day, today) ? "text-blue-600" : "text-gray-900"}`}>
-                        {format(day, "dd")}
+                      <div
+                        className={`font-medium ${isSameDay(day, today) ? 'text-blue-600' : 'text-gray-900'}`}
+                      >
+                        {format(day, 'dd')}
                       </div>
-                      <div className={`text-xs ${isSameDay(day, today) ? "text-blue-500" : "text-gray-400"}`}>
-                        {format(day, "EEE", { locale: es })}
+                      <div
+                        className={`text-xs ${isSameDay(day, today) ? 'text-blue-500' : 'text-gray-400'}`}
+                      >
+                        {format(day, 'EEE', { locale: es })}
                       </div>
                     </div>
                   ))}
@@ -354,12 +362,15 @@ export function ResourceTimeline({
               {activePeople.map((person, personIndex) => {
                 const personAssignments = getPersonAssignments(person.id)
 
-                const renderAssignmentLabel = (project: Project, assignment: AssignmentWithRelations) => (
+                const renderAssignmentLabel = (
+                  project: Project,
+                  assignment: AssignmentWithRelations
+                ) => (
                   <div className="px-3 py-2 text-white font-medium truncate h-full flex items-center text-sm">
                     <span className="truncate">{project.name}</span>
-                    {assignment.allocation < 100 && (
+                    {assignment.allocation < 1 && (
                       <span className="ml-2 bg-black/30 text-white text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                        {assignment.allocation}%
+                        {toUiAllocation(assignment.allocation)}%
                       </span>
                     )}
                   </div>
@@ -370,7 +381,7 @@ export function ResourceTimeline({
                     key={person.id}
                     className={`
           flex border-b border-gray-100 hover:bg-gray-50/30 transition-colors
-          ${personIndex % 2 === 0 ? "bg-white" : "bg-gray-50/20"}
+          ${personIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50/20'}
         `}
                     style={{ height: `${ROW_HEIGHT}px` }}
                   >
@@ -383,9 +394,9 @@ export function ResourceTimeline({
                         <Avatar className="h-10 w-10">
                           <AvatarFallback className="text-sm bg-gray-100 text-gray-600">
                             {person.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
+                              .split(' ')
+                              .map(n => n[0])
+                              .join('')
                               .slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
@@ -405,8 +416,8 @@ export function ResourceTimeline({
                           key={i}
                           className={`
                 absolute top-0 bottom-0 border-r border-gray-50
-                ${isWeekend(day) ? "bg-gray-50/50" : ""}
-                ${isSameDay(day, today) ? "bg-blue-50/30" : ""}
+                ${isWeekend(day) ? 'bg-gray-50/50' : ''}
+                ${isSameDay(day, today) ? 'bg-blue-50/30' : ''}
               `}
                           style={{
                             left: `${i * DAY_WIDTH}px`,
@@ -417,7 +428,7 @@ export function ResourceTimeline({
 
                       {/* Assignment bars */}
                       {personAssignments.map((assignment, idx) => {
-                        const project = projects.find((p) => p.id === assignment.project_id)
+                        const project = projects.find(p => p.id === assignment.project_id)
                         if (!project) return null
 
                         const dimensions = calculateBarDimensions(assignment)
@@ -425,7 +436,9 @@ export function ResourceTimeline({
 
                         const totalAssignments = personAssignments.length
                         const assignmentHeight = Math.min(ROW_HEIGHT * 0.7, 36)
-                        const verticalGap = (ROW_HEIGHT - assignmentHeight * totalAssignments) / (totalAssignments + 1)
+                        const verticalGap =
+                          (ROW_HEIGHT - assignmentHeight * totalAssignments) /
+                          (totalAssignments + 1)
                         const top = verticalGap + idx * (assignmentHeight + verticalGap)
 
                         // Calculate sticky behavior
@@ -450,11 +463,11 @@ export function ResourceTimeline({
                                   }}
                                 >
                                   <div
-                                    className={`${isSticky ? "sticky" : ""}`}
+                                    className={`${isSticky ? 'sticky' : ''}`}
                                     style={{
                                       left: `${SIDEBAR_WIDTH}px`,
                                       maxWidth: `${labelMaxWidth}px`,
-                                      background: isSticky ? "inherit" : "none",
+                                      background: isSticky ? 'inherit' : 'none',
                                     }}
                                   >
                                     {renderAssignmentLabel(project, assignment)}
@@ -462,18 +475,31 @@ export function ResourceTimeline({
                                 </div>
                               </Link>
                             </TooltipTrigger>
-                            <TooltipContent side="top" className="bg-gray-900 text-white border-gray-700 p-3 max-w-xs">
+                            <TooltipContent
+                              side="top"
+                              className="bg-gray-900 text-white border-gray-700 p-3 max-w-xs"
+                            >
                               <div className="space-y-2">
                                 <div className="flex items-center space-x-2">
-                                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: bgColor }}></div>
+                                  <div
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: bgColor }}
+                                  ></div>
                                   <p className="font-medium">{project.name}</p>
                                 </div>
                                 <p className="text-sm">
-                                  {format(dimensions.startDate, "dd MMM")} - {format(dimensions.endDate, "dd MMM yyyy")}
+                                  {format(dimensions.startDate, 'dd MMM')} -{' '}
+                                  {format(dimensions.endDate, 'dd MMM yyyy')}
                                 </p>
-                                <p className="text-sm">{assignment.allocation}% asignación</p>
-                                {assignment.assigned_role && <p className="text-sm">Rol: {assignment.assigned_role}</p>}
-                                {project.description && <p className="text-xs opacity-75">{project.description}</p>}
+                                <p className="text-sm">
+                                  {Math.round(assignment.allocation * 100)}% asignación
+                                </p>
+                                {assignment.assigned_role && (
+                                  <p className="text-sm">Rol: {assignment.assigned_role}</p>
+                                )}
+                                {project.description && (
+                                  <p className="text-xs opacity-75">{project.description}</p>
+                                )}
                               </div>
                             </TooltipContent>
                           </Tooltip>
@@ -481,7 +507,7 @@ export function ResourceTimeline({
                       })}
 
                       {/* Today marker */}
-                      {days.some((day) => isSameDay(day, today)) && (
+                      {days.some(day => isSameDay(day, today)) && (
                         <div
                           className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-10 pointer-events-none opacity-70"
                           style={{
@@ -497,7 +523,9 @@ export function ResourceTimeline({
               {activePeople.length === 0 && (
                 <div className="p-12 text-center text-gray-500">
                   <div className="text-lg font-medium mb-2">No hay miembros activos del equipo</div>
-                  <div className="text-sm">Agrega personas con estado "Activo" para ver sus asignaciones</div>
+                  <div className="text-sm">
+                    Agrega personas con estado "Activo" para ver sus asignaciones
+                  </div>
                 </div>
               )}
             </TooltipProvider>

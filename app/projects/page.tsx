@@ -1,23 +1,29 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Plus, Search, Edit, Trash2, Eye } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { TableResource } from "@/components/ui/table-resource"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useProjects } from "@/hooks/use-data"
-import { toast } from "sonner"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { projectColumns } from "@/constants/resource-columns/projectColumns"
-import type { ResourceAction, ResourceColumn } from "@/types"
-import type { Project } from "@/lib/supabase"
+import { useState } from 'react'
+import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { TableResource } from '@/components/ui/table-resource'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useProjects } from '@/hooks/use-data'
+import { toast } from 'sonner'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { projectColumns } from '@/constants/resource-columns/projectColumns'
+import type { ResourceAction, ResourceColumn } from '@/types'
+import type { Project } from '@/lib/supabase'
 
 export default function ProjectsPage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
   const { projects, loading, error, deleteProject } = useProjects()
   const router = useRouter()
 
@@ -42,44 +48,44 @@ export default function ProjectsPage() {
     )
   }
 
-  const filteredProjects = projects.filter((project) => {
+  const filteredProjects = projects.filter(project => {
     const matchesSearch =
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesStatus = statusFilter === "all" || project.status === statusFilter
+    const matchesStatus = statusFilter === 'all' || project.status === statusFilter
     return matchesSearch && matchesStatus
   })
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar este proyecto?")) {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este proyecto?')) {
       try {
         await deleteProject(id)
-        toast.success("Proyecto eliminado correctamente")
+        toast.success('Proyecto eliminado correctamente')
       } catch (error) {
-        toast.error("Error al eliminar el proyecto")
-        console.error("Error deleting project:", error)
+        toast.error('Error al eliminar el proyecto')
+        console.error('Error deleting project:', error)
       }
     }
   }
 
   const actions: ResourceAction[] = [
     {
-      label: "Ver",
-      resourceName: "projects",
+      label: 'Ver',
+      resourceName: 'projects',
       icon: Eye,
-      path: (id) => `projects/${id}/show`,
+      path: id => `projects/${id}/show`,
     },
     {
-      label: "Editar",
-      resourceName: "projects",
+      label: 'Editar',
+      resourceName: 'projects',
       icon: Edit,
-      path: (id) => `projects/${id}/edit`,
+      path: id => `projects/${id}/edit`,
     },
     {
-      label: "Eliminar",
-      resourceName: "projects",
+      label: 'Eliminar',
+      resourceName: 'projects',
       icon: Trash2,
-      onClick: (id) => handleDelete(id),
+      onClick: id => handleDelete(id),
     },
   ]
 
@@ -106,7 +112,7 @@ export default function ProjectsPage() {
             <Input
               placeholder="Buscar por nombre o descripción..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={e => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>

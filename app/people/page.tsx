@@ -1,22 +1,40 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Plus, Search, MoreHorizontal, Edit, Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { usePeople } from "@/hooks/use-data"
-import { toast } from "sonner"
-import Link from "next/link"
+import { useState } from 'react'
+import { Plus, Search, MoreHorizontal, Edit, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { usePeople } from '@/hooks/use-data'
+import { toast } from 'sonner'
+import Link from 'next/link'
 
 export default function PeoplePage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("Active")
-  const [typeFilter, setTypeFilter] = useState("all")
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('Active')
+  const [typeFilter, setTypeFilter] = useState('all')
 
   const { people, loading, error, deletePerson } = usePeople()
 
@@ -41,40 +59,40 @@ export default function PeoplePage() {
     )
   }
 
-  const filteredPeople = people.filter((person) => {
+  const filteredPeople = people.filter(person => {
     const matchesSearch =
       person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       person.profile.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || person.status === statusFilter
-    const matchesType = typeFilter === "all" || person.type === typeFilter
+    const matchesStatus = statusFilter === 'all' || person.status === statusFilter
+    const matchesType = typeFilter === 'all' || person.type === typeFilter
 
     return matchesSearch && matchesStatus && matchesType
   })
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      Active: "bg-green-100 text-green-800",
-      Paused: "bg-yellow-100 text-yellow-800",
-      Terminated: "bg-red-100 text-red-800",
+      Active: 'bg-green-100 text-green-800',
+      Paused: 'bg-yellow-100 text-yellow-800',
+      Terminated: 'bg-red-100 text-red-800',
     }
-    return variants[status as keyof typeof variants] || "bg-gray-100 text-gray-800"
+    return variants[status as keyof typeof variants] || 'bg-gray-100 text-gray-800'
   }
 
   const getTypeBadge = (type: string) => {
     const variants = {
-      Internal: "bg-blue-100 text-blue-800",
-      External: "bg-purple-100 text-purple-800",
+      Internal: 'bg-blue-100 text-blue-800',
+      External: 'bg-purple-100 text-purple-800',
     }
-    return variants[type as keyof typeof variants] || "bg-gray-100 text-gray-800"
+    return variants[type as keyof typeof variants] || 'bg-gray-100 text-gray-800'
   }
 
   const handleDelete = async (id: string, name: string) => {
     if (confirm(`¿Estás seguro de que quieres eliminar a ${name}?`)) {
       try {
         await deletePerson(id)
-        toast.success("Persona eliminada correctamente")
+        toast.success('Persona eliminada correctamente')
       } catch (error) {
-        toast.error("Error al eliminar la persona")
+        toast.error('Error al eliminar la persona')
       }
     }
   }
@@ -104,7 +122,7 @@ export default function PeoplePage() {
                 <Input
                   placeholder="Buscar por nombre o perfil..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
@@ -153,34 +171,34 @@ export default function PeoplePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPeople.map((person) => (
+              {filteredPeople.map(person => (
                 <TableRow key={person.id}>
                   <TableCell className="font-medium">{person.name}</TableCell>
                   <TableCell>{person.profile}</TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      <div>{new Date(person.start_date).toLocaleDateString("es-ES")}</div>
+                      <div>{new Date(person.start_date).toLocaleDateString('es-ES')}</div>
                       {person.end_date && (
                         <div className="text-muted-foreground">
-                          hasta {new Date(person.end_date).toLocaleDateString("es-ES")}
+                          hasta {new Date(person.end_date).toLocaleDateString('es-ES')}
                         </div>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge className={getStatusBadge(person.status)}>
-                      {person.status === "Active"
-                        ? "Activo"
-                        : person.status === "Paused"
-                          ? "Pausado"
-                          : person.status === "Terminated"
-                            ? "Terminado"
+                      {person.status === 'Active'
+                        ? 'Activo'
+                        : person.status === 'Paused'
+                          ? 'Pausado'
+                          : person.status === 'Terminated'
+                            ? 'Terminado'
                             : person.status}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge className={getTypeBadge(person.type)}>
-                      {person.type === "Internal" ? "Interno" : "Externo"}
+                      {person.type === 'Internal' ? 'Interno' : 'Externo'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -197,7 +215,10 @@ export default function PeoplePage() {
                             Editar
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(person.id, person.name)}>
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => handleDelete(person.id, person.name)}
+                        >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Eliminar
                         </DropdownMenuItem>
