@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CheckCircle, XCircle, RefreshCw, Database } from 'lucide-react'
-import { testSupabaseConnection, isSupabaseConfigured } from '@/lib/supabase'
+import { testSupabaseConnection } from '@/lib/supabase/connection'
+import { isSupabaseConfigured } from '@/lib/supabase/client'
 
 interface ConnectionStatus {
   configured: boolean

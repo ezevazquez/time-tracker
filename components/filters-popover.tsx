@@ -18,7 +18,8 @@ import { CalendarIcon, Filter, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/utils/classnames'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import type { Person, Project } from '@/lib/supabase'
+import type { Person } from '@/types/people'
+import type { Project } from '@/types/project'
 
 interface FiltersPopoverProps {
   people: Person[]

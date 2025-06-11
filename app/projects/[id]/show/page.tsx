@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { toast } from 'sonner'
+
 import {
   ArrowLeft,
   Calendar,
@@ -12,48 +17,32 @@ import {
   Trash2,
   AlertCircle,
 } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { useProjects } from '@/hooks/use-data'
-import type { ProjectWithClient } from '@/lib/supabase'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
-import Link from 'next/link'
-import { toast } from 'sonner'
-import { projectsService } from '@/lib/database'
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'In Progress':
-      return 'bg-blue-100 text-blue-800 border-blue-200'
-    case 'Finished':
-      return 'bg-green-100 text-green-800 border-green-200'
-    case 'On Hold':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-    case 'Not Started':
-      return 'bg-gray-100 text-gray-800 border-gray-200'
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200'
+import { useProjects } from '@/hooks/use-projects'
+import { projectsService } from '@/lib/services/projects.service'
+import type { ProjectWithClient } from '@/types/project'
+import { PROJECT_STATUS_OPTIONS } from '@/constants/projects'
+
+
+const getProjectStatusLabel = (status: string) =>
+  PROJECT_STATUS_OPTIONS.find(opt => opt.value === status)?.label || status
+
+const getProjectStatusBadgeClass = (status: string) => {
+  const variants: Record<string, string> = {
+    'In Progress': 'bg-blue-100 text-blue-800 border-blue-200',
+    Finished: 'bg-green-100 text-green-800 border-green-200',
+    'On Hold': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    'Not Started': 'bg-gray-100 text-gray-800 border-gray-200',
   }
+  return variants[status] || 'bg-gray-100 text-gray-800 border-gray-200'
 }
 
-const getStatusText = (status: string) => {
-  switch (status) {
-    case 'In Progress':
-      return 'En Progreso'
-    case 'Finished':
-      return 'Finalizado'
-    case 'On Hold':
-      return 'En Pausa'
-    case 'Not Started':
-      return 'No Iniciado'
-    default:
-      return status
-  }
-}
 
 export default function ProjectShowPage() {
   const { deleteProject } = useProjects()
@@ -253,9 +242,10 @@ export default function ProjectShowPage() {
 
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium text-sm text-muted-foreground">Estado:</h3>
-                  <Badge className={getStatusColor(project.status)}>
-                    {getStatusText(project.status)}
+                  <Badge className={getProjectStatusBadgeClass(project.status)}>
+                    {getProjectStatusLabel(project.status)}
                   </Badge>
+
                 </div>
               </CardContent>
             </Card>
@@ -300,7 +290,7 @@ export default function ProjectShowPage() {
                       {Math.ceil(
                         (new Date(project.end_date).getTime() -
                           new Date(project.start_date).getTime()) /
-                          (1000 * 60 * 60 * 24)
+                        (1000 * 60 * 60 * 24)
                       )}{' '}
                       días
                     </p>
@@ -345,15 +335,6 @@ export default function ProjectShowPage() {
                       <h3 className="font-medium text-sm text-muted-foreground mb-1">Nombre</h3>
                       <p className="font-semibold">{project.clients.name}</p>
                     </div>
-
-                    {project.clients.description && (
-                      <div>
-                        <h3 className="font-medium text-sm text-muted-foreground mb-1">
-                          Descripción
-                        </h3>
-                        <p className="text-sm">{project.clients.description}</p>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <div className="text-center py-4 text-muted-foreground">
@@ -391,8 +372,8 @@ export default function ProjectShowPage() {
 
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Estado actual</span>
-                  <Badge className={getStatusColor(project.status)} variant="outline">
-                    {getStatusText(project.status)}
+                  <Badge className={getProjectStatusBadgeClass(project.status)} variant="outline">
+                    {getProjectStatusLabel(project.status)}
                   </Badge>
                 </div>
               </CardContent>

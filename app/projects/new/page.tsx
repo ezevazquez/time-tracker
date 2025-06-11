@@ -1,36 +1,40 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Save, AlertTriangle } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { toast } from 'sonner'
+
+import {
+  ArrowLeft,
+  Save,
+  AlertTriangle,
+  CalendarIcon,
+} from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { CalendarIcon } from 'lucide-react'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
-import { cn } from '@/utils/classnames'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useProjects, clientsService } from '@/hooks/use-data'
-import { useToast } from '@/hooks/use-toast'
-import type { Client } from '@/lib/supabase'
+
+import { cn } from '@/utils/classnames'
+import { useProjects } from '@/hooks/use-projects'
+import { clientsService } from '@/lib/services/clients.service'
+import { PROJECT_STATUS_OPTIONS } from '@/constants/projects'
+
+import type { Client } from '@/types/client'
+
 
 export default function NewProjectPage() {
   const router = useRouter()
   const { createProject } = useProjects()
-  const { toast } = useToast()
 
   const [clients, setClients] = useState<Client[]>([])
   const [loadingClients, setLoadingClients] = useState(true)
@@ -82,18 +86,11 @@ export default function NewProjectPage() {
         client_id: formData.client_id || null,
       })
 
-      toast({
-        title: 'Proyecto creado',
-        description: 'El proyecto se ha creado exitosamente.',
-      })
+      toast.success('El proyecto se ha creado exitosamente.')
 
       router.push('/projects')
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Error al crear el proyecto',
-        variant: 'destructive',
-      })
+      toast.error(error instanceof Error ? error.message : 'Error al crear el proyecto')
     } finally {
       setIsSubmitting(false)
     }
@@ -113,7 +110,7 @@ export default function NewProjectPage() {
     setWarnings(newWarnings)
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     checkForWarnings()
   }, [formData])
 
@@ -197,10 +194,11 @@ export default function NewProjectPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="In Progress">En Progreso</SelectItem>
-                      <SelectItem value="Not Started">No Iniciado</SelectItem>
-                      <SelectItem value="On Hold">En Pausa</SelectItem>
-                      <SelectItem value="Finished">Finalizado</SelectItem>
+                      {PROJECT_STATUS_OPTIONS.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -292,13 +290,9 @@ export default function NewProjectPage() {
                       )}
                       <div>
                         <strong>Estado:</strong>{' '}
-                        {formData.status === 'In Progress'
-                          ? 'En Progreso'
-                          : formData.status === 'Not Started'
-                            ? 'No Iniciado'
-                            : formData.status === 'On Hold'
-                              ? 'En Pausa'
-                              : 'Finalizado'}
+                        {PROJECT_STATUS_OPTIONS.find(opt => opt.value === formData.status)?.label || formData.status}
+
+
                       </div>
                       {formData.start_date && formData.end_date && (
                         <div>

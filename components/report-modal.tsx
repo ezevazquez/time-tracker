@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { DateRange } from 'react-day-picker'
 import {
   Dialog,
   DialogContent,

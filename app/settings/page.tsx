@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ConnectionStatus } from '@/components/connection-status'
 import { Badge } from '@/components/ui/badge'
 import { Database, Wifi, Settings } from 'lucide-react'
-import { isSupabaseConfigured } from '@/lib/supabase'
+import { isSupabaseConfigured } from '@/lib/supabase/client'
 
 export default function SettingsPage() {
   const supabaseConfigured = isSupabaseConfigured()

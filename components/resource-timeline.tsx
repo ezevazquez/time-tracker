@@ -20,7 +20,9 @@ import {
 } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { FiltersPopover } from './filters-popover'
-import type { Person, Project, AssignmentWithRelations } from '@/lib/supabase'
+import type { Person } from '@/types/people'
+import type { Project } from '@/types/project'
+import type { AssignmentWithRelations } from '@/types/assignment'
 import { toUiAllocation } from '@/lib/assignments'
 
 interface ResourceTimelineProps {
@@ -114,7 +116,7 @@ export function ResourceTimeline({
 
   // Get active people and projects
   const activePeople = people.filter(p => {
-    if (p.status !== 'Active') return false
+    if (p.status !== 'Activo') return false
     if (filters?.personProfile && p.profile !== filters.personProfile) return false
     return true
   })

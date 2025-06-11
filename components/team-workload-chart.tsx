@@ -1,8 +1,9 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import type { Person, AssignmentWithRelations } from '@/lib/supabase'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import type { Person } from '@/types/people'
+import type { AssignmentWithRelations } from '@/types/assignment'
 
 interface TeamWorkloadChartProps {
   people: Person[]
@@ -14,7 +15,7 @@ export function TeamWorkloadChart({ people, assignments }: TeamWorkloadChartProp
 
   // Calculate current workload for each active person
   const workloadData = people
-    .filter(person => person.status === 'Active')
+    .filter(person => person.status === 'Activo')
     .map(person => {
       const currentAssignments = assignments.filter(assignment => {
         const start = new Date(assignment.start_date)
@@ -80,9 +81,13 @@ export function TeamWorkloadChart({ people, assignments }: TeamWorkloadChartProp
               <Tooltip content={<CustomTooltip />} />
               <Bar
                 dataKey="workload"
-                fill={entry => (entry?.isOverallocated ? '#EF4444' : '#10B981')}
+                fill="#10B981"
                 radius={[4, 4, 0, 0]}
-              />
+              >
+                {workloadData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.isOverallocated ? '#EF4444' : '#10B981'} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>

@@ -6,7 +6,9 @@ import { Badge } from '@/components/ui/badge'
 import { Calendar } from 'lucide-react'
 import { format, isAfter, isBefore, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
-import type { Person, Project, AssignmentWithRelations } from '@/lib/supabase'
+import type { Person } from '@/types/people'
+import type { Project } from '@/types/project'
+import type { AssignmentWithRelations } from '@/types/assignment'
 
 interface RecentActivityProps {
   assignments: AssignmentWithRelations[]

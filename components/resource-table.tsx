@@ -15,7 +15,9 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { FiltersPopover } from './filters-popover'
-import type { Person, Project, AssignmentWithRelations } from '@/lib/supabase'
+import type { Person } from '@/types/people'
+import type { Project } from '@/types/project'
+import type { AssignmentWithRelations } from '@/types/assignment'
 import { toUiAllocation } from '@/lib/assignments'
 
 interface ResourceTableProps {
