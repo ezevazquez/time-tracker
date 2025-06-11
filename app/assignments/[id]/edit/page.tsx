@@ -18,6 +18,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
 import { usePeople, useProjects, useAssignments } from "@/hooks/use-data"
 import type { Assignment, Person, Project } from "@/lib/supabase"
+import { getTotalAllocationForPersonInRange } from "@/lib/database"
+import { useToast } from "@/hooks/use-toast"
+import { toDbAllocation, toUiAllocation, ALLOCATION_VALUES } from "@/lib/assignments"
+
 
 const formSchema = z
   .object({
@@ -46,6 +50,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
   const { people } = usePeople()
   const { projects } = useProjects()
   const { assignments, updateAssignment } = useAssignments()
+  const { toast } = useToast()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -74,7 +79,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
           project_id: foundAssignment.project_id,
           start_date: new Date(foundAssignment.start_date),
           end_date: new Date(foundAssignment.end_date),
-          allocation: foundAssignment.allocation,
+          allocation: toUiAllocation(foundAssignment.allocation),
           assigned_role: foundAssignment.assigned_role || "",
         })
       } catch (err) {
@@ -101,11 +106,28 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
       const updatedAssignment = {
         person_id: values.person_id,
         project_id: values.project_id,
-        start_date: values.start_date.toISOString().split("T")[0],
-        end_date: values.end_date.toISOString().split("T")[0],
-        allocation: values.allocation / 100, // Convert from percentage to decimal
+        start_date: format(values.start_date, "yyyy-MM-dd"),
+        end_date: format(values.end_date, "yyyy-MM-dd"),
+        allocation: toDbAllocation(values.allocation),
         assigned_role: values.assigned_role || null,
         updated_at: new Date().toISOString(),
+      }
+      const { projectedMax } = await getTotalAllocationForPersonInRange(
+        values.person_id,
+        format(values.start_date, "yyyy-MM-dd"),
+        format(values.end_date, "yyyy-MM-dd"),
+        assignment.id
+      );
+
+
+      const projected = projectedMax + values.allocation / 100;
+
+      if (projected > 1) {
+        toast({
+          title: "Advertencia",
+          description: `Esta persona alcanzará el ${Math.round(projected * 100)}% de asignación.`,
+          variant: "default"
+        });
       }
 
       await updateAssignment(assignment.id, updatedAssignment)
@@ -294,11 +316,13 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                     <SelectValue placeholder="Seleccionar asignación" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="25">25%</SelectItem>
-                    <SelectItem value="50">50%</SelectItem>
-                    <SelectItem value="75">75%</SelectItem>
-                    <SelectItem value="100">100%</SelectItem>
+                    {ALLOCATION_VALUES.map((val) => (
+                      <SelectItem key={val} value={(val * 100).toString()}>
+                        {val * 100}%
+                      </SelectItem>
+                    ))}
                   </SelectContent>
+
                 </Select>
                 {form.formState.errors.allocation && (
                   <p className="text-sm text-red-500">{form.formState.errors.allocation.message}</p>

@@ -110,7 +110,7 @@ export function ResourceTable({
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
                         <Badge variant={isOverallocated ? "destructive" : "secondary"} className="text-xs">
-                          {a.allocation}%
+                          {a.allocation * 100}%
                         </Badge>
                         {isOverallocated && <AlertTriangle className="h-4 w-4 text-destructive" />}
                       </div>

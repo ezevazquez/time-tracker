@@ -359,7 +359,7 @@ export function ResourceTimeline({
                     <span className="truncate">{project.name}</span>
                     {assignment.allocation < 100 && (
                       <span className="ml-2 bg-black/30 text-white text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                        {assignment.allocation}%
+                        {Math.round(assignment.allocation * 100)}%
                       </span>
                     )}
                   </div>
@@ -471,7 +471,7 @@ export function ResourceTimeline({
                                 <p className="text-sm">
                                   {format(dimensions.startDate, "dd MMM")} - {format(dimensions.endDate, "dd MMM yyyy")}
                                 </p>
-                                <p className="text-sm">{assignment.allocation}% asignación</p>
+                                <p className="text-sm">{Math.round(assignment.allocation * 100)}% asignación</p>
                                 {assignment.assigned_role && <p className="text-sm">Rol: {assignment.assigned_role}</p>}
                                 {project.description && <p className="text-xs opacity-75">{project.description}</p>}
                               </div>

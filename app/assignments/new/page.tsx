@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { CalendarIcon } from "lucide-react"
-import { format } from "date-fns"
+import { eachDayOfInterval, format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -18,6 +18,9 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { usePeople, useProjects, useAssignments } from "@/hooks/use-data"
 import { useToast } from "@/hooks/use-toast"
+import { getTotalAllocationForPersonInRange } from "@/lib/database"
+import { toDbAllocation, ALLOCATION_VALUES } from "@/lib/assignments"
+
 
 export default function NewAssignmentPage() {
   const router = useRouter()
@@ -48,12 +51,38 @@ export default function NewAssignmentPage() {
 
     try {
       setIsSubmitting(true)
+
+      const result = await getTotalAllocationForPersonInRange(
+        formData.person_id,
+        format(formData.start_date, "yyyy-MM-dd"),
+        format(formData.end_date, "yyyy-MM-dd")
+      )
+
+      const days = eachDayOfInterval({
+        start: formData.start_date,
+        end: formData.end_date,
+      })
+
+      for (const day of days) {
+        const key = format(day, "yyyy-MM-dd")
+        const projected = (result.allocationByDate[key] || 0) + formData.allocation / 100
+        if (projected > 1) {
+          toast({
+            title: "Advertencia de sobreasignación",
+            description: `El ${format(day, "dd/MM/yyyy")} supera el 100% (${Math.round(projected * 100)}%)`,
+            variant: "destructive",
+          })
+          break
+        }
+      }
+
+
       await createAssignment({
         person_id: formData.person_id,
         project_id: formData.project_id,
-        start_date: formData.start_date.toISOString().split("T")[0],
-        end_date: formData.end_date.toISOString().split("T")[0],
-        allocation: formData.allocation / 100, // Convert to 0-1 range
+        start_date: format(formData.start_date, "yyyy-MM-dd"),
+        end_date: format(formData.end_date, "yyyy-MM-dd"),
+        allocation: toDbAllocation(formData.allocation),
         assigned_role: formData.assigned_role || null,
       })
 
@@ -282,10 +311,11 @@ export default function NewAssignmentPage() {
                     <SelectValue placeholder="Seleccionar asignación" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="25">25%</SelectItem>
-                    <SelectItem value="50">50%</SelectItem>
-                    <SelectItem value="75">75%</SelectItem>
-                    <SelectItem value="100">100%</SelectItem>
+                    {ALLOCATION_VALUES.map((val) => (
+                      <SelectItem key={val} value={(val * 100).toString()}>
+                        {val * 100}%
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
