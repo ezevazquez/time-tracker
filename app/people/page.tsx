@@ -30,6 +30,9 @@ import {
 import { usePeople } from '@/hooks/use-data'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { getActivePeople } from '@/lib/people'
+import { PERSON_STATUS } from '@/constants/people'
+
 
 export default function PeoplePage() {
   const [searchTerm, setSearchTerm] = useState('')

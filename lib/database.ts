@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
+import type { Person } from '@/types/people'
 import type {
-  Person,
   Project,
   Assignment,
   AssignmentWithRelations,
