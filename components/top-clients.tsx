@@ -1,9 +1,9 @@
-"use client"
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Building2, TrendingUp } from "lucide-react"
-import type { Client, Project } from "@/lib/supabase"
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Building2, TrendingUp } from 'lucide-react'
+import type { Client, Project } from '@/lib/supabase'
 
 interface TopClientsProps {
   clients: Client[]
@@ -13,10 +13,10 @@ interface TopClientsProps {
 export function TopClients({ clients, projects }: TopClientsProps) {
   // Calculate client metrics
   const clientMetrics = clients
-    .map((client) => {
-      const clientProjects = projects.filter((project) => project.client_id === client.id)
-      const activeProjects = clientProjects.filter((project) => project.status === "Active")
-      const completedProjects = clientProjects.filter((project) => project.status === "Completed")
+    .map(client => {
+      const clientProjects = projects.filter(project => project.client_id === client.id)
+      const activeProjects = clientProjects.filter(project => project.status === 'Active')
+      const completedProjects = clientProjects.filter(project => project.status === 'Completed')
 
       return {
         ...client,
@@ -24,10 +24,12 @@ export function TopClients({ clients, projects }: TopClientsProps) {
         activeProjects: activeProjects.length,
         completedProjects: completedProjects.length,
         completionRate:
-          clientProjects.length > 0 ? Math.round((completedProjects.length / clientProjects.length) * 100) : 0,
+          clientProjects.length > 0
+            ? Math.round((completedProjects.length / clientProjects.length) * 100)
+            : 0,
       }
     })
-    .filter((client) => client.totalProjects > 0) // Only show clients with projects
+    .filter(client => client.totalProjects > 0) // Only show clients with projects
     .sort((a, b) => b.totalProjects - a.totalProjects)
     .slice(0, 5)
 
@@ -64,7 +66,7 @@ export function TopClients({ clients, projects }: TopClientsProps) {
 
                 <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-2">
                   <div>
-                    Total: {client.totalProjects} proyecto{client.totalProjects !== 1 ? "s" : ""}
+                    Total: {client.totalProjects} proyecto{client.totalProjects !== 1 ? 's' : ''}
                   </div>
                   <div>Activos: {client.activeProjects}</div>
                   <div>Completados: {client.completedProjects}</div>
@@ -74,7 +76,9 @@ export function TopClients({ clients, projects }: TopClientsProps) {
                   </div>
                 </div>
 
-                {client.contact_email && <p className="text-xs text-gray-500 truncate">{client.contact_email}</p>}
+                {client.contact_email && (
+                  <p className="text-xs text-gray-500 truncate">{client.contact_email}</p>
+                )}
               </div>
             </div>
           ))

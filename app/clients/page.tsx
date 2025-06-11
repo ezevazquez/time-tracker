@@ -1,19 +1,31 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Plus, Search, MoreHorizontal, Edit, Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { useClients } from "@/hooks/use-data"
-import { toast } from "sonner"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useState } from 'react'
+import { Plus, Search, MoreHorizontal, Edit, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { useClients } from '@/hooks/use-data'
+import { toast } from 'sonner'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function ClientsPage() {
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchTerm, setSearchTerm] = useState('')
   const router = useRouter()
   const { clients, loading, error, deleteClient } = useClients()
 
@@ -38,7 +50,7 @@ export default function ClientsPage() {
     )
   }
 
-  const filteredClients = clients.filter((client) => {
+  const filteredClients = clients.filter(client => {
     const matchesSearch =
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (client.description && client.description.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -47,13 +59,13 @@ export default function ClientsPage() {
   })
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar este cliente?")) {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este cliente?')) {
       try {
         await deleteClient(id)
-        toast.success("Cliente eliminado correctamente")
+        toast.success('Cliente eliminado correctamente')
       } catch (error) {
-        toast.error("Error al eliminar el cliente")
-        console.error("Error deleting client:", error)
+        toast.error('Error al eliminar el cliente')
+        console.error('Error deleting client:', error)
       }
     }
   }
@@ -81,7 +93,7 @@ export default function ClientsPage() {
             <Input
               placeholder="Buscar por nombre o descripción..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={e => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
@@ -111,10 +123,10 @@ export default function ClientsPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredClients.map((client) => (
+                filteredClients.map(client => (
                   <TableRow key={client.id}>
                     <TableCell className="font-medium">{client.name}</TableCell>
-                    <TableCell>{client.description || "-"}</TableCell>
+                    <TableCell>{client.description || '-'}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -123,7 +135,9 @@ export default function ClientsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => router.push(`/clients/${client.id}/edit`)}>
+                          <DropdownMenuItem
+                            onClick={() => router.push(`/clients/${client.id}/edit`)}
+                          >
                             <Edit className="h-4 w-4 mr-2" />
                             Editar
                           </DropdownMenuItem>
@@ -146,4 +160,4 @@ export default function ClientsPage() {
       </Card>
     </main>
   )
-} 
+}

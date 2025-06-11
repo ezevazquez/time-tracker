@@ -1,19 +1,19 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { supabase, isSupabaseConfigured } from "@/lib/supabase"
-import { usePeople, useProjects, useAssignments, useClients } from "@/hooks/use-data"
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { usePeople, useProjects, useAssignments, useClients } from '@/hooks/use-data'
 
-import { Card } from "@/components/ui/card"
-import { DashboardHeader } from "@/components/dashboard-header"
-import { StatsOverview } from "@/components/stats-overview"
-import { ProjectStatusChart } from "@/components/project-status-chart"
-import { TeamWorkloadChart } from "@/components/team-workload-chart"
-import { RecentActivity } from "@/components/recent-activity"
-import { UpcomingDeadlines } from "@/components/upcoming-deadlines"
-import { ResourceUtilization } from "@/components/resource-utilization"
-import { TopClients } from "@/components/top-clients"
+import { Card } from '@/components/ui/card'
+import { DashboardHeader } from '@/components/dashboard-header'
+import { StatsOverview } from '@/components/stats-overview'
+import { ProjectStatusChart } from '@/components/project-status-chart'
+import { TeamWorkloadChart } from '@/components/team-workload-chart'
+import { RecentActivity } from '@/components/recent-activity'
+import { UpcomingDeadlines } from '@/components/upcoming-deadlines'
+import { ResourceUtilization } from '@/components/resource-utilization'
+import { TopClients } from '@/components/top-clients'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -38,18 +38,18 @@ export default function Dashboard() {
       const session = sessionData?.session
 
       if (!session || sessionError) {
-        router.push("/login")
+        router.push('/login')
         return
       }
 
       const { data: allowed } = await supabase
-        .from("auth_users")
-        .select("email")
-        .eq("email", session.user.email)
+        .from('auth_users')
+        .select('email')
+        .eq('email', session.user.email)
         .maybeSingle()
 
       if (!allowed) {
-        router.push("/unauthorized")
+        router.push('/unauthorized')
         return
       }
 
@@ -110,7 +110,12 @@ export default function Dashboard() {
         <DashboardHeader />
 
         {/* Stats Overview */}
-        <StatsOverview people={people} projects={projects} assignments={assignments} clients={clients} />
+        <StatsOverview
+          people={people}
+          projects={projects}
+          assignments={assignments}
+          clients={clients}
+        />
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

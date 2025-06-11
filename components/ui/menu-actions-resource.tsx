@@ -1,15 +1,15 @@
-"use client"
+'use client'
 
-import { MoreHorizontal } from "lucide-react"
+import { MoreHorizontal } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
-import { ResourceAction } from "@/types"
-import Link from "next/link"
+} from '@/components/ui/dropdown-menu'
+import { Button } from '@/components/ui/button'
+import { ResourceAction } from '@/types'
+import Link from 'next/link'
 
 interface MenuActionsResourceProps {
   actions: ResourceAction[]
@@ -28,7 +28,7 @@ export function MenuActionsResource({ actions, id }: MenuActionsResourceProps) {
       <DropdownMenuContent align="end">
         {actions.map((action, index) => {
           const Icon = action.icon
-          
+
           if (action.onClick) {
             return (
               <DropdownMenuItem
@@ -41,7 +41,7 @@ export function MenuActionsResource({ actions, id }: MenuActionsResourceProps) {
               </DropdownMenuItem>
             )
           }
-          
+
           if (action.path) {
             return (
               <DropdownMenuItem key={index} asChild>
@@ -52,10 +52,10 @@ export function MenuActionsResource({ actions, id }: MenuActionsResourceProps) {
               </DropdownMenuItem>
             )
           }
-          
+
           return null
         })}
       </DropdownMenuContent>
     </DropdownMenu>
   )
-} 
+}

@@ -1,15 +1,13 @@
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { Plus } from "lucide-react";
-import { Resource } from "@/types";
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { Plus } from 'lucide-react'
+import { Resource } from '@/types'
 interface ButtonCreateResourceProps {
-  resource?: Resource;
+  resource?: Resource
 }
-export const ButtonCreateResource = ({
-  resource,
-}: ButtonCreateResourceProps) => {
+export const ButtonCreateResource = ({ resource }: ButtonCreateResourceProps) => {
   if (!resource) {
-    return null;
+    return null
   }
   return (
     <Button asChild>
@@ -18,5 +16,5 @@ export const ButtonCreateResource = ({
         Crear {resource?.singularLabel}
       </Link>
     </Button>
-  );
-};
+  )
+}

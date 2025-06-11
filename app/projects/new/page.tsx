@@ -1,25 +1,31 @@
-"use client"
+'use client'
 
-import React, { useState, useEffect } from "react"
-import { ArrowLeft, Save, AlertTriangle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon } from "lucide-react"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
-import { cn } from "@/lib/utils"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useProjects, clientsService } from "@/hooks/use-data"
-import { useToast } from "@/hooks/use-toast"
-import type { Client } from "@/lib/supabase"
+import React, { useState, useEffect } from 'react'
+import { ArrowLeft, Save, AlertTriangle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { CalendarIcon } from 'lucide-react'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { cn } from '@/lib/utils'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useProjects, clientsService } from '@/hooks/use-data'
+import { useToast } from '@/hooks/use-toast'
+import type { Client } from '@/lib/supabase'
 
 export default function NewProjectPage() {
   const router = useRouter()
@@ -30,12 +36,12 @@ export default function NewProjectPage() {
   const [loadingClients, setLoadingClients] = useState(true)
 
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    status: "In Progress" as "In Progress" | "Finished" | "On Hold" | "Not Started",
+    name: '',
+    description: '',
+    status: 'In Progress' as 'In Progress' | 'Finished' | 'On Hold' | 'Not Started',
     start_date: undefined as Date | undefined,
     end_date: undefined as Date | undefined,
-    client_id: "" as string | null,
+    client_id: '' as string | null,
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -48,7 +54,7 @@ export default function NewProjectPage() {
         const clientsData = await clientsService.getAll()
         setClients(clientsData)
       } catch (error) {
-        console.error("Error fetching clients:", error)
+        console.error('Error fetching clients:', error)
       } finally {
         setLoadingClients(false)
       }
@@ -61,7 +67,7 @@ export default function NewProjectPage() {
     e.preventDefault()
 
     if (!formData.name.trim()) {
-      setWarnings(["El nombre del proyecto es obligatorio"])
+      setWarnings(['El nombre del proyecto es obligatorio'])
       return
     }
 
@@ -71,22 +77,22 @@ export default function NewProjectPage() {
         name: formData.name.trim(),
         description: formData.description.trim() || null,
         status: formData.status,
-        start_date: formData.start_date?.toISOString().split("T")[0] || null,
-        end_date: formData.end_date?.toISOString().split("T")[0] || null,
+        start_date: formData.start_date?.toISOString().split('T')[0] || null,
+        end_date: formData.end_date?.toISOString().split('T')[0] || null,
         client_id: formData.client_id || null,
       })
 
       toast({
-        title: "Proyecto creado",
-        description: "El proyecto se ha creado exitosamente.",
+        title: 'Proyecto creado',
+        description: 'El proyecto se ha creado exitosamente.',
       })
 
-      router.push("/projects")
+      router.push('/projects')
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Error al crear el proyecto",
-        variant: "destructive",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Error al crear el proyecto',
+        variant: 'destructive',
       })
     } finally {
       setIsSubmitting(false)
@@ -97,11 +103,11 @@ export default function NewProjectPage() {
     const newWarnings: string[] = []
 
     if (!formData.name.trim()) {
-      newWarnings.push("El nombre del proyecto es obligatorio")
+      newWarnings.push('El nombre del proyecto es obligatorio')
     }
 
     if (formData.start_date && formData.end_date && formData.start_date > formData.end_date) {
-      newWarnings.push("La fecha de inicio debe ser anterior a la fecha de fin")
+      newWarnings.push('La fecha de inicio debe ser anterior a la fecha de fin')
     }
 
     setWarnings(newWarnings)
@@ -111,7 +117,7 @@ export default function NewProjectPage() {
     checkForWarnings()
   }, [formData])
 
-  const selectedClient = clients.find((client) => client.id === formData.client_id)
+  const selectedClient = clients.find(client => client.id === formData.client_id)
 
   return (
     <main className="flex-1 container mx-auto px-4 py-6">
@@ -154,7 +160,7 @@ export default function NewProjectPage() {
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Ej: E-commerce Platform"
                   />
                 </div>
@@ -162,15 +168,15 @@ export default function NewProjectPage() {
                 <div className="space-y-2">
                   <Label htmlFor="client">Cliente</Label>
                   <Select
-                    value={formData.client_id || ""}
-                    onValueChange={(value) => setFormData({ ...formData, client_id: value || null })}
+                    value={formData.client_id || ''}
+                    onValueChange={value => setFormData({ ...formData, client_id: value || null })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar cliente" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="no-client">Sin cliente</SelectItem>
-                      {clients.map((client) => (
+                      {clients.map(client => (
                         <SelectItem key={client.id} value={client.id}>
                           {client.name}
                         </SelectItem>
@@ -183,9 +189,9 @@ export default function NewProjectPage() {
                   <Label htmlFor="status">Estado</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value: "In Progress" | "Finished" | "On Hold" | "Not Started") =>
-                      setFormData({ ...formData, status: value })
-                    }
+                    onValueChange={(
+                      value: 'In Progress' | 'Finished' | 'On Hold' | 'Not Started'
+                    ) => setFormData({ ...formData, status: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -206,13 +212,13 @@ export default function NewProjectPage() {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !formData.start_date && "text-muted-foreground",
+                          'w-full justify-start text-left font-normal',
+                          !formData.start_date && 'text-muted-foreground'
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.start_date ? (
-                          format(formData.start_date, "PPP", { locale: es })
+                          format(formData.start_date, 'PPP', { locale: es })
                         ) : (
                           <span>Seleccionar fecha</span>
                         )}
@@ -222,7 +228,7 @@ export default function NewProjectPage() {
                       <Calendar
                         mode="single"
                         selected={formData.start_date}
-                        onSelect={(date) => setFormData({ ...formData, start_date: date })}
+                        onSelect={date => setFormData({ ...formData, start_date: date })}
                         initialFocus
                       />
                     </PopoverContent>
@@ -236,13 +242,13 @@ export default function NewProjectPage() {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !formData.end_date && "text-muted-foreground",
+                          'w-full justify-start text-left font-normal',
+                          !formData.end_date && 'text-muted-foreground'
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.end_date ? (
-                          format(formData.end_date, "PPP", { locale: es })
+                          format(formData.end_date, 'PPP', { locale: es })
                         ) : (
                           <span>Seleccionar fecha</span>
                         )}
@@ -252,7 +258,7 @@ export default function NewProjectPage() {
                       <Calendar
                         mode="single"
                         selected={formData.end_date}
-                        onSelect={(date) => setFormData({ ...formData, end_date: date })}
+                        onSelect={date => setFormData({ ...formData, end_date: date })}
                         initialFocus
                       />
                     </PopoverContent>
@@ -265,7 +271,7 @@ export default function NewProjectPage() {
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={e => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Describe el proyecto..."
                   rows={4}
                 />
@@ -285,19 +291,19 @@ export default function NewProjectPage() {
                         </div>
                       )}
                       <div>
-                        <strong>Estado:</strong>{" "}
-                        {formData.status === "In Progress"
-                          ? "En Progreso"
-                          : formData.status === "Not Started"
-                            ? "No Iniciado"
-                            : formData.status === "On Hold"
-                              ? "En Pausa"
-                              : "Finalizado"}
+                        <strong>Estado:</strong>{' '}
+                        {formData.status === 'In Progress'
+                          ? 'En Progreso'
+                          : formData.status === 'Not Started'
+                            ? 'No Iniciado'
+                            : formData.status === 'On Hold'
+                              ? 'En Pausa'
+                              : 'Finalizado'}
                       </div>
                       {formData.start_date && formData.end_date && (
                         <div>
-                          <strong>Período:</strong> {format(formData.start_date, "dd/MM/yyyy")} -{" "}
-                          {format(formData.end_date, "dd/MM/yyyy")}
+                          <strong>Período:</strong> {format(formData.start_date, 'dd/MM/yyyy')} -{' '}
+                          {format(formData.end_date, 'dd/MM/yyyy')}
                         </div>
                       )}
                     </div>
@@ -312,7 +318,7 @@ export default function NewProjectPage() {
                   disabled={!formData.name.trim() || warnings.length > 0 || isSubmitting}
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {isSubmitting ? "Creando..." : "Crear Proyecto"}
+                  {isSubmitting ? 'Creando...' : 'Crear Proyecto'}
                 </Button>
                 <Button type="button" variant="outline" asChild>
                   <Link href="/projects">Cancelar</Link>

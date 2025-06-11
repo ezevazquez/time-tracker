@@ -1,17 +1,22 @@
-"use client"
+'use client'
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useState } from "react"
-import { ChevronDown, Home, Calendar, Users, Building2, Briefcase, Menu, X } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useState } from 'react'
+import { ChevronDown, Home, Calendar, Users, Building2, Briefcase, Menu, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Button } from '@/components/ui/button'
 
 const resourceItems = [
-  { href: "/projects", label: "Proyectos", icon: Briefcase },
-  { href: "/clients", label: "Clientes", icon: Building2 },
-  { href: "/people", label: "Personas", icon: Users },
+  { href: '/projects', label: 'Proyectos', icon: Briefcase },
+  { href: '/clients', label: 'Clientes', icon: Building2 },
+  { href: '/people', label: 'Personas', icon: Users },
 ]
 
 export function MainNav() {
@@ -19,11 +24,11 @@ export function MainNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const isResourceActive = resourceItems.some(
-    (item) => pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href)),
+    item => pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
   )
 
-  const isHomeActive = pathname === "/"
-  const isAssignmentsActive = pathname === "/assignments" || pathname?.startsWith("/assignments")
+  const isHomeActive = pathname === '/'
+  const isAssignmentsActive = pathname === '/assignments' || pathname?.startsWith('/assignments')
 
   return (
     <>
@@ -33,8 +38,10 @@ export function MainNav() {
         <Link
           href="/"
           className={cn(
-            "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:bg-gray-100",
-            isHomeActive ? "text-blue-600 bg-blue-50 hover:bg-blue-100" : "text-gray-700 hover:text-gray-900",
+            'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:bg-gray-100',
+            isHomeActive
+              ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+              : 'text-gray-700 hover:text-gray-900'
           )}
         >
           <Home className="h-4 w-4" />
@@ -45,8 +52,10 @@ export function MainNav() {
         <Link
           href="/assignments"
           className={cn(
-            "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:bg-gray-100",
-            isAssignmentsActive ? "text-blue-600 bg-blue-50 hover:bg-blue-100" : "text-gray-700 hover:text-gray-900",
+            'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:bg-gray-100',
+            isAssignmentsActive
+              ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+              : 'text-gray-700 hover:text-gray-900'
           )}
         >
           <Calendar className="h-4 w-4" />
@@ -59,10 +68,10 @@ export function MainNav() {
             <Button
               variant="ghost"
               className={cn(
-                "flex items-center gap-2 px-3 py-2 h-auto font-medium text-sm transition-all duration-200",
+                'flex items-center gap-2 px-3 py-2 h-auto font-medium text-sm transition-all duration-200',
                 isResourceActive
-                  ? "text-blue-600 bg-blue-50 hover:bg-blue-100"
-                  : "text-gray-700 hover:text-gray-900 hover:bg-gray-100",
+                  ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
               )}
             >
               <Users className="h-4 w-4" />
@@ -71,17 +80,18 @@ export function MainNav() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-48 mt-1">
-            {resourceItems.map((item) => {
+            {resourceItems.map(item => {
               const Icon = item.icon
-              const isActive = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href))
+              const isActive =
+                pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
 
               return (
                 <DropdownMenuItem key={item.href} asChild>
                   <Link
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2 text-sm cursor-pointer transition-colors",
-                      isActive ? "text-blue-600 bg-blue-50" : "text-gray-700 hover:text-gray-900",
+                      'flex items-center gap-3 px-3 py-2 text-sm cursor-pointer transition-colors',
+                      isActive ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:text-gray-900'
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -96,7 +106,12 @@ export function MainNav() {
 
       {/* Mobile Navigation */}
       <div className="md:hidden">
-        <Button variant="ghost" size="sm" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="p-2"
+        >
           {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
 
@@ -109,8 +124,10 @@ export function MainNav() {
                 href="/"
                 onClick={() => setMobileMenuOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium transition-colors",
-                  isHomeActive ? "text-blue-600 bg-blue-50" : "text-gray-700 hover:text-gray-900 hover:bg-gray-50",
+                  'flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium transition-colors',
+                  isHomeActive
+                    ? 'text-blue-600 bg-blue-50'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
                 )}
               >
                 <Home className="h-4 w-4" />
@@ -122,10 +139,10 @@ export function MainNav() {
                 href="/assignments"
                 onClick={() => setMobileMenuOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium transition-colors",
+                  'flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium transition-colors',
                   isAssignmentsActive
-                    ? "text-blue-600 bg-blue-50"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50",
+                    ? 'text-blue-600 bg-blue-50'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
                 )}
               >
                 <Calendar className="h-4 w-4" />
@@ -134,10 +151,13 @@ export function MainNav() {
 
               {/* Resources Section */}
               <div className="pt-2">
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Resources</div>
-                {resourceItems.map((item) => {
+                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Resources
+                </div>
+                {resourceItems.map(item => {
                   const Icon = item.icon
-                  const isActive = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href))
+                  const isActive =
+                    pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
 
                   return (
                     <Link
@@ -145,8 +165,10 @@ export function MainNav() {
                       href={item.href}
                       onClick={() => setMobileMenuOpen(false)}
                       className={cn(
-                        "flex items-center gap-3 px-6 py-3 rounded-md text-sm font-medium transition-colors",
-                        isActive ? "text-blue-600 bg-blue-50" : "text-gray-700 hover:text-gray-900 hover:bg-gray-50",
+                        'flex items-center gap-3 px-6 py-3 rounded-md text-sm font-medium transition-colors',
+                        isActive
+                          ? 'text-blue-600 bg-blue-50'
+                          : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
                       )}
                     >
                       <Icon className="h-4 w-4" />

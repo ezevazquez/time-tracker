@@ -1,11 +1,11 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { CheckCircle, XCircle, RefreshCw, Database } from "lucide-react"
-import { testSupabaseConnection, isSupabaseConfigured } from "@/lib/supabase"
+import { useEffect, useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { CheckCircle, XCircle, RefreshCw, Database } from 'lucide-react'
+import { testSupabaseConnection, isSupabaseConfigured } from '@/lib/supabase'
 
 interface ConnectionStatus {
   configured: boolean
@@ -22,7 +22,7 @@ export function ConnectionStatus() {
   })
 
   const testConnection = async () => {
-    setStatus((prev) => ({ ...prev, testing: true }))
+    setStatus(prev => ({ ...prev, testing: true }))
 
     const configured = isSupabaseConfigured()
 
@@ -30,7 +30,7 @@ export function ConnectionStatus() {
       setStatus({
         configured: false,
         connected: false,
-        error: "Environment variables not properly configured",
+        error: 'Environment variables not properly configured',
         testing: false,
       })
       return
@@ -105,7 +105,7 @@ export function ConnectionStatus() {
           </div>
 
           <Button onClick={testConnection} disabled={status.testing} variant="outline" size="sm">
-            <RefreshCw className={`h-4 w-4 mr-2 ${status.testing ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${status.testing ? 'animate-spin' : ''}`} />
             Test Connection
           </Button>
         </div>

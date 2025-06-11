@@ -1,46 +1,55 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, Calendar, User, Building2, Clock, Edit, Trash2, AlertCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useProjects } from "@/hooks/use-data"
-import type { ProjectWithClient } from "@/lib/supabase"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
-import Link from "next/link"
-import { toast } from "sonner"
-import { projectsService } from "@/lib/database"
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import {
+  ArrowLeft,
+  Calendar,
+  User,
+  Building2,
+  Clock,
+  Edit,
+  Trash2,
+  AlertCircle,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useProjects } from '@/hooks/use-data'
+import type { ProjectWithClient } from '@/lib/supabase'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import Link from 'next/link'
+import { toast } from 'sonner'
+import { projectsService } from '@/lib/database'
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case "In Progress":
-      return "bg-blue-100 text-blue-800 border-blue-200"
-    case "Finished":
-      return "bg-green-100 text-green-800 border-green-200"
-    case "On Hold":
-      return "bg-yellow-100 text-yellow-800 border-yellow-200"
-    case "Not Started":
-      return "bg-gray-100 text-gray-800 border-gray-200"
+    case 'In Progress':
+      return 'bg-blue-100 text-blue-800 border-blue-200'
+    case 'Finished':
+      return 'bg-green-100 text-green-800 border-green-200'
+    case 'On Hold':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+    case 'Not Started':
+      return 'bg-gray-100 text-gray-800 border-gray-200'
     default:
-      return "bg-gray-100 text-gray-800 border-gray-200"
+      return 'bg-gray-100 text-gray-800 border-gray-200'
   }
 }
 
 const getStatusText = (status: string) => {
   switch (status) {
-    case "In Progress":
-      return "En Progreso"
-    case "Finished":
-      return "Finalizado"
-    case "On Hold":
-      return "En Pausa"
-    case "Not Started":
-      return "No Iniciado"
+    case 'In Progress':
+      return 'En Progreso'
+    case 'Finished':
+      return 'Finalizado'
+    case 'On Hold':
+      return 'En Pausa'
+    case 'Not Started':
+      return 'No Iniciado'
     default:
       return status
   }
@@ -55,8 +64,8 @@ export default function ProjectShowPage() {
   const { id } = useParams()
   const router = useRouter()
 
-  if (typeof id !== "string") {
-    throw new Error("ID de proyecto inválido.")
+  if (typeof id !== 'string') {
+    throw new Error('ID de proyecto inválido.')
   }
 
   useEffect(() => {
@@ -67,8 +76,8 @@ export default function ProjectShowPage() {
         const data = await projectsService.getById(id)
         setProject(data)
       } catch (err) {
-        setError("Error al cargar el proyecto")
-        console.error("Error fetching project:", err)
+        setError('Error al cargar el proyecto')
+        console.error('Error fetching project:', err)
       } finally {
         setLoading(false)
       }
@@ -79,15 +88,19 @@ export default function ProjectShowPage() {
   const handleDelete = async () => {
     if (!project) return
 
-    if (window.confirm("¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer.")) {
+    if (
+      window.confirm(
+        '¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer.'
+      )
+    ) {
       try {
         setIsDeleting(true)
         await deleteProject(project.id)
-        toast.success("Proyecto eliminado correctamente")
-        router.push("/projects")
+        toast.success('Proyecto eliminado correctamente')
+        router.push('/projects')
       } catch (error) {
-        toast.error("Error al eliminar el proyecto")
-        console.error("Error deleting project:", error)
+        toast.error('Error al eliminar el proyecto')
+        console.error('Error deleting project:', error)
       } finally {
         setIsDeleting(false)
       }
@@ -143,7 +156,9 @@ export default function ProjectShowPage() {
         <div className="max-w-4xl mx-auto">
           <Alert className="border-red-200 bg-red-50">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="text-red-800">Error al cargar el proyecto: {error}</AlertDescription>
+            <AlertDescription className="text-red-800">
+              Error al cargar el proyecto: {error}
+            </AlertDescription>
           </Alert>
           <div className="mt-6">
             <Button asChild>
@@ -205,7 +220,7 @@ export default function ProjectShowPage() {
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
               <Trash2 className="h-4 w-4 mr-2" />
-              {isDeleting ? "Eliminando..." : "Eliminar"}
+              {isDeleting ? 'Eliminando...' : 'Eliminar'}
             </Button>
           </div>
         </div>
@@ -223,7 +238,9 @@ export default function ProjectShowPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h3 className="font-medium text-sm text-muted-foreground mb-1">Nombre del Proyecto</h3>
+                  <h3 className="font-medium text-sm text-muted-foreground mb-1">
+                    Nombre del Proyecto
+                  </h3>
                   <p className="text-lg font-semibold">{project.name}</p>
                 </div>
 
@@ -236,7 +253,9 @@ export default function ProjectShowPage() {
 
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium text-sm text-muted-foreground">Estado:</h3>
-                  <Badge className={getStatusColor(project.status)}>{getStatusText(project.status)}</Badge>
+                  <Badge className={getStatusColor(project.status)}>
+                    {getStatusText(project.status)}
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
@@ -252,11 +271,13 @@ export default function ProjectShowPage() {
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <h3 className="font-medium text-sm text-muted-foreground mb-1">Fecha de Inicio</h3>
+                    <h3 className="font-medium text-sm text-muted-foreground mb-1">
+                      Fecha de Inicio
+                    </h3>
                     <p className="text-sm">
                       {project.start_date
                         ? format(new Date(project.start_date), "dd 'de' MMMM, yyyy", { locale: es })
-                        : "No definida"}
+                        : 'No definida'}
                     </p>
                   </div>
 
@@ -265,19 +286,22 @@ export default function ProjectShowPage() {
                     <p className="text-sm">
                       {project.end_date
                         ? format(new Date(project.end_date), "dd 'de' MMMM, yyyy", { locale: es })
-                        : "No definida"}
+                        : 'No definida'}
                     </p>
                   </div>
                 </div>
 
                 {project.start_date && project.end_date && (
                   <div className="mt-4 pt-4 border-t">
-                    <h3 className="font-medium text-sm text-muted-foreground mb-1">Duración Estimada</h3>
+                    <h3 className="font-medium text-sm text-muted-foreground mb-1">
+                      Duración Estimada
+                    </h3>
                     <p className="text-sm">
                       {Math.ceil(
-                        (new Date(project.end_date).getTime() - new Date(project.start_date).getTime()) /
-                          (1000 * 60 * 60 * 24),
-                      )}{" "}
+                        (new Date(project.end_date).getTime() -
+                          new Date(project.start_date).getTime()) /
+                          (1000 * 60 * 60 * 24)
+                      )}{' '}
                       días
                     </p>
                   </div>
@@ -324,7 +348,9 @@ export default function ProjectShowPage() {
 
                     {project.clients.description && (
                       <div>
-                        <h3 className="font-medium text-sm text-muted-foreground mb-1">Descripción</h3>
+                        <h3 className="font-medium text-sm text-muted-foreground mb-1">
+                          Descripción
+                        </h3>
                         <p className="text-sm">{project.clients.description}</p>
                       </div>
                     )}
@@ -350,14 +376,14 @@ export default function ProjectShowPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Creado</span>
                   <span className="text-sm font-medium">
-                    {format(new Date(project.created_at), "dd/MM/yyyy", { locale: es })}
+                    {format(new Date(project.created_at), 'dd/MM/yyyy', { locale: es })}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Última actualización</span>
                   <span className="text-sm font-medium">
-                    {format(new Date(project.updated_at), "dd/MM/yyyy", { locale: es })}
+                    {format(new Date(project.updated_at), 'dd/MM/yyyy', { locale: es })}
                   </span>
                 </div>
 
@@ -385,9 +411,14 @@ export default function ProjectShowPage() {
                   </Link>
                 </Button>
 
-                <Button variant="outline" className="w-full" onClick={handleDelete} disabled={isDeleting}>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  {isDeleting ? "Eliminando..." : "Eliminar Proyecto"}
+                  {isDeleting ? 'Eliminando...' : 'Eliminar Proyecto'}
                 </Button>
               </CardContent>
             </Card>
