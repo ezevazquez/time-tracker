@@ -5,13 +5,17 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Plus, List, CalendarDays } from 'lucide-react'
 
-import { supabase } from '@/lib/supabase'
-import { useAssignments, usePeople, useProjects } from '@/hooks/use-data'
-
 import { Button } from '@/components/ui/button'
 import { ResourceTimeline } from '@/components/resource-timeline'
 import { ResourceTable } from '@/components/resource-table'
 import { ReportModal } from '@/components/report-modal'
+
+import { usePeople } from '@/hooks/use-people'
+import { useProjects } from '@/hooks/use-projects'
+import { useAssignments } from '@/hooks/use-assignments'
+
+import { supabase } from '@/lib/supabase/client'
+
 
 export default function AssignmentsPage() {
   const router = useRouter()

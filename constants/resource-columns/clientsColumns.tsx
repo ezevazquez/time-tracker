@@ -1,5 +1,4 @@
-import { Client } from '@/lib/supabase'
-import { ResourceColumn } from '@/types'
+import type { Client } from '@/types/client'
 
 export const clientsColumns = [
   {

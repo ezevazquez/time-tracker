@@ -19,7 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/classnames'
 import { usePeople } from '@/hooks/use-data'
 import { toast } from 'sonner'
 import Link from 'next/link'

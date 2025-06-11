@@ -1,10 +1,23 @@
 'use client'
 
 import React, { useState } from 'react'
-import { ArrowLeft, Save, AlertTriangle } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, Save, AlertTriangle, CalendarIcon } from 'lucide-react'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -14,18 +27,18 @@ import {
 } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { CalendarIcon } from 'lucide-react'
-import { eachDayOfInterval, format } from 'date-fns'
-import { es } from 'date-fns/locale'
-import { cn } from '@/lib/utils'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Input } from '@/components/ui/input'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { usePeople, useProjects, useAssignments } from '@/hooks/use-data'
+
+import { cn } from '@/utils/classnames'
 import { useToast } from '@/hooks/use-toast'
-import { getTotalAllocationForPersonInRange } from '@/lib/database'
-import { toDbAllocation, ALLOCATION_VALUES } from '@/lib/assignments'
+
+import { usePeople } from '@/hooks/use-people'
+import { useProjects } from '@/hooks/use-projects'
+import { useAssignments } from '@/hooks/use-assignments'
+
+import { assignmentsService } from '@/lib/services/assignments.service'
+import { toDbAllocation } from '@/lib/assignments'
+import { ASSIGNMENT_ALLOCATION_VALUES as ALLOCATION_VALUES } from '@/constants/assignments'
+
 
 export default function NewAssignmentPage() {
   const router = useRouter()
@@ -57,29 +70,20 @@ export default function NewAssignmentPage() {
     try {
       setIsSubmitting(true)
 
-      const result = await getTotalAllocationForPersonInRange(
+      const result = await assignmentsService.getTotalAllocationForPersonInRange(
         formData.person_id,
         format(formData.start_date, 'yyyy-MM-dd'),
         format(formData.end_date, 'yyyy-MM-dd')
       )
 
-      const days = eachDayOfInterval({
-        start: formData.start_date,
-        end: formData.end_date,
-      })
-
-      for (const day of days) {
-        const key = format(day, 'yyyy-MM-dd')
-        const projected = (result.allocationByDate[key] || 0) + formData.allocation / 100
-        if (projected > 1) {
-          toast({
-            id: 'assignment-overalloc-warning',
-            title: 'Advertencia de sobreasignación',
-            description: `El ${format(day, 'dd/MM/yyyy')} supera el 100% (${Math.round(projected * 100)}%)`,
-            variant: 'destructive',
-          })
-          break
-        }
+      const projected = result.projectedMax + formData.allocation / 100
+      if (projected > 1) {
+        toast({
+          id: 'assignment-overalloc-warning',
+          title: 'Advertencia de sobreasignación',
+          description: `Esta persona alcanzará el ${Math.round(projected * 100)}% de asignación.`,
+          variant: 'destructive',
+        })
       }
 
       await createAssignment({
@@ -137,7 +141,7 @@ export default function NewAssignmentPage() {
   const selectedProject = projects.find(p => p.id === formData.project_id)
 
   // Filter active people and projects
-  const activePeople = people.filter(p => p.status === 'Active')
+  const activePeople = people.filter(p => p.status === 'Activo')
   const activeProjects = projects.filter(
     p => p.status === 'In Progress' || p.status === 'Not Started'
   )

@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/classnames'
 import { toast } from 'sonner'
 import { projectsService, clientsService } from '@/lib/database'
 import type { Project, Client } from '@/lib/supabase'

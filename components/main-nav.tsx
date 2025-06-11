@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { ChevronDown, Home, Calendar, Users, Building2, Briefcase, Menu, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/classnames'
 import {
   DropdownMenu,
   DropdownMenuContent,
