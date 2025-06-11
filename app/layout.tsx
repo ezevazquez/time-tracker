@@ -1,17 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import '@/app/globals.css'
 import { Inter } from 'next/font/google'
-import Link from 'next/link'
-import Script from 'next/script'
-
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/toaster'
+import Link from 'next/link'
+import { isSupabaseConfigured, supabase } from '@/lib/supabase/client'
+import Script from 'next/script'
 import { MainNav } from '@/components/main-nav'
 import { AccountDropdown } from '@/components/account-dropdown'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase/client'
-
-import '@/app/globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -22,13 +20,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession()
-      setSessionExists(!!data?.session)
+      setSessionExists(!!data.session)
     }
-
-    if (supabaseConfigured) {
-      checkSession()
-    }
-  }, [supabaseConfigured])
+    checkSession()
+  }, [])
 
   return (
     <html lang="es" suppressHydrationWarning>
@@ -48,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <div className="flex flex-col min-h-screen">
+            {/* Header */}
             {sessionExists && (
               <header className="bg-white dark:bg-zinc-900 shadow-sm sticky top-0 z-30">
                 <div className="container mx-auto px-6 py-3">
@@ -67,7 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </header>
             )}
 
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 min-h-0">{children}</main>
           </div>
           <Toaster />
         </ThemeProvider>

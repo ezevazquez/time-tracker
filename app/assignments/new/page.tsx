@@ -69,6 +69,7 @@ export default function NewAssignmentPage() {
 
     try {
       setIsSubmitting(true)
+      console.log('Submitting assignment with data:', formData)
 
       const result = await assignmentsService.getTotalAllocationForPersonInRange(
         formData.person_id,
@@ -79,34 +80,49 @@ export default function NewAssignmentPage() {
       const projected = result.projectedMax + formData.allocation / 100
       if (projected > 1) {
         toast({
-          id: 'assignment-overalloc-warning',
+          id: `assignment-overalloc-warning-${Date.now()}`,
           title: 'Advertencia de sobreasignación',
           description: `Esta persona alcanzará el ${Math.round(projected * 100)}% de asignación.`,
           variant: 'destructive',
         })
       }
 
-      await createAssignment({
+      const assignmentData = {
         person_id: formData.person_id,
         project_id: formData.project_id,
         start_date: format(formData.start_date, 'yyyy-MM-dd'),
         end_date: format(formData.end_date, 'yyyy-MM-dd'),
         allocation: toDbAllocation(formData.allocation),
         assigned_role: formData.assigned_role || null,
-      })
+      }
+
+      console.log('Creating assignment with data:', assignmentData)
+
+      await createAssignment(assignmentData)
 
       toast({
-        id: 'assignment-created',
+        id: `assignment-created-${Date.now()}`,
         title: 'Asignación creada',
         description: 'La asignación se ha creado exitosamente.',
       })
 
       router.push('/assignments')
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error creating assignment:', error)
+      console.error('Error type:', typeof error)
+      console.error('Error constructor:', error?.constructor?.name)
+      console.error('Error message:', error?.message)
+      console.error('Error details:', error?.details)
+      console.error('Error hint:', error?.hint)
+      console.error('Error code:', error?.code)
+      console.error('Full error object:', JSON.stringify(error, null, 2))
+      
+      const errorMessage = error?.message || error?.details || error?.hint || 'Error desconocido al crear la asignación'
+      
       toast({
-        id: 'assignment-create-error',
+        id: `assignment-create-error-${Date.now()}`,
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Error al crear la asignación',
+        description: errorMessage,
         variant: 'destructive',
       })
     } finally {
@@ -140,8 +156,13 @@ export default function NewAssignmentPage() {
   const selectedPerson = people.find(p => p.id === formData.person_id)
   const selectedProject = projects.find(p => p.id === formData.project_id)
 
-  // Filter active people and projects
-  const activePeople = people.filter(p => p.status === 'Activo')
+  // Debug logging
+  console.log('All people:', people)
+  console.log('People count:', people.length)
+  console.log('People statuses:', people.map(p => ({ name: p.name, status: p.status })))
+
+  // Show all people instead of filtering by status
+  const activePeople = people
   const activeProjects = projects.filter(
     p => p.status === 'In Progress' || p.status === 'Not Started'
   )
