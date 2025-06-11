@@ -1,17 +1,17 @@
-"use client"
+'use client'
 
-import React, { useState } from "react"
-import { ArrowLeft, Save, AlertTriangle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useClients } from "@/hooks/use-data"
-import { useToast } from "@/hooks/use-toast"
+import React, { useState } from 'react'
+import { ArrowLeft, Save, AlertTriangle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useClients } from '@/hooks/use-data'
+import { useToast } from '@/hooks/use-toast'
 
 export default function NewClientPage() {
   const router = useRouter()
@@ -19,8 +19,8 @@ export default function NewClientPage() {
   const { toast } = useToast()
 
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
+    name: '',
+    description: '',
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -30,7 +30,7 @@ export default function NewClientPage() {
     e.preventDefault()
 
     if (!formData.name.trim()) {
-      setWarnings(["El nombre del cliente es obligatorio"])
+      setWarnings(['El nombre del cliente es obligatorio'])
       return
     }
 
@@ -42,16 +42,16 @@ export default function NewClientPage() {
       })
 
       toast({
-        title: "Cliente creado",
-        description: "El cliente se ha creado exitosamente.",
+        title: 'Cliente creado',
+        description: 'El cliente se ha creado exitosamente.',
       })
 
-      router.push("/clients")
+      router.push('/clients')
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Error al crear el cliente",
-        variant: "destructive",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Error al crear el cliente',
+        variant: 'destructive',
       })
     } finally {
       setIsSubmitting(false)
@@ -62,7 +62,7 @@ export default function NewClientPage() {
     const newWarnings: string[] = []
 
     if (!formData.name.trim()) {
-      newWarnings.push("El nombre del cliente es obligatorio")
+      newWarnings.push('El nombre del cliente es obligatorio')
     }
 
     setWarnings(newWarnings)
@@ -112,7 +112,7 @@ export default function NewClientPage() {
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Ej: Empresa XYZ"
                 />
               </div>
@@ -122,14 +122,14 @@ export default function NewClientPage() {
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={e => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Información adicional sobre el cliente..."
                   rows={4}
                 />
               </div>
 
               <div className="flex justify-end space-x-2">
-                <Button variant="outline" type="button" onClick={() => router.push("/clients")}>
+                <Button variant="outline" type="button" onClick={() => router.push('/clients')}>
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
@@ -161,4 +161,4 @@ export default function NewClientPage() {
       </div>
     </main>
   )
-} 
+}

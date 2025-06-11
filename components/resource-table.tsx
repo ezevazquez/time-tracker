@@ -1,14 +1,22 @@
-"use client"
+'use client'
 
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import { Edit, Trash2, AlertTriangle } from 'lucide-react'
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { FiltersPopover } from "./filters-popover"
-import type { Person, Project, AssignmentWithRelations } from "@/lib/supabase"
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { FiltersPopover } from './filters-popover'
+import type { Person, Project, AssignmentWithRelations } from '@/lib/supabase'
+import { toUiAllocation } from '@/lib/assignments'
 
 interface ResourceTableProps {
   people: Person[]
@@ -34,7 +42,8 @@ export function ResourceTable({
   onClearFilters,
   onDelete,
 }: ResourceTableProps) {
-  const hasActiveFilters = filters.personProfile || filters.projectStatus || filters.overallocatedOnly
+  const hasActiveFilters =
+    filters.personProfile || filters.projectStatus || filters.overallocatedOnly
 
   return (
     <div className="space-y-4">
@@ -77,9 +86,9 @@ export function ResourceTable({
                 </TableCell>
               </TableRow>
             ) : (
-              assignments.map((a) => {
-                const person = people.find((p) => p.id === a.person_id)
-                const project = projects.find((p) => p.id === a.project_id)
+              assignments.map(a => {
+                const person = people.find(p => p.id === a.person_id)
+                const project = projects.find(p => p.id === a.project_id)
                 const isOverallocated = a.allocation > 100
 
                 return (
@@ -87,30 +96,33 @@ export function ResourceTable({
                     <TableCell>
                       <div className="text-sm">
                         <div className="font-medium">
-                          {format(new Date(a.start_date), "dd MMM yyyy", { locale: es })}
+                          {format(new Date(a.start_date), 'dd MMM yyyy', { locale: es })}
                         </div>
                         <div className="text-muted-foreground">
-                          {format(new Date(a.end_date), "dd MMM yyyy", { locale: es })}
+                          {format(new Date(a.end_date), 'dd MMM yyyy', { locale: es })}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{person?.name || "N/A"}</div>
-                        <div className="text-sm text-muted-foreground">{person?.profile || ""}</div>
+                        <div className="font-medium">{person?.name || 'N/A'}</div>
+                        <div className="text-sm text-muted-foreground">{person?.profile || ''}</div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{project?.name || "N/A"}</div>
-                        <div className="text-sm text-muted-foreground">{project?.status || ""}</div>
+                        <div className="font-medium">{project?.name || 'N/A'}</div>
+                        <div className="text-sm text-muted-foreground">{project?.status || ''}</div>
                       </div>
                     </TableCell>
-                    <TableCell>{a.assigned_role || "Sin especificar"}</TableCell>
+                    <TableCell>{a.assigned_role || 'Sin especificar'}</TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <Badge variant={isOverallocated ? "destructive" : "secondary"} className="text-xs">
-                          {a.allocation * 100}%
+                        <Badge
+                          variant={isOverallocated ? 'destructive' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {toUiAllocation(a.allocation)}%
                         </Badge>
                         {isOverallocated && <AlertTriangle className="h-4 w-4 text-destructive" />}
                       </div>
@@ -123,7 +135,7 @@ export function ResourceTable({
                           </Badge>
                         )}
                         <Badge variant="outline" className="text-xs w-fit">
-                          {project?.status || "N/A"}
+                          {project?.status || 'N/A'}
                         </Badge>
                       </div>
                     </TableCell>

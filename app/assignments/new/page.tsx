@@ -1,26 +1,31 @@
-"use client"
+'use client'
 
-import React, { useState } from "react"
-import { ArrowLeft, Save, AlertTriangle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon } from "lucide-react"
-import { eachDayOfInterval, format } from "date-fns"
-import { es } from "date-fns/locale"
-import { cn } from "@/lib/utils"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Input } from "@/components/ui/input"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { usePeople, useProjects, useAssignments } from "@/hooks/use-data"
-import { useToast } from "@/hooks/use-toast"
-import { getTotalAllocationForPersonInRange } from "@/lib/database"
-import { toDbAllocation, ALLOCATION_VALUES } from "@/lib/assignments"
-
+import React, { useState } from 'react'
+import { ArrowLeft, Save, AlertTriangle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { CalendarIcon } from 'lucide-react'
+import { eachDayOfInterval, format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { cn } from '@/lib/utils'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Input } from '@/components/ui/input'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { usePeople, useProjects, useAssignments } from '@/hooks/use-data'
+import { useToast } from '@/hooks/use-toast'
+import { getTotalAllocationForPersonInRange } from '@/lib/database'
+import { toDbAllocation, ALLOCATION_VALUES } from '@/lib/assignments'
 
 export default function NewAssignmentPage() {
   const router = useRouter()
@@ -30,12 +35,12 @@ export default function NewAssignmentPage() {
   const { toast } = useToast()
 
   const [formData, setFormData] = useState({
-    person_id: "",
-    project_id: "",
+    person_id: '',
+    project_id: '',
     start_date: undefined as Date | undefined,
     end_date: undefined as Date | undefined,
     allocation: 100, // Default to 100%
-    assigned_role: "",
+    assigned_role: '',
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -45,7 +50,7 @@ export default function NewAssignmentPage() {
     e.preventDefault()
 
     if (!formData.person_id || !formData.project_id || !formData.start_date || !formData.end_date) {
-      setWarnings(["Todos los campos marcados con * son obligatorios"])
+      setWarnings(['Todos los campos marcados con * son obligatorios'])
       return
     }
 
@@ -54,8 +59,8 @@ export default function NewAssignmentPage() {
 
       const result = await getTotalAllocationForPersonInRange(
         formData.person_id,
-        format(formData.start_date, "yyyy-MM-dd"),
-        format(formData.end_date, "yyyy-MM-dd")
+        format(formData.start_date, 'yyyy-MM-dd'),
+        format(formData.end_date, 'yyyy-MM-dd')
       )
 
       const days = eachDayOfInterval({
@@ -64,39 +69,41 @@ export default function NewAssignmentPage() {
       })
 
       for (const day of days) {
-        const key = format(day, "yyyy-MM-dd")
+        const key = format(day, 'yyyy-MM-dd')
         const projected = (result.allocationByDate[key] || 0) + formData.allocation / 100
         if (projected > 1) {
           toast({
-            title: "Advertencia de sobreasignación",
-            description: `El ${format(day, "dd/MM/yyyy")} supera el 100% (${Math.round(projected * 100)}%)`,
-            variant: "destructive",
+            id: 'assignment-overalloc-warning',
+            title: 'Advertencia de sobreasignación',
+            description: `El ${format(day, 'dd/MM/yyyy')} supera el 100% (${Math.round(projected * 100)}%)`,
+            variant: 'destructive',
           })
           break
         }
       }
 
-
       await createAssignment({
         person_id: formData.person_id,
         project_id: formData.project_id,
-        start_date: format(formData.start_date, "yyyy-MM-dd"),
-        end_date: format(formData.end_date, "yyyy-MM-dd"),
+        start_date: format(formData.start_date, 'yyyy-MM-dd'),
+        end_date: format(formData.end_date, 'yyyy-MM-dd'),
         allocation: toDbAllocation(formData.allocation),
         assigned_role: formData.assigned_role || null,
       })
 
       toast({
-        title: "Asignación creada",
-        description: "La asignación se ha creado exitosamente.",
+        id: 'assignment-created',
+        title: 'Asignación creada',
+        description: 'La asignación se ha creado exitosamente.',
       })
 
-      router.push("/assignments")
+      router.push('/assignments')
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Error al crear la asignación",
-        variant: "destructive",
+        id: 'assignment-create-error',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Error al crear la asignación',
+        variant: 'destructive',
       })
     } finally {
       setIsSubmitting(false)
@@ -107,15 +114,15 @@ export default function NewAssignmentPage() {
     const newWarnings: string[] = []
 
     if (formData.allocation > 100) {
-      newWarnings.push("La dedicación no puede superar el 100%")
+      newWarnings.push('La dedicación no puede superar el 100%')
     }
 
     if (formData.start_date && formData.end_date && formData.start_date > formData.end_date) {
-      newWarnings.push("La fecha de inicio debe ser anterior a la fecha de fin")
+      newWarnings.push('La fecha de inicio debe ser anterior a la fecha de fin')
     }
 
     if (!formData.person_id || !formData.project_id || !formData.start_date || !formData.end_date) {
-      newWarnings.push("Todos los campos marcados con * son obligatorios")
+      newWarnings.push('Todos los campos marcados con * son obligatorios')
     }
 
     setWarnings(newWarnings)
@@ -126,12 +133,14 @@ export default function NewAssignmentPage() {
     checkForConflicts()
   }, [formData])
 
-  const selectedPerson = people.find((p) => p.id === formData.person_id)
-  const selectedProject = projects.find((p) => p.id === formData.project_id)
+  const selectedPerson = people.find(p => p.id === formData.person_id)
+  const selectedProject = projects.find(p => p.id === formData.project_id)
 
   // Filter active people and projects
-  const activePeople = people.filter((p) => p.status === "Active")
-  const activeProjects = projects.filter((p) => p.status === "In Progress" || p.status === "Not Started")
+  const activePeople = people.filter(p => p.status === 'Active')
+  const activeProjects = projects.filter(
+    p => p.status === 'In Progress' || p.status === 'Not Started'
+  )
 
   if (peopleLoading || projectsLoading) {
     return (
@@ -203,13 +212,13 @@ export default function NewAssignmentPage() {
                   <Label htmlFor="person">Persona *</Label>
                   <Select
                     value={formData.person_id}
-                    onValueChange={(value) => setFormData({ ...formData, person_id: value })}
+                    onValueChange={value => setFormData({ ...formData, person_id: value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar persona" />
                     </SelectTrigger>
                     <SelectContent>
-                      {activePeople.map((person) => (
+                      {activePeople.map(person => (
                         <SelectItem key={person.id} value={person.id}>
                           <div>
                             <div className="font-medium">{person.name}</div>
@@ -225,13 +234,13 @@ export default function NewAssignmentPage() {
                   <Label htmlFor="project">Proyecto *</Label>
                   <Select
                     value={formData.project_id}
-                    onValueChange={(value) => setFormData({ ...formData, project_id: value })}
+                    onValueChange={value => setFormData({ ...formData, project_id: value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar proyecto" />
                     </SelectTrigger>
                     <SelectContent>
-                      {activeProjects.map((project) => (
+                      {activeProjects.map(project => (
                         <SelectItem key={project.id} value={project.id}>
                           {project.name}
                         </SelectItem>
@@ -247,13 +256,13 @@ export default function NewAssignmentPage() {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !formData.start_date && "text-muted-foreground",
+                          'w-full justify-start text-left font-normal',
+                          !formData.start_date && 'text-muted-foreground'
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.start_date ? (
-                          format(formData.start_date, "PPP", { locale: es })
+                          format(formData.start_date, 'PPP', { locale: es })
                         ) : (
                           <span>Seleccionar fecha</span>
                         )}
@@ -263,7 +272,7 @@ export default function NewAssignmentPage() {
                       <Calendar
                         mode="single"
                         selected={formData.start_date}
-                        onSelect={(date) => setFormData({ ...formData, start_date: date })}
+                        onSelect={date => setFormData({ ...formData, start_date: date })}
                         initialFocus
                       />
                     </PopoverContent>
@@ -277,13 +286,13 @@ export default function NewAssignmentPage() {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !formData.end_date && "text-muted-foreground",
+                          'w-full justify-start text-left font-normal',
+                          !formData.end_date && 'text-muted-foreground'
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.end_date ? (
-                          format(formData.end_date, "PPP", { locale: es })
+                          format(formData.end_date, 'PPP', { locale: es })
                         ) : (
                           <span>Seleccionar fecha</span>
                         )}
@@ -293,7 +302,7 @@ export default function NewAssignmentPage() {
                       <Calendar
                         mode="single"
                         selected={formData.end_date}
-                        onSelect={(date) => setFormData({ ...formData, end_date: date })}
+                        onSelect={date => setFormData({ ...formData, end_date: date })}
                         initialFocus
                       />
                     </PopoverContent>
@@ -305,15 +314,15 @@ export default function NewAssignmentPage() {
                 <Label>Asignación</Label>
                 <Select
                   value={formData.allocation.toString()}
-                  onValueChange={(value) => setFormData({ ...formData, allocation: parseInt(value) })}
+                  onValueChange={val => setFormData({ ...formData, allocation: Number(val) })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar asignación" />
+                    <SelectValue placeholder="Asignación" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ALLOCATION_VALUES.map((val) => (
-                      <SelectItem key={val} value={(val * 100).toString()}>
-                        {val * 100}%
+                    {ALLOCATION_VALUES.map(value => (
+                      <SelectItem key={value} value={(value * 100).toString()}>
+                        {value * 100}%
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -325,7 +334,7 @@ export default function NewAssignmentPage() {
                 <Input
                   id="assigned_role"
                   value={formData.assigned_role}
-                  onChange={(e) => setFormData({ ...formData, assigned_role: e.target.value })}
+                  onChange={e => setFormData({ ...formData, assigned_role: e.target.value })}
                   placeholder="Ej: Frontend Developer"
                 />
               </div>
@@ -352,8 +361,8 @@ export default function NewAssignmentPage() {
                       )}
                       {formData.start_date && formData.end_date && (
                         <div>
-                          <strong>Período:</strong> {format(formData.start_date, "dd/MM/yyyy")} -{" "}
-                          {format(formData.end_date, "dd/MM/yyyy")}
+                          <strong>Período:</strong> {format(formData.start_date, 'dd/MM/yyyy')} -{' '}
+                          {format(formData.end_date, 'dd/MM/yyyy')}
                         </div>
                       )}
                     </div>
@@ -362,9 +371,13 @@ export default function NewAssignmentPage() {
               )}
 
               <div className="flex gap-4 pt-6">
-                <Button type="submit" className="flex-1" disabled={warnings.length > 0 || isSubmitting}>
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={warnings.length > 0 || isSubmitting}
+                >
                   <Save className="h-4 w-4 mr-2" />
-                  {isSubmitting ? "Creando..." : "Crear Asignación"}
+                  {isSubmitting ? 'Creando...' : 'Crear Asignación'}
                 </Button>
                 <Button type="button" variant="outline" asChild>
                   <Link href="/assignments">Cancelar</Link>

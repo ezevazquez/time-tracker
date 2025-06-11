@@ -1,42 +1,48 @@
-"use client"
+'use client'
 
-import type React from "react"
-import { useState } from "react"
-import { ArrowLeft, Save } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon } from "lucide-react"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
-import { cn } from "@/lib/utils"
-import { usePeople } from "@/hooks/use-data"
-import { toast } from "sonner"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import type React from 'react'
+import { useState } from 'react'
+import { ArrowLeft, Save } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { CalendarIcon } from 'lucide-react'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { cn } from '@/lib/utils'
+import { usePeople } from '@/hooks/use-data'
+import { toast } from 'sonner'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function NewPersonPage() {
   const router = useRouter()
   const { createPerson } = usePeople()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    name: "",
-    profile: "",
+    name: '',
+    profile: '',
     start_date: undefined as Date | undefined,
     end_date: undefined as Date | undefined,
-    status: "Active" as "Active" | "Paused" | "Terminated",
-    type: "Internal" as "Internal" | "External",
+    status: 'Active' as 'Active' | 'Paused' | 'Terminated',
+    type: 'Internal' as 'Internal' | 'External',
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!formData.start_date) {
-      toast.error("La fecha de inicio es requerida")
+      toast.error('La fecha de inicio es requerida')
       return
     }
 
@@ -46,16 +52,16 @@ export default function NewPersonPage() {
       await createPerson({
         name: formData.name,
         profile: formData.profile,
-        start_date: formData.start_date.toISOString().split("T")[0],
-        end_date: formData.end_date ? formData.end_date.toISOString().split("T")[0] : null,
+        start_date: formData.start_date.toISOString().split('T')[0],
+        end_date: formData.end_date ? formData.end_date.toISOString().split('T')[0] : null,
         status: formData.status,
         type: formData.type,
       })
 
-      toast.success("Persona creada correctamente")
-      router.push("/people")
+      toast.success('Persona creada correctamente')
+      router.push('/people')
     } catch (error) {
-      toast.error("Error al crear la persona")
+      toast.error('Error al crear la persona')
       console.error(error)
     } finally {
       setLoading(false)
@@ -90,7 +96,7 @@ export default function NewPersonPage() {
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Ej: Ana García"
                     required
                   />
@@ -101,7 +107,7 @@ export default function NewPersonPage() {
                   <Input
                     id="profile"
                     value={formData.profile}
-                    onChange={(e) => setFormData({ ...formData, profile: e.target.value })}
+                    onChange={e => setFormData({ ...formData, profile: e.target.value })}
                     placeholder="Ej: Frontend Developer"
                     required
                   />
@@ -114,13 +120,13 @@ export default function NewPersonPage() {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !formData.start_date && "text-muted-foreground",
+                          'w-full justify-start text-left font-normal',
+                          !formData.start_date && 'text-muted-foreground'
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.start_date ? (
-                          format(formData.start_date, "PPP", { locale: es })
+                          format(formData.start_date, 'PPP', { locale: es })
                         ) : (
                           <span>Seleccionar fecha</span>
                         )}
@@ -130,7 +136,7 @@ export default function NewPersonPage() {
                       <Calendar
                         mode="single"
                         selected={formData.start_date}
-                        onSelect={(date) => setFormData({ ...formData, start_date: date })}
+                        onSelect={date => setFormData({ ...formData, start_date: date })}
                         initialFocus
                       />
                     </PopoverContent>
@@ -144,13 +150,13 @@ export default function NewPersonPage() {
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !formData.end_date && "text-muted-foreground",
+                          'w-full justify-start text-left font-normal',
+                          !formData.end_date && 'text-muted-foreground'
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.end_date ? (
-                          format(formData.end_date, "PPP", { locale: es })
+                          format(formData.end_date, 'PPP', { locale: es })
                         ) : (
                           <span>Seleccionar fecha</span>
                         )}
@@ -160,7 +166,7 @@ export default function NewPersonPage() {
                       <Calendar
                         mode="single"
                         selected={formData.end_date}
-                        onSelect={(date) => setFormData({ ...formData, end_date: date })}
+                        onSelect={date => setFormData({ ...formData, end_date: date })}
                         initialFocus
                       />
                     </PopoverContent>
@@ -171,7 +177,7 @@ export default function NewPersonPage() {
                   <Label htmlFor="status">Estado *</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value: "Active" | "Paused" | "Terminated") =>
+                    onValueChange={(value: 'Active' | 'Paused' | 'Terminated') =>
                       setFormData({ ...formData, status: value })
                     }
                   >
@@ -190,7 +196,9 @@ export default function NewPersonPage() {
                   <Label htmlFor="type">Tipo *</Label>
                   <Select
                     value={formData.type}
-                    onValueChange={(value: "Internal" | "External") => setFormData({ ...formData, type: value })}
+                    onValueChange={(value: 'Internal' | 'External') =>
+                      setFormData({ ...formData, type: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -206,7 +214,7 @@ export default function NewPersonPage() {
               <div className="flex gap-4 pt-6">
                 <Button type="submit" className="flex-1" disabled={loading}>
                   <Save className="h-4 w-4 mr-2" />
-                  {loading ? "Guardando..." : "Guardar Persona"}
+                  {loading ? 'Guardando...' : 'Guardar Persona'}
                 </Button>
                 <Button type="button" variant="outline" asChild>
                   <Link href="/people">Cancelar</Link>

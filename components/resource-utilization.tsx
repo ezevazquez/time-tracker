@@ -1,11 +1,11 @@
-"use client"
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Users, TrendingUp, TrendingDown } from "lucide-react"
-import type { Person, AssignmentWithRelations } from "@/lib/supabase"
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Users, TrendingUp, TrendingDown } from 'lucide-react'
+import type { Person, AssignmentWithRelations } from '@/lib/supabase'
 
 interface ResourceUtilizationProps {
   people: Person[]
@@ -17,15 +17,18 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
 
   // Calculate utilization for each active person
   const utilizationData = people
-    .filter((person) => person.status === "Active")
-    .map((person) => {
-      const currentAssignments = assignments.filter((assignment) => {
+    .filter(person => person.status === 'Active')
+    .map(person => {
+      const currentAssignments = assignments.filter(assignment => {
         const start = new Date(assignment.start_date)
         const end = new Date(assignment.end_date)
         return assignment.person_id === person.id && start <= currentDate && end >= currentDate
       })
 
-      const totalAllocation = currentAssignments.reduce((sum, assignment) => sum + assignment.allocation * 100, 0)
+      const totalAllocation = currentAssignments.reduce(
+        (sum, assignment) => sum + assignment.allocation * 100,
+        0
+      )
 
       return {
         ...person,
@@ -39,11 +42,14 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
 
   const avgUtilization =
     utilizationData.length > 0
-      ? Math.round(utilizationData.reduce((sum, person) => sum + person.utilization, 0) / utilizationData.length)
+      ? Math.round(
+          utilizationData.reduce((sum, person) => sum + person.utilization, 0) /
+            utilizationData.length
+        )
       : 0
 
-  const overallocatedCount = utilizationData.filter((p) => p.isOverallocated).length
-  const underutilizedCount = utilizationData.filter((p) => p.isUnderutilized).length
+  const overallocatedCount = utilizationData.filter(p => p.isOverallocated).length
+  const underutilizedCount = utilizationData.filter(p => p.isUnderutilized).length
 
   return (
     <Card>
@@ -68,21 +74,26 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
       <CardContent>
         <div className="mb-6 p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Utilización Promedio del Equipo</span>
+            <span className="text-sm font-medium text-gray-700">
+              Utilización Promedio del Equipo
+            </span>
             <span className="text-lg font-bold text-gray-900">{avgUtilization}%</span>
           </div>
           <Progress value={avgUtilization} className="h-2" />
         </div>
 
         <div className="space-y-4 max-h-96 overflow-y-auto">
-          {utilizationData.map((person) => (
-            <div key={person.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+          {utilizationData.map(person => (
+            <div
+              key={person.id}
+              className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <Avatar className="h-10 w-10">
                 <AvatarFallback className="text-sm bg-gray-100">
                   {person.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
+                    .split(' ')
+                    .map(n => n[0])
+                    .join('')
                     .slice(0, 2)}
                 </AvatarFallback>
               </Avatar>
@@ -106,7 +117,7 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
                   <p className="text-xs text-gray-600">{person.profile}</p>
                   <span className="text-xs text-gray-400">•</span>
                   <p className="text-xs text-gray-600">
-                    {person.assignmentsCount} asignación{person.assignmentsCount !== 1 ? "es" : ""}
+                    {person.assignmentsCount} asignación{person.assignmentsCount !== 1 ? 'es' : ''}
                   </p>
                 </div>
 
@@ -115,10 +126,10 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
                   <span
                     className={`text-sm font-medium min-w-[3rem] text-right ${
                       person.isOverallocated
-                        ? "text-red-600"
+                        ? 'text-red-600'
                         : person.isUnderutilized
-                          ? "text-yellow-600"
-                          : "text-green-600"
+                          ? 'text-yellow-600'
+                          : 'text-green-600'
                     }`}
                   >
                     {person.utilization}%

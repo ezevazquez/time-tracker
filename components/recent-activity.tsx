@@ -1,12 +1,12 @@
-"use client"
+'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Calendar } from "lucide-react"
-import { format, isAfter, isBefore, addDays } from "date-fns"
-import { es } from "date-fns/locale"
-import type { Person, Project, AssignmentWithRelations } from "@/lib/supabase"
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Calendar } from 'lucide-react'
+import { format, isAfter, isBefore, addDays } from 'date-fns'
+import { es } from 'date-fns/locale'
+import type { Person, Project, AssignmentWithRelations } from '@/lib/supabase'
 
 interface RecentActivityProps {
   assignments: AssignmentWithRelations[]
@@ -20,13 +20,14 @@ export function RecentActivity({ assignments, people, projects }: RecentActivity
 
   // Get recent and upcoming assignments
   const recentActivity = assignments
-    .filter((assignment) => {
+    .filter(assignment => {
       const startDate = new Date(assignment.start_date)
       const endDate = new Date(assignment.end_date)
 
       // Recently started (within last 7 days) or starting soon (within next 7 days)
       return (
-        (isAfter(startDate, addDays(currentDate, -7)) && isBefore(startDate, addDays(currentDate, 1))) ||
+        (isAfter(startDate, addDays(currentDate, -7)) &&
+          isBefore(startDate, addDays(currentDate, 1))) ||
         (isAfter(startDate, currentDate) && isBefore(startDate, weekFromNow)) ||
         (isAfter(endDate, addDays(currentDate, -7)) && isBefore(endDate, addDays(currentDate, 1)))
       )
@@ -39,11 +40,11 @@ export function RecentActivity({ assignments, people, projects }: RecentActivity
     const endDate = new Date(assignment.end_date)
 
     if (isAfter(endDate, addDays(currentDate, -7)) && isBefore(endDate, addDays(currentDate, 1))) {
-      return { type: "completed", label: "Completado", color: "bg-green-100 text-green-800" }
+      return { type: 'completed', label: 'Completado', color: 'bg-green-100 text-green-800' }
     } else if (isAfter(startDate, currentDate)) {
-      return { type: "upcoming", label: "Próximo", color: "bg-blue-100 text-blue-800" }
+      return { type: 'upcoming', label: 'Próximo', color: 'bg-blue-100 text-blue-800' }
     } else {
-      return { type: "started", label: "Iniciado", color: "bg-purple-100 text-purple-800" }
+      return { type: 'started', label: 'Iniciado', color: 'bg-purple-100 text-purple-800' }
     }
   }
 
@@ -59,9 +60,9 @@ export function RecentActivity({ assignments, people, projects }: RecentActivity
         {recentActivity.length === 0 ? (
           <p className="text-gray-500 text-sm text-center py-4">No hay actividad reciente</p>
         ) : (
-          recentActivity.map((assignment) => {
-            const person = people.find((p) => p.id === assignment.person_id)
-            const project = projects.find((p) => p.id === assignment.project_id)
+          recentActivity.map(assignment => {
+            const person = people.find(p => p.id === assignment.person_id)
+            const project = projects.find(p => p.id === assignment.project_id)
             const activity = getActivityType(assignment)
 
             if (!person || !project) return null
@@ -74,9 +75,9 @@ export function RecentActivity({ assignments, people, projects }: RecentActivity
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="text-xs bg-gray-100">
                     {person.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
+                      .split(' ')
+                      .map(n => n[0])
+                      .join('')
                       .slice(0, 2)}
                   </AvatarFallback>
                 </Avatar>
@@ -94,7 +95,7 @@ export function RecentActivity({ assignments, people, projects }: RecentActivity
                   <div className="flex items-center gap-4 text-xs text-gray-500">
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      {format(new Date(assignment.start_date), "dd MMM", { locale: es })}
+                      {format(new Date(assignment.start_date), 'dd MMM', { locale: es })}
                     </span>
                     <span>{Math.round(assignment.allocation * 100)}%</span>
                   </div>

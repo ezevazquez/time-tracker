@@ -1,5 +1,5 @@
-import { eachDayOfInterval, isWithinInterval } from "date-fns"
-import type { Assignment } from "./supabase";
+import { eachDayOfInterval, isWithinInterval } from 'date-fns'
+import type { Assignment } from './supabase'
 
 // Valores permitidos (centralizados)
 export const ALLOCATION_VALUES = [0.25, 0.5, 0.75, 1]
@@ -31,3 +31,6 @@ export function willExceedDailyAllocation(
     return total + newAllocation > 1
   })
 }
+
+export const ASSIGNMENT_STATUS_VALUES = ['active', 'ended'] as const
+export type AssignmentStatus = (typeof ASSIGNMENT_STATUS_VALUES)[number]

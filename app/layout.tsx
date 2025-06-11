@@ -1,34 +1,29 @@
-"use client";
+'use client'
 
+import { useEffect, useState } from 'react'
+import '@/app/globals.css'
+import { Inter } from 'next/font/google'
+import { ThemeProvider } from '@/components/theme-provider'
+import { Toaster } from '@/components/ui/toaster'
+import Link from 'next/link'
+import { isSupabaseConfigured, supabase } from '@/lib/supabase'
+import Script from 'next/script'
+import { MainNav } from '@/components/main-nav'
+import { AccountDropdown } from '@/components/account-dropdown'
 
-import { useEffect, useState } from "react"
-import "@/app/globals.css"
-import { Inter } from "next/font/google"
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
-import Link from "next/link"
-import { isSupabaseConfigured, supabase } from "@/lib/supabase"
-import Script from "next/script"
-import { MainNav } from "@/components/main-nav"
-import { AccountDropdown } from "@/components/account-dropdown"
+const inter = Inter({ subsets: ['latin'] })
 
-const inter = Inter({ subsets: ["latin"] });
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [sessionExists, setSessionExists] = useState(false);
-  const supabaseConfigured = isSupabaseConfigured();
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const [sessionExists, setSessionExists] = useState(false)
+  const supabaseConfigured = isSupabaseConfigured()
 
   useEffect(() => {
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setSessionExists(!!data.session);
-    };
-    checkSession();
-  }, []);
+      const { data } = await supabase.auth.getSession()
+      setSessionExists(!!data.session)
+    }
+    checkSession()
+  }, [])
 
   return (
     <html lang="es" suppressHydrationWarning>
@@ -50,7 +45,6 @@ export default function RootLayout({
           <div className="flex flex-col min-h-screen">
             {/* Header */}
             {sessionExists && (
-
               <header className="bg-white dark:bg-zinc-900 shadow-sm sticky top-0 z-30">
                 <div className="container mx-auto px-6 py-3">
                   <div className="flex items-center justify-between gap-4">
@@ -75,5 +69,5 @@ export default function RootLayout({
         </ThemeProvider>
       </body>
     </html>
-  );
+  )
 }

@@ -1,9 +1,9 @@
-import { Client } from "@/lib/supabase";
-import { ResourceColumn } from "@/types";
+import { Client } from '@/lib/supabase'
+import { ResourceColumn } from '@/types'
 
 export const clientsColumns = [
   {
-    title: "Name",
+    title: 'Name',
     render: (client: Client) => client.name,
   },
-];
+]

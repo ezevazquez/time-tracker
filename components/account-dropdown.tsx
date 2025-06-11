@@ -1,33 +1,29 @@
 'use client'
 
-import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { LogOut, Settings } from "lucide-react"
-import Link from "next/link"
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage
-} from "@/components/ui/avatar"
+} from '@/components/ui/dropdown-menu'
+import { LogOut, Settings } from 'lucide-react'
+import Link from 'next/link'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 export function AccountDropdown() {
-  const [userName, setUserName] = useState("")
-  const [avatarUrl, setAvatarUrl] = useState("")
+  const [userName, setUserName] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState('')
 
   useEffect(() => {
     const fetchUser = async () => {
       const { data } = await supabase.auth.getUser()
       const user = data?.user
       if (user) {
-        const name = user.user_metadata?.full_name || user.email || "Cuenta"
-        const avatar = user.user_metadata?.avatar_url || ""
+        const name = user.user_metadata?.full_name || user.email || 'Cuenta'
+        const avatar = user.user_metadata?.avatar_url || ''
         setUserName(name)
         setAvatarUrl(avatar)
       }

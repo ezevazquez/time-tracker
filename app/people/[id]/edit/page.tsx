@@ -1,34 +1,54 @@
-"use client"
+'use client'
 
-import { useState, useEffect, use } from "react"
-import { useRouter } from "next/navigation"
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { format } from "date-fns"
-import { CalendarIcon, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
-import { toast } from "sonner"
-import { peopleService } from "@/lib/database"
-import type { Person } from "@/lib/supabase"
+import { useState, useEffect, use } from 'react'
+import { useRouter } from 'next/navigation'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { format } from 'date-fns'
+import { CalendarIcon, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
+import { peopleService } from '@/lib/database'
+import type { Person } from '@/lib/supabase'
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres" }),
-  profile: z.string().min(2, { message: "El perfil debe tener al menos 2 caracteres" }),
-  start_date: z.date({ required_error: "La fecha de inicio es requerida" }),
+  name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),
+  profile: z.string().min(2, { message: 'El perfil debe tener al menos 2 caracteres' }),
+  start_date: z.date({ required_error: 'La fecha de inicio es requerida' }),
   end_date: z.date().nullable().optional(),
-  status: z.enum(["Active", "Paused", "Terminated"], {
-    required_error: "El estado es requerido",
+  status: z.enum(['Active', 'Paused', 'Terminated'], {
+    required_error: 'El estado es requerido',
   }),
-  type: z.enum(["Internal", "External"], {
-    required_error: "El tipo es requerido",
+  type: z.enum(['Internal', 'External'], {
+    required_error: 'El tipo es requerido',
   }),
 })
 
@@ -43,12 +63,12 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      profile: "",
+      name: '',
+      profile: '',
       start_date: new Date(),
       end_date: null,
-      status: "Active",
-      type: "Internal",
+      status: 'Active',
+      type: 'Internal',
     },
   })
 
@@ -70,11 +90,11 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
             type: personData.type,
           })
         } else {
-          setError("Persona no encontrada")
+          setError('Persona no encontrada')
         }
       } catch (err) {
-        console.error("Error fetching person:", err)
-        setError(err instanceof Error ? err.message : "Error al cargar la persona")
+        console.error('Error fetching person:', err)
+        setError(err instanceof Error ? err.message : 'Error al cargar la persona')
       } finally {
         setIsLoadingPerson(false)
       }
@@ -91,11 +111,11 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
         start_date: values.start_date.toISOString(),
         end_date: values.end_date ? values.end_date.toISOString() : null,
       })
-      toast.success("Persona actualizada correctamente")
-      router.push("/people")
+      toast.success('Persona actualizada correctamente')
+      router.push('/people')
     } catch (error) {
-      console.error("Error updating person:", error)
-      toast.error("Error al actualizar la persona")
+      console.error('Error updating person:', error)
+      toast.error('Error al actualizar la persona')
     } finally {
       setIsLoading(false)
     }
@@ -121,7 +141,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
             <CardDescription>{error}</CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button onClick={() => router.push("/people")}>Volver a la lista</Button>
+            <Button onClick={() => router.push('/people')}>Volver a la lista</Button>
           </CardFooter>
         </Card>
       </div>
@@ -182,10 +202,15 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
-                              variant={"outline"}
-                              className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                              variant={'outline'}
+                              className={cn(
+                                'pl-3 text-left font-normal',
+                                !field.value && 'text-muted-foreground'
+                              )}
                             >
-                              {field.value ? format(field.value, "dd/MM/yyyy") : "Seleccionar fecha"}
+                              {field.value
+                                ? format(field.value, 'dd/MM/yyyy')
+                                : 'Seleccionar fecha'}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
@@ -195,7 +220,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                             mode="single"
                             selected={field.value}
                             onSelect={field.onChange}
-                            disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                            disabled={date => date > new Date() || date < new Date('1900-01-01')}
                             initialFocus
                           />
                         </PopoverContent>
@@ -215,10 +240,13 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
-                              variant={"outline"}
-                              className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                              variant={'outline'}
+                              className={cn(
+                                'pl-3 text-left font-normal',
+                                !field.value && 'text-muted-foreground'
+                              )}
                             >
-                              {field.value ? format(field.value, "dd/MM/yyyy") : "Sin fecha de fin"}
+                              {field.value ? format(field.value, 'dd/MM/yyyy') : 'Sin fecha de fin'}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
@@ -228,7 +256,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                             mode="single"
                             selected={field.value || undefined}
                             onSelect={field.onChange}
-                            disabled={(date) => date < new Date(form.getValues("start_date"))}
+                            disabled={date => date < new Date(form.getValues('start_date'))}
                             initialFocus
                           />
                         </PopoverContent>
@@ -237,11 +265,10 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                           variant="ghost"
                           size="sm"
                           className="mt-2 self-start"
-                          onClick={() => form.setValue("end_date", null)}
+                          onClick={() => form.setValue('end_date', null)}
                         >
                           Limpiar fecha
                         </Button>
-
                       </Popover>
                       <FormMessage />
                     </FormItem>
@@ -297,7 +324,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
               </div>
 
               <div className="flex justify-end space-x-2">
-                <Button variant="outline" type="button" onClick={() => router.push("/people")}>
+                <Button variant="outline" type="button" onClick={() => router.push('/people')}>
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isLoading}>

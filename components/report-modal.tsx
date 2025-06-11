@@ -1,14 +1,27 @@
 'use client'
 
-import { useState } from "react"
-import { format } from "date-fns"
-import { DateRange } from "react-day-picker"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
-import { DatePickerWithRange } from "@/components/date-range-picker"
-import { CalendarRange, Loader2 } from "lucide-react"
-import { fetchOcupationReport } from "@/lib/fetchReport"
+import { useState } from 'react'
+import { format } from 'date-fns'
+import { DateRange } from 'react-day-picker'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table'
+import { DatePickerWithRange } from '@/components/date-range-picker'
+import { CalendarRange, Loader2 } from 'lucide-react'
+import { fetchOcupationReport } from '@/lib/fetchReport'
 
 export function ReportModal() {
   const [range, setRange] = useState<{ from: Date; to: Date } | undefined>()
@@ -18,8 +31,8 @@ export function ReportModal() {
   const handleGenerate = async () => {
     if (!range?.from || !range?.to) return
     setLoading(true)
-    const from = format(range.from, "yyyy-MM-dd")
-    const to = format(range.to, "yyyy-MM-dd")
+    const from = format(range.from, 'yyyy-MM-dd')
+    const to = format(range.to, 'yyyy-MM-dd')
     const data = await fetchOcupationReport(from, to)
     setReport(data)
     setLoading(false)
@@ -28,8 +41,7 @@ export function ReportModal() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm"
-          className="h-8">
+        <Button variant="outline" size="sm" className="h-8">
           <CalendarRange className="mr-2 h-4 w-4" />
           Nuevo reporte
         </Button>
@@ -64,9 +76,11 @@ export function ReportModal() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {report.map((r) => (
+                  {report.map(r => (
                     <TableRow key={r.assignment_id}>
-                      <TableCell>{r.person_first_name} {r.person_last_name}</TableCell>
+                      <TableCell>
+                        {r.person_first_name} {r.person_last_name}
+                      </TableCell>
                       <TableCell>{r.project_name}</TableCell>
                       <TableCell>
                         {r.assignment_start_date} → {r.assignment_end_date}
