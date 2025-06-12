@@ -1,7 +1,7 @@
 export const PERSON_STATUS = {
-  ACTIVE: 'Activo',
-  PAUSED: 'Pausado',
-  TERMINATED: 'Terminado',
+  ACTIVE: 'Active',
+  PAUSED: 'Paused',
+  TERMINATED: 'Terminated',
 } as const
 
 export const PERSON_TYPE = {

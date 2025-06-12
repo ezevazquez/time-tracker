@@ -6,6 +6,7 @@ import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
 import type { Client } from '@/types/client'
+import { ACTIVE_PERSON_STATUSES } from '@/constants/people'
 
 interface StatsOverviewProps {
   people: Person[]
@@ -16,7 +17,7 @@ interface StatsOverviewProps {
 
 export function StatsOverview({ people, projects, assignments, clients }: StatsOverviewProps) {
   // Calculate stats
-  const activePeople = people.filter(p => p.status === 'Activo').length
+  const activePeople = people.filter(p => ACTIVE_PERSON_STATUSES.includes(p.status as any)).length
   const activeProjects = projects.filter(p => p.status === 'In Progress').length
   const totalAssignments = assignments.length
   const totalClients = clients.length
@@ -29,13 +30,16 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
     return start <= currentDate && end >= currentDate
   })
 
+  const assignedPeopleToday = new Set(
+    currentAssignments.map(a => a.person_id)
+  )
+  const totalActivePeople = people.filter(p => ACTIVE_PERSON_STATUSES.includes(p.status as any)).length
+  
   const avgUtilization =
-    currentAssignments.length > 0
-      ? Math.round(
-          currentAssignments.reduce((sum, a) => sum + a.allocation, 0) / currentAssignments.length
-        )
+    totalActivePeople > 0
+      ? Math.round((assignedPeopleToday.size / totalActivePeople) * 100)
       : 0
-
+  
   // Overallocated people
   const overallocatedCount = people.filter(person => {
     const personAssignments = currentAssignments.filter(a => a.person_id === person.id)
