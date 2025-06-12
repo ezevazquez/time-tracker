@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Users, TrendingUp, TrendingDown } from 'lucide-react'
 import type { Person } from '@/types/people'
 import type { AssignmentWithRelations } from '@/types/assignment'
+import { PERSON_STATUS } from '@/constants/people'
 
 interface ResourceUtilizationProps {
   people: Person[]
@@ -18,7 +19,7 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
 
   // Calculate utilization for each active person
   const utilizationData = people
-    .filter(person => person.status === 'Activo')
+    .filter(person => person.status === PERSON_STATUS.ACTIVE)
     .map(person => {
       const currentAssignments = assignments.filter(assignment => {
         const start = new Date(assignment.start_date)
@@ -58,7 +59,7 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-blue-600" />
-            Utilización de Recursos
+            Utilización de personas
           </div>
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-1">
@@ -73,7 +74,7 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+        {/* <div className="mb-6 p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-700">
               Utilización Promedio del Equipo
@@ -81,7 +82,7 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
             <span className="text-lg font-bold text-gray-900">{avgUtilization}%</span>
           </div>
           <Progress value={avgUtilization} className="h-2" />
-        </div>
+        </div> */}
 
         <div className="space-y-4 max-h-96 overflow-y-auto">
           {utilizationData.map(person => (
