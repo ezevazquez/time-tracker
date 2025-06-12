@@ -44,7 +44,9 @@ import { clientsService } from '@/lib/services/clients.service'
 import type { Project } from '@/types/project'
 import type { Client } from '@/types/client'
 import { PROJECT_STATUS_OPTIONS, PROJECT_STATUS } from '@/constants/projects'
-
+import { ResourceError } from '@/components/ui/resource-error'
+import { Resource } from '@/types'
+import { RESOURCES } from '@/constants/resources'
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),
@@ -158,19 +160,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   }
 
   if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-red-600">Error</CardTitle>
-            <CardDescription>{error}</CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button onClick={() => router.push('/projects')}>Volver a la lista</Button>
-          </CardFooter>
-        </Card>
-      </div>
-    )
+    return <ResourceError error={error} resource={RESOURCES.projects as Resource} />
   }
 
   return (
@@ -319,7 +309,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                             </SelectItem>
                           ))}
                         </SelectContent>
-
                       </Select>
                       <FormMessage />
                     </FormItem>
