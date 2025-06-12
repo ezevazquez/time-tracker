@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -33,19 +33,20 @@ import { useClients } from '@/hooks/use-clients'
 import { clientsService } from '@/lib/services/clients.service'
 import type { Client } from '@/types/client'
 
-
 const formSchema = z.object({
   name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),
   description: z.string().optional(),
 })
 
-export default function EditClientPage({ params }: { params: { id: string } }) {
+export default function EditClientPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [client, setClient] = useState<Client | null>(null)
   const [isLoadingClient, setIsLoadingClient] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { updateClient } = useClients()
+  const params = useParams()
+  const id = params?.id as string
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -60,7 +61,7 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
     async function fetchClient() {
       try {
         setIsLoadingClient(true)
-        const clientData = await clientsService.getById(params.id)
+        const clientData = await clientsService.getById(id)
         if (!clientData) {
           setError('Cliente no encontrado')
           return
@@ -84,7 +85,7 @@ export default function EditClientPage({ params }: { params: { id: string } }) {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setIsLoading(true)
-      await updateClient(params.id, {
+      await updateClient(id, {
         name: values.name.trim(),
         description: values.description?.trim() || null,
       })
