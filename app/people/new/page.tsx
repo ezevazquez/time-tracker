@@ -34,19 +34,27 @@ import { usePeople } from '@/hooks/use-people'
 import {
   PERSON_STATUS_OPTIONS,
   PERSON_TYPE_OPTIONS,
+  PERSON_PROFILE_OPTIONS,
 } from '@/constants/people'
-import { PERSON_STATUS, PERSON_TYPE } from '@/constants/people'
+import { PERSON_STATUS, PERSON_TYPE, PERSON_PROFILE } from '@/constants/people'
 
 
 export default function NewPersonPage() {
   const router = useRouter()
   const { createPerson } = usePeople()
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string
+    profile: string
+    start_date: Date | undefined
+    end_date: Date | undefined
+    status: typeof PERSON_STATUS[keyof typeof PERSON_STATUS]
+    type: typeof PERSON_TYPE[keyof typeof PERSON_TYPE]
+  }>({
     name: '',
-    profile: '',
-    start_date: new Date() as Date | undefined,
-    end_date: undefined as Date | undefined,
+    profile: PERSON_PROFILE.PROJECT_MANAGER,
+    start_date: new Date(),
+    end_date: undefined,
     status: PERSON_STATUS.ACTIVE,
     type: PERSON_TYPE.INTERNAL,
   })
@@ -119,13 +127,23 @@ export default function NewPersonPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="profile">Perfil/Rol *</Label>
-                  <Input
-                    id="profile"
+                  <Select
                     value={formData.profile}
-                    onChange={e => setFormData({ ...formData, profile: e.target.value })}
-                    placeholder="Ej: Frontend Developer"
-                    required
-                  />
+                    onValueChange={(value: string) =>
+                      setFormData({ ...formData, profile: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un perfil" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PERSON_PROFILE_OPTIONS.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">

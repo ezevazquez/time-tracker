@@ -39,13 +39,14 @@ import {
 } from '@/components/ui/select'
 
 import { usePeople } from '@/hooks/use-people'
-import { PERSON_STATUS_OPTIONS, PERSON_TYPE_OPTIONS, PERSON_STATUS, PERSON_TYPE } from '@/constants/people'
+import { PERSON_STATUS_OPTIONS, PERSON_TYPE_OPTIONS, PERSON_STATUS, PERSON_TYPE, PERSON_PROFILE_OPTIONS } from '@/constants/people'
 
 
 export default function PeoplePage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('Active')
   const [typeFilter, setTypeFilter] = useState('all')
+  const [profileFilter, setProfileFilter] = useState('all')
 
   const { people, loading, error, deletePerson } = usePeople()
 
@@ -76,8 +77,9 @@ export default function PeoplePage() {
       person.profile.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || person.status === statusFilter
     const matchesType = typeFilter === 'all' || person.type === typeFilter
+    const matchesProfile = profileFilter === 'all' || person.profile === profileFilter
 
-    return matchesSearch && matchesStatus && matchesType
+    return matchesSearch && matchesStatus && matchesType && matchesProfile
   })
 
   const getStatusBadge = (status: string) => {
@@ -162,6 +164,20 @@ export default function PeoplePage() {
               <SelectContent>
                 <SelectItem value="all">Todos los tipos</SelectItem>
                 {PERSON_TYPE_OPTIONS.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={profileFilter} onValueChange={setProfileFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Perfil" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los perfiles</SelectItem>
+                {PERSON_PROFILE_OPTIONS.map(option => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>

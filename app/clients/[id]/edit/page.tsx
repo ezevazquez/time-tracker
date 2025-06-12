@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+
+import { useState, useEffect, use } from 'react'
+import { useRouter } from 'next/navigation'
+
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -38,15 +40,17 @@ const formSchema = z.object({
   description: z.string().optional(),
 })
 
-export default function EditClientPage() {
+
+export default function EditClientPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [client, setClient] = useState<Client | null>(null)
   const [isLoadingClient, setIsLoadingClient] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { updateClient } = useClients()
-  const params = useParams()
-  const id = params?.id as string
+
+  // Unwrap the params Promise
+  const { id } = use(params)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -80,7 +84,7 @@ export default function EditClientPage() {
     }
 
     fetchClient()
-  }, [params.id, form])
+  }, [id, form])
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
