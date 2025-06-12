@@ -40,9 +40,16 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/utils/classnames'
 import { peopleService } from '@/lib/services/people.service'
 import type { Person } from '@/types/people'
-import { PERSON_STATUS_OPTIONS, PERSON_TYPE_OPTIONS, PERSON_PROFILE_OPTIONS, PERSON_STATUS, PERSON_TYPE } from '@/constants/people'
-
-
+import {
+  PERSON_STATUS_OPTIONS,
+  PERSON_TYPE_OPTIONS,
+  PERSON_PROFILE_OPTIONS,
+  PERSON_STATUS,
+  PERSON_TYPE,
+} from '@/constants/people'
+import { ResourceError } from '@/components/ui/resource-error'
+import { Resource } from '@/types'
+import { RESOURCES } from '@/constants/resources'
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),
@@ -138,19 +145,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
   }
 
   if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-red-600">Error</CardTitle>
-            <CardDescription>{error}</CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button onClick={() => router.push('/people')}>Volver a la lista</Button>
-          </CardFooter>
-        </Card>
-      </div>
-    )
+    return <ResourceError error={error} resource={RESOURCES.people as Resource} />
   }
 
   return (
