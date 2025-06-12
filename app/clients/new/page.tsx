@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useClients } from '@/hooks/use-data'
+import { useClients } from '@/hooks/use-clients'
 import { useToast } from '@/hooks/use-toast'
 
 export default function NewClientPage() {
