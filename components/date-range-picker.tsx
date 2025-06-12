@@ -1,7 +1,7 @@
 'use client'
 import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { useState } from 'react'
 
 import { cn } from '@/utils/classnames'
 import { Button } from '@/components/ui/button'
@@ -17,45 +17,69 @@ export function DatePickerWithRange({
   date: { from: Date; to: Date }
   setDate: (date: { from: Date; to: Date }) => void
 }) {
+  const [startOpen, setStartOpen] = useState(false)
+  const [endOpen, setEndOpen] = useState(false)
+
   return (
-    <div className={cn('grid gap-2', className)}>
-      <Popover>
+    <div className={cn('flex items-center gap-2', className)}>
+      {/* Start Date Picker */}
+      <Popover open={startOpen} onOpenChange={setStartOpen}>
         <PopoverTrigger asChild>
           <Button
-            id="date"
             variant={'outline'}
             className={cn(
-              'w-[300px] justify-start text-left font-normal',
-              !date && 'text-muted-foreground'
+              'w-[140px] justify-start text-left font-normal',
+              !date?.from && 'text-muted-foreground'
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {date?.from ? (
-              date.to ? (
-                <>
-                  {format(date.from, 'LLL dd, y', { locale: es })} -{' '}
-                  {format(date.to, 'LLL dd, y', { locale: es })}
-                </>
-              ) : (
-                format(date.from, 'LLL dd, y', { locale: es })
-              )
-            ) : (
-              <span>Seleccionar fechas</span>
-            )}
+            {date?.from ? format(date.from, 'dd/MM/yyyy') : 'Desde'}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
-            initialFocus
-            mode="range"
-            defaultMonth={date?.from}
-            selected={{ from: date.from, to: date.to }}
-            onSelect={range => {
-              if (range?.from && range?.to) {
-                setDate({ from: range.from, to: range.to })
+            mode="single"
+            selected={date.from}
+            onSelect={(selectedDate) => {
+              if (selectedDate) {
+                setDate({ ...date, from: selectedDate })
+                setStartOpen(false)
               }
             }}
-            numberOfMonths={2}
+            disabled={(selectedDate) => selectedDate > new Date()}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
+
+      <span className="text-gray-500">hasta</span>
+
+      {/* End Date Picker */}
+      <Popover open={endOpen} onOpenChange={setEndOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant={'outline'}
+            className={cn(
+              'w-[140px] justify-start text-left font-normal',
+              !date?.to && 'text-muted-foreground'
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {date?.to ? format(date.to, 'dd/MM/yyyy') : 'Hasta'}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={date.to}
+            onSelect={(selectedDate) => {
+              if (selectedDate) {
+                setDate({ ...date, to: selectedDate })
+                setEndOpen(false)
+              }
+            }}
+            disabled={(selectedDate) => selectedDate > new Date() || (date.from && selectedDate < date.from)}
+            initialFocus
           />
         </PopoverContent>
       </Popover>
