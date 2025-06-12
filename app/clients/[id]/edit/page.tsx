@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Loader2 } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -25,9 +26,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+
 import { toast } from 'sonner'
-import { useClients, clientsService } from '@/hooks/use-data'
-import type { Client } from '@/lib/supabase'
+
+import { useClients } from '@/hooks/use-clients'
+import { clientsService } from '@/lib/services/clients.service'
+import type { Client } from '@/types/client'
+
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),

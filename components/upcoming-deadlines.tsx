@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, Calendar, Clock } from 'lucide-react'
 import { format, differenceInDays, isAfter, isBefore, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
-import type { Project, AssignmentWithRelations } from '@/lib/supabase'
+import type { Project } from '@/types/project'
+import type { AssignmentWithRelations } from '@/types/assignment'
 
 interface UpcomingDeadlinesProps {
   projects: Project[]

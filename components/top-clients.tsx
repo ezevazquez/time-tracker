@@ -3,7 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Building2, TrendingUp } from 'lucide-react'
-import type { Client, Project } from '@/lib/supabase'
+import type { Client } from '@/types/client'
+import type { Project } from '@/types/project'
 
 interface TopClientsProps {
   clients: Client[]
@@ -15,8 +16,8 @@ export function TopClients({ clients, projects }: TopClientsProps) {
   const clientMetrics = clients
     .map(client => {
       const clientProjects = projects.filter(project => project.client_id === client.id)
-      const activeProjects = clientProjects.filter(project => project.status === 'Active')
-      const completedProjects = clientProjects.filter(project => project.status === 'Completed')
+      const activeProjects = clientProjects.filter(project => project.status === 'In Progress')
+      const completedProjects = clientProjects.filter(project => project.status === 'Finished')
 
       return {
         ...client,
@@ -75,10 +76,6 @@ export function TopClients({ clients, projects }: TopClientsProps) {
                     {client.completionRate}% éxito
                   </div>
                 </div>
-
-                {client.contact_email && (
-                  <p className="text-xs text-gray-500 truncate">{client.contact_email}</p>
-                )}
               </div>
             </div>
           ))

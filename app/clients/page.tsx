@@ -1,10 +1,20 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Plus, Search, MoreHorizontal, Edit, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -19,10 +29,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useClients } from '@/hooks/use-data'
-import { toast } from 'sonner'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+
+import { useClients } from '@/hooks/use-clients'
+
 
 export default function ClientsPage() {
   const [searchTerm, setSearchTerm] = useState('')

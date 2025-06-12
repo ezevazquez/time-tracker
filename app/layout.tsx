@@ -6,7 +6,7 @@ import { Inter } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/toaster'
 import Link from 'next/link'
-import { isSupabaseConfigured, supabase } from '@/lib/supabase'
+import { isSupabaseConfigured, supabase } from '@/lib/supabase/client'
 import Script from 'next/script'
 import { MainNav } from '@/components/main-nav'
 import { AccountDropdown } from '@/components/account-dropdown'
@@ -63,7 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </header>
             )}
 
-            {children}
+            <main className="flex-1 min-h-0">{children}</main>
           </div>
           <Toaster />
         </ThemeProvider>

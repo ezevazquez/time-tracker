@@ -5,7 +5,8 @@ import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Users, TrendingUp, TrendingDown } from 'lucide-react'
-import type { Person, AssignmentWithRelations } from '@/lib/supabase'
+import type { Person } from '@/types/people'
+import type { AssignmentWithRelations } from '@/types/assignment'
 
 interface ResourceUtilizationProps {
   people: Person[]
@@ -17,7 +18,7 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
 
   // Calculate utilization for each active person
   const utilizationData = people
-    .filter(person => person.status === 'Active')
+    .filter(person => person.status === 'Activo')
     .map(person => {
       const currentAssignments = assignments.filter(assignment => {
         const start = new Date(assignment.start_date)

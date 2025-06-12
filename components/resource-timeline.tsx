@@ -20,7 +20,9 @@ import {
 } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { FiltersPopover } from './filters-popover'
-import type { Person, Project, AssignmentWithRelations } from '@/lib/supabase'
+import type { Person } from '@/types/people'
+import type { Project } from '@/types/project'
+import type { AssignmentWithRelations } from '@/types/assignment'
 import { toUiAllocation } from '@/lib/assignments'
 
 interface ResourceTimelineProps {
@@ -112,12 +114,33 @@ export function ResourceTimeline({
     })
   }, [visibleDateRange])
 
+  // Get assignments for a person within the visible date range
+  const getPersonAssignments = (personId: string) => {
+    return assignments.filter(assignment => {
+      const startDate = new Date(assignment.start_date)
+      const endDate = new Date(assignment.end_date)
+      return (
+        assignment.person_id === personId &&
+        startDate <= endOfMonth(visibleDateRange.end) &&
+        endDate >= startOfMonth(visibleDateRange.start)
+      )
+    })
+  }
+
   // Get active people and projects
   const activePeople = people.filter(p => {
-    if (p.status !== 'Active') return false
+    // For debugging, let's show all people first
+    console.log('Person:', p.name, 'Status:', p.status, 'Profile:', p.profile)
+    
+    // Show all people, regardless of status
+    // Apply filters if they exist
     if (filters?.personProfile && p.profile !== filters.personProfile) return false
+    
     return true
   })
+
+  console.log('Active people count:', activePeople.length)
+  console.log('Total people:', people.length)
 
   // Handle scroll to dynamically load more months
   useEffect(() => {
@@ -182,19 +205,6 @@ export function ResourceTimeline({
     scrollContainer.scrollTo({
       left: Math.max(0, scrollPosition),
       behavior: 'smooth',
-    })
-  }
-
-  // Get assignments for a person within the visible date range
-  const getPersonAssignments = (personId: string) => {
-    return assignments.filter(assignment => {
-      const startDate = new Date(assignment.start_date)
-      const endDate = new Date(assignment.end_date)
-      return (
-        assignment.person_id === personId &&
-        startDate <= endOfMonth(visibleDateRange.end) &&
-        endDate >= startOfMonth(visibleDateRange.start)
-      )
     })
   }
 
@@ -368,11 +378,9 @@ export function ResourceTimeline({
                 ) => (
                   <div className="px-3 py-2 text-white font-medium truncate h-full flex items-center text-sm">
                     <span className="truncate">{project.name}</span>
-                    {assignment.allocation < 1 && (
-                      <span className="ml-2 bg-black/30 text-white text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                        {toUiAllocation(assignment.allocation)}%
-                      </span>
-                    )}
+                    <span className="ml-2 bg-black/30 text-white text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                      {toUiAllocation(assignment.allocation)}%
+                    </span>
                   </div>
                 )
 

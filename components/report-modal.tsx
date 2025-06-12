@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { DateRange } from 'react-day-picker'
 import {
   Dialog,
   DialogContent,
@@ -21,7 +20,7 @@ import {
 } from '@/components/ui/table'
 import { DatePickerWithRange } from '@/components/date-range-picker'
 import { CalendarRange, Loader2 } from 'lucide-react'
-import { fetchOcupationReport } from '@/lib/fetchReport'
+import { fetchOcupationReport } from '@/lib/services/reports.service'
 
 export function ReportModal() {
   const [range, setRange] = useState<{ from: Date; to: Date } | undefined>()

@@ -1,7 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Search, MoreHorizontal, Edit, Trash2 } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import {
+  Plus,
+  Search,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+} from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,9 +37,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { usePeople } from '@/hooks/use-data'
-import { toast } from 'sonner'
-import Link from 'next/link'
+
+import { usePeople } from '@/hooks/use-people'
+import { PERSON_STATUS_OPTIONS, PERSON_TYPE_OPTIONS, PERSON_STATUS, PERSON_TYPE } from '@/constants/people'
+
 
 export default function PeoplePage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -97,6 +108,9 @@ export default function PeoplePage() {
     }
   }
 
+  const getLabel = (options: { value: string; label: string }[], value: string) =>
+    options.find(opt => opt.value === value)?.label || value
+
   return (
     <main className="flex-1 container mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
@@ -133,21 +147,28 @@ export default function PeoplePage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los estados</SelectItem>
-                <SelectItem value="Active">Activo</SelectItem>
-                <SelectItem value="Paused">Pausado</SelectItem>
-                <SelectItem value="Terminated">Terminado</SelectItem>
+                {PERSON_STATUS_OPTIONS.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los tipos</SelectItem>
-                <SelectItem value="Internal">Interno</SelectItem>
-                <SelectItem value="External">Externo</SelectItem>
+                {PERSON_TYPE_OPTIONS.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+
           </div>
         </CardContent>
       </Card>
@@ -187,18 +208,13 @@ export default function PeoplePage() {
                   </TableCell>
                   <TableCell>
                     <Badge className={getStatusBadge(person.status)}>
-                      {person.status === 'Active'
-                        ? 'Activo'
-                        : person.status === 'Paused'
-                          ? 'Pausado'
-                          : person.status === 'Terminated'
-                            ? 'Terminado'
-                            : person.status}
+                      {getLabel(PERSON_STATUS_OPTIONS, person.status)}
                     </Badge>
+
                   </TableCell>
                   <TableCell>
                     <Badge className={getTypeBadge(person.type)}>
-                      {person.type === 'Internal' ? 'Interno' : 'Externo'}
+                      {getLabel(PERSON_TYPE_OPTIONS, person.type)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">

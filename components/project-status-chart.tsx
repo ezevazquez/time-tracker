@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
-import type { Project } from '@/lib/supabase'
+import type { Project } from '@/types/project'
 
 interface ProjectStatusChartProps {
   projects: Project[]
@@ -79,11 +79,14 @@ export function ProjectStatusChart({ projects }: ProjectStatusChartProps) {
               <Legend
                 verticalAlign="bottom"
                 height={36}
-                formatter={(value, entry) => (
-                  <span style={{ color: entry.color }}>
-                    {value} ({entry.payload?.percentage}%)
-                  </span>
-                )}
+                formatter={(value, entry) => {
+                  const dataItem = data.find(item => item.name === value)
+                  return (
+                    <span style={{ color: entry.color }}>
+                      {value} ({dataItem?.percentage}%)
+                    </span>
+                  )
+                }}
               />
             </PieChart>
           </ResponsiveContainer>
