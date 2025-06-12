@@ -6,6 +6,7 @@ import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
 import type { Client } from '@/types/client'
+import { ACTIVE_PERSON_STATUSES } from '@/constants/people'
 
 interface StatsOverviewProps {
   people: Person[]
@@ -16,7 +17,7 @@ interface StatsOverviewProps {
 
 export function StatsOverview({ people, projects, assignments, clients }: StatsOverviewProps) {
   // Calculate stats
-  const activePeople = people.filter(p => p.status === 'Activo').length
+  const activePeople = people.filter(p => ACTIVE_PERSON_STATUSES.includes(p.status as any)).length
   const activeProjects = projects.filter(p => p.status === 'In Progress').length
   const totalAssignments = assignments.length
   const totalClients = clients.length
@@ -29,13 +30,16 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
     return start <= currentDate && end >= currentDate
   })
 
+  const assignedPeopleToday = new Set(
+    currentAssignments.map(a => a.person_id)
+  )
+  const totalActivePeople = people.filter(p => ACTIVE_PERSON_STATUSES.includes(p.status as any)).length
+  
   const avgUtilization =
-    currentAssignments.length > 0
-      ? Math.round(
-          currentAssignments.reduce((sum, a) => sum + a.allocation, 0) / currentAssignments.length
-        )
+    totalActivePeople > 0
+      ? Math.round((assignedPeopleToday.size / totalActivePeople) * 100)
       : 0
-
+  
   // Overallocated people
   const overallocatedCount = people.filter(person => {
     const personAssignments = currentAssignments.filter(a => a.person_id === person.id)
@@ -45,7 +49,7 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
 
   const stats = [
     {
-      title: 'Equipo Activo',
+      title: 'Equipo activo',
       value: activePeople,
       total: people.length,
       icon: Users,
@@ -54,34 +58,16 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
       description: `${people.length - activePeople} inactivos`,
     },
     {
-      title: 'Proyectos Activos',
-      value: activeProjects,
-      total: projects.length,
-      icon: Briefcase,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-      description: `${projects.length - activeProjects} completados/pausados`,
+      title: 'Sobreasignados',
+      value: overallocatedCount,
+      total: activePeople,
+      icon: AlertTriangle,
+      color: overallocatedCount > 0 ? 'text-red-600' : 'text-green-600',
+      bgColor: overallocatedCount > 0 ? 'bg-red-50' : 'bg-green-50',
+      description: overallocatedCount > 0 ? 'Requieren atención' : 'Todo bajo control',
     },
     {
-      title: 'Asignaciones',
-      value: totalAssignments,
-      total: currentAssignments.length,
-      icon: Calendar,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      description: `${currentAssignments.length} activas`,
-    },
-    {
-      title: 'Clientes',
-      value: totalClients,
-      total: null,
-      icon: Building2,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-      description: 'Total registrados',
-    },
-    {
-      title: 'Utilización Promedio',
+      title: 'Utilización promedio',
       value: `${avgUtilization}%`,
       total: null,
       icon: TrendingUp,
@@ -96,34 +82,54 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
       description: 'Del equipo activo',
     },
     {
-      title: 'Sobreasignados',
-      value: overallocatedCount,
-      total: activePeople,
-      icon: AlertTriangle,
-      color: overallocatedCount > 0 ? 'text-red-600' : 'text-green-600',
-      bgColor: overallocatedCount > 0 ? 'bg-red-50' : 'bg-green-50',
-      description: overallocatedCount > 0 ? 'Requieren atención' : 'Todo bajo control',
+      title: 'Asignaciones',
+      value: totalAssignments,
+      total: currentAssignments.length,
+      icon: Calendar,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      description: `${currentAssignments.length} activas`,
+    },
+    {
+      title: 'Proyectos activos',
+      value: activeProjects,
+      total: projects.length,
+      icon: Briefcase,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+      description: `${projects.length - activeProjects} completados/pausados`,
+    },
+    {
+      title: 'Clientes',
+      value: totalClients,
+      total: null,
+      icon: Building2,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
+      description: 'Total registrados',
     },
   ]
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
       {stats.map((stat, index) => (
-        <Card key={index} className="hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  {stat.total && <p className="text-sm text-gray-500">/{stat.total}</p>}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">{stat.description}</p>
-              </div>
-              <div className={`p-3 rounded-full ${stat.bgColor}`}>
+        <Card key={index} className="hover:shadow-md transition-shadow flex flex-col justify-between">
+          <CardContent className="p-4 h-full flex flex-col justify-between">
+            <div className="flex items-start justify-between">
+              <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+              <div className={`p-2 rounded-full ${stat.bgColor}`}>
                 <stat.icon className={`h-5 w-5 ${stat.color}`} />
               </div>
             </div>
+  
+            <div className="mt-4">
+              <div className="flex items-baseline gap-1">
+                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                {stat.total && <p className="text-sm text-gray-500">/{stat.total}</p>}
+              </div>
+            </div>
+  
+            <p className="text-xs text-gray-500 mt-auto pt-4">{stat.description}</p>
           </CardContent>
         </Card>
       ))}

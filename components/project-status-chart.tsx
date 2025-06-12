@@ -3,14 +3,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
 import type { Project } from '@/types/project'
+import { PROJECT_STATUS } from '@/constants/projects'
 
 interface ProjectStatusChartProps {
   projects: Project[]
 }
 
 export function ProjectStatusChart({ projects }: ProjectStatusChartProps) {
-  // Count projects by status
-  const statusCounts = projects.reduce(
+  // Filter out finished projects and count projects by status
+  const activeProjects = projects.filter(project => project.status !== PROJECT_STATUS.FINISHED)
+  
+  const statusCounts = activeProjects.reduce(
     (acc, project) => {
       acc[project.status] = (acc[project.status] || 0) + 1
       return acc
@@ -21,15 +24,14 @@ export function ProjectStatusChart({ projects }: ProjectStatusChartProps) {
   const data = Object.entries(statusCounts).map(([status, count]) => ({
     name: status,
     value: count,
-    percentage: Math.round((count / projects.length) * 100),
+    percentage: Math.round((count / activeProjects.length) * 100),
   }))
 
   const COLORS = {
-    Active: '#10B981',
-    Completed: '#3B82F6',
-    'On Hold': '#F59E0B',
-    Cancelled: '#EF4444',
-    Planning: '#8B5CF6',
+    [PROJECT_STATUS.IN_PROGRESS]: '#10B981', // Verde para proyectos en progreso
+    [PROJECT_STATUS.FINISHED]: '#3B82F6',    // Azul para proyectos finalizados
+    [PROJECT_STATUS.ON_HOLD]: '#F59E0B',     // Amarillo para proyectos en pausa
+    [PROJECT_STATUS.NOT_STARTED]: '#6B7280', // Gris para proyectos no iniciados
   }
 
   const CustomTooltip = ({ active, payload }: any) => {
@@ -52,7 +54,7 @@ export function ProjectStatusChart({ projects }: ProjectStatusChartProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-          Estado de Proyectos
+          Estado de proyectos
         </CardTitle>
       </CardHeader>
       <CardContent>

@@ -12,10 +12,12 @@ export function DashboardHeader() {
     day: 'numeric',
   })
 
+  const formattedDate = currentDate.charAt(0).toUpperCase() + currentDate.slice(1).toLowerCase()
+
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <p className="text-gray-600 capitalize">{currentDate}</p>
+        <p className="text-gray-600">{formattedDate}</p>
       </div>
 
       <div className="flex gap-3">

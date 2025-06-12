@@ -71,7 +71,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5 text-orange-600" />
-          Próximos Vencimientos
+          Próximos vencimientos
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
