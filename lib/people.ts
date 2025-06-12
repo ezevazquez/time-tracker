@@ -17,6 +17,30 @@ export function getInactivePeople(people: Person[]) {
   )
 }
 
+/**
+ * Gets the full name of a person combining first_name and last_name
+ */
+export function getFullName(person: Person): string {
+  return `${person.first_name} ${person.last_name}`.trim()
+}
+
+/**
+ * Gets the initials from first_name and last_name
+ */
+export function getInitials(person: Person): string {
+  const firstInitial = person.first_name.charAt(0).toUpperCase()
+  const lastInitial = person.last_name.charAt(0).toUpperCase()
+  return `${firstInitial}${lastInitial}`.slice(0, 2)
+}
+
+/**
+ * Gets the display name (full name) for a person
+ * This is the main function to use when displaying a person's name
+ */
+export function getDisplayName(person: Person): string {
+  return getFullName(person)
+}
+
 export function getPersonStatusLabel(status: string): string {
   switch (status) {
     case PERSON_STATUS.ACTIVE:

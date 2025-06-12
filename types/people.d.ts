@@ -2,7 +2,6 @@ import { PERSON_STATUS, PERSON_TYPE } from '@/constants/people'
 
 export interface Person {
     id: string
-    name: string
     profile: string
     start_date: string
     end_date: string | null
