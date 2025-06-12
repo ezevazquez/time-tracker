@@ -39,16 +39,16 @@ import {
 } from '@/components/ui/select'
 
 import { usePeople } from '@/hooks/use-people'
+import { getDisplayName } from '@/lib/people'
 import { PERSON_STATUS_OPTIONS, PERSON_TYPE_OPTIONS, PERSON_STATUS, PERSON_TYPE, PERSON_PROFILE_OPTIONS } from '@/constants/people'
 
-
 export default function PeoplePage() {
+  const router = useRouter()
+  const { people, loading, error, deletePerson } = usePeople()
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('Active')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
   const [profileFilter, setProfileFilter] = useState('all')
-
-  const { people, loading, error, deletePerson } = usePeople()
 
   if (loading) {
     return (
@@ -64,16 +64,23 @@ export default function PeoplePage() {
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center text-red-600">
-          <p>Error: {error}</p>
-        </div>
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-red-600">Error</CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => window.location.reload()}>Reintentar</Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   const filteredPeople = people.filter(person => {
+    const fullName = getDisplayName(person)
     const matchesSearch =
-      person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       person.profile.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || person.status === statusFilter
     const matchesType = typeFilter === 'all' || person.type === typeFilter
@@ -99,8 +106,8 @@ export default function PeoplePage() {
     return variants[type as keyof typeof variants] || 'bg-gray-100 text-gray-800'
   }
 
-  const handleDelete = async (id: string, name: string) => {
-    if (confirm(`¿Estás seguro de que quieres eliminar a ${name}?`)) {
+  const handleDelete = async (id: string, fullName: string) => {
+    if (confirm(`¿Estás seguro de que quieres eliminar a ${fullName}?`)) {
       try {
         await deletePerson(id)
         toast.success('Persona eliminada correctamente')
@@ -210,7 +217,7 @@ export default function PeoplePage() {
             <TableBody>
               {filteredPeople.map(person => (
                 <TableRow key={person.id}>
-                  <TableCell className="font-medium">{person.name}</TableCell>
+                  <TableCell className="font-medium">{getDisplayName(person)}</TableCell>
                   <TableCell>{person.profile}</TableCell>
                   <TableCell>
                     <div className="text-sm">
@@ -249,7 +256,7 @@ export default function PeoplePage() {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-red-600"
-                          onClick={() => handleDelete(person.id, person.name)}
+                          onClick={() => handleDelete(person.id, getDisplayName(person))}
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Eliminar

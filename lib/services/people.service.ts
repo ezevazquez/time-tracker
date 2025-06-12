@@ -3,7 +3,7 @@ import type { Person } from '@/types/people'
 
 export const peopleService = {
   async getAll(): Promise<Person[]> {
-    const { data, error } = await supabase.from('people').select('*').order('name')
+    const { data, error } = await supabase.from('people').select('*').order('first_name')
     if (error) throw new Error(`Error fetching people: ${error.message}`)
     return data ?? []
   },

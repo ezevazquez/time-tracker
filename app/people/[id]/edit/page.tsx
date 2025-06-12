@@ -52,7 +52,8 @@ import { Resource } from '@/types'
 import { RESOURCES } from '@/constants/resources'
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),
+  first_name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),
+  last_name: z.string().min(2, { message: 'El apellido debe tener al menos 2 caracteres' }),
   profile: z.string().min(2, { message: 'El perfil debe tener al menos 2 caracteres' }),
   start_date: z.date({ required_error: 'La fecha de inicio es requerida' }),
   end_date: z.date().nullable().optional(),
@@ -75,7 +76,8 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
+      first_name: '',
+      last_name: '',
       profile: '',
       start_date: new Date(),
       end_date: null,
@@ -94,7 +96,8 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
           setPerson(personData)
           // Set form values
           form.reset({
-            name: personData.name,
+            first_name: personData.first_name,
+            last_name: personData.last_name,
             profile: personData.profile,
             start_date: personData.start_date ? new Date(personData.start_date) : new Date(),
             end_date: personData.end_date ? new Date(personData.end_date) : null,
@@ -163,19 +166,35 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nombre</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nombre completo" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="first_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nombre</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nombre" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="last_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Apellido</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Apellido" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}
@@ -231,7 +250,9 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                             mode="single"
                             selected={field.value}
                             onSelect={field.onChange}
-                            disabled={date => date > new Date() || date < new Date('1900-01-01')}
+                            disabled={(date) =>
+                              date > new Date() || date < new Date('1900-01-01')
+                            }
                             initialFocus
                           />
                         </PopoverContent>
@@ -246,7 +267,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                   name="end_date"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel>Fecha de Fin (opcional)</FormLabel>
+                      <FormLabel>Fecha de Fin</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
@@ -257,7 +278,9 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                                 !field.value && 'text-muted-foreground'
                               )}
                             >
-                              {field.value ? format(field.value, 'dd/MM/yyyy') : 'Sin fecha de fin'}
+                              {field.value
+                                ? format(field.value, 'dd/MM/yyyy')
+                                : 'Seleccionar fecha'}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
@@ -267,19 +290,12 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                             mode="single"
                             selected={field.value || undefined}
                             onSelect={field.onChange}
-                            disabled={date => date < new Date(form.getValues('start_date'))}
+                            disabled={(date) =>
+                              date > new Date() || date < new Date('1900-01-01')
+                            }
                             initialFocus
                           />
                         </PopoverContent>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="mt-2 self-start"
-                          onClick={() => form.setValue('end_date', null)}
-                        >
-                          Limpiar fecha
-                        </Button>
                       </Popover>
                       <FormMessage />
                     </FormItem>
@@ -339,13 +355,13 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                 />
               </div>
 
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" type="button" onClick={() => router.push('/people')}>
+              <div className="flex justify-end gap-4">
+                <Button type="button" variant="outline" onClick={() => router.push('/people')}>
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Guardar Cambios
+                  Actualizar Persona
                 </Button>
               </div>
             </form>
