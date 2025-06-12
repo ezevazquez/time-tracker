@@ -1,6 +1,5 @@
 'use client'
 
-
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -34,12 +33,14 @@ import { toast } from 'sonner'
 import { useClients } from '@/hooks/use-clients'
 import { clientsService } from '@/lib/services/clients.service'
 import type { Client } from '@/types/client'
+import { ResourceError } from '@/components/ui/resource-error'
+import { RESOURCES } from '@/constants/resources'
+import { Resource } from '@/types'
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),
   description: z.string().optional(),
 })
-
 
 export default function EditClientPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
@@ -116,19 +117,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   }
 
   if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-red-600">Error</CardTitle>
-            <CardDescription>{error}</CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button onClick={() => router.push('/clients')}>Volver a la lista</Button>
-          </CardFooter>
-        </Card>
-      </div>
-    )
+    return <ResourceError error={error} resource={RESOURCES.clients as Resource} />
   }
 
   return (
