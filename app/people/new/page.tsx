@@ -44,14 +44,16 @@ export default function NewPersonPage() {
   const { createPerson } = usePeople()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<{
-    name: string
+    first_name: string
+    last_name: string
     profile: string
     start_date: Date | undefined
     end_date: Date | undefined
     status: typeof PERSON_STATUS[keyof typeof PERSON_STATUS]
     type: typeof PERSON_TYPE[keyof typeof PERSON_TYPE]
   }>({
-    name: '',
+    first_name: '',
+    last_name: '',
     profile: PERSON_PROFILE.PROJECT_MANAGER,
     start_date: new Date(),
     end_date: undefined,
@@ -67,18 +69,22 @@ export default function NewPersonPage() {
       return
     }
 
+    if (!formData.first_name.trim() || !formData.last_name.trim()) {
+      toast.error('El nombre y apellido son requeridos')
+      return
+    }
+
     setLoading(true)
 
     try {
       await createPerson({
-        name: formData.name,
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
         profile: formData.profile,
         start_date: formData.start_date.toISOString().split('T')[0],
         end_date: formData.end_date ? formData.end_date.toISOString().split('T')[0] : null,
         status: formData.status,
         type: formData.type,
-        first_name: formData.name.split(' ')[0] || '',
-        last_name: formData.name.split(' ').slice(1).join(' ') || '',
       })
 
       toast.success('Persona creada correctamente')
@@ -115,12 +121,23 @@ export default function NewPersonPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nombre Completo *</Label>
+                  <Label htmlFor="first_name">Nombre *</Label>
                   <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Ej: Ana García"
+                    id="first_name"
+                    value={formData.first_name}
+                    onChange={e => setFormData({ ...formData, first_name: e.target.value })}
+                    placeholder="Ej: Ana"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="last_name">Apellido *</Label>
+                  <Input
+                    id="last_name"
+                    value={formData.last_name}
+                    onChange={e => setFormData({ ...formData, last_name: e.target.value })}
+                    placeholder="Ej: García"
                     required
                   />
                 </div>
@@ -247,17 +264,16 @@ export default function NewPersonPage() {
                       ))}
                     </SelectContent>
                   </Select>
-
                 </div>
               </div>
 
-              <div className="flex gap-4 pt-6">
-                <Button type="submit" className="flex-1" disabled={loading}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {loading ? 'Guardando...' : 'Guardar Persona'}
-                </Button>
+              <div className="flex justify-end gap-4">
                 <Button type="button" variant="outline" asChild>
                   <Link href="/people">Cancelar</Link>
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading && <Save className="h-4 w-4 mr-2 animate-spin" />}
+                  Crear Persona
                 </Button>
               </div>
             </form>

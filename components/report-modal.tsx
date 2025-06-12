@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,23 +20,154 @@ import {
   TableBody,
   TableCell,
 } from '@/components/ui/table'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePickerWithRange } from '@/components/date-range-picker'
-import { CalendarRange, Loader2 } from 'lucide-react'
+import { CalendarRange, Loader2, Download, FileSpreadsheet, Save } from 'lucide-react'
 import { fetchOcupationReport } from '@/lib/services/reports.service'
+import { supabase } from '@/lib/supabase/client'
+import * as XLSX from 'xlsx'
+import { toast } from 'sonner'
+
+interface ReportData {
+  assignment_id: string
+  person_first_name: string
+  person_last_name: string
+  person_profile: string
+  project_name: string
+  project_status: string
+  assignment_start_date: string
+  assignment_end_date: string
+  allocation: number
+  assigned_role?: string
+}
 
 export function ReportModal() {
-  const [range, setRange] = useState<{ from: Date; to: Date } | undefined>()
-  const [report, setReport] = useState<any[]>([])
+  const [range, setRange] = useState<{ from: Date; to: Date }>(() => {
+    const today = new Date()
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+    return { from: firstDayOfMonth, to: today }
+  })
+  const [report, setReport] = useState<ReportData[]>([])
   const [loading, setLoading] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   const handleGenerate = async () => {
-    if (!range?.from || !range?.to) return
+    if (!range?.from || !range?.to) {
+      toast.error('Por favor selecciona un rango de fechas')
+      return
+    }
+    
     setLoading(true)
-    const from = format(range.from, 'yyyy-MM-dd')
-    const to = format(range.to, 'yyyy-MM-dd')
-    const data = await fetchOcupationReport(from, to)
-    setReport(data)
-    setLoading(false)
+    try {
+      const from = format(range.from, 'yyyy-MM-dd')
+      const to = format(range.to, 'yyyy-MM-dd')
+      const data = await fetchOcupationReport(from, to)
+      setReport(data)
+      toast.success('Reporte generado correctamente')
+    } catch (error) {
+      console.error('Error generating report:', error)
+      toast.error('Error al generar el reporte')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const generateExcel = async (data: ReportData[]) => {
+    if (!data || data.length === 0) {
+      toast.error('No hay datos para exportar')
+      return
+    }
+
+    // Prepare data for Excel with exact columns requested
+    const excelData = data.map(item => ({
+      'First Name': item.person_first_name,
+      'Last Name': item.person_last_name,
+      'Profile': item.person_profile,
+      'Project': item.project_name,
+      'Fecha Inicio': format(new Date(item.assignment_start_date), 'dd/MM/yyyy'),
+      'Fecha Fin': format(new Date(item.assignment_end_date), 'dd/MM/yyyy'),
+      'Asignación': Math.round(item.allocation * 100)
+    }))
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Reporte Ocupación')
+
+    return workbook
+  }
+
+  const handleExportAndSave = async () => {
+    setExporting(true)
+    try {
+      const workbook = await generateExcel(report)
+      if (!workbook) {
+        toast.error('No hay datos para exportar')
+        return
+      }
+      const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
+
+      const fileName = `reporte-ocupacion-${format(range!.from, 'yyyy-MM-dd')}-${format(range!.to, 'yyyy-MM-dd')}-${Date.now()}.xlsx`
+      
+      console.log('Intentando subir archivo:', fileName)
+      console.log('Tamaño del archivo:', blob.size, 'bytes')
+      
+      // Save to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('reports')
+        .upload(`ocupacion/${fileName}`, blob, { 
+          upsert: true,
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        })
+
+      if (uploadError) {
+        console.error('Error de upload:', uploadError)
+        
+        // Check if it's an RLS policy error
+        if (uploadError.message?.includes('row-level security policy')) {
+          throw new Error('Error de permisos: Necesitas configurar las políticas de Storage en Supabase. Ve a Storage → Policies → reports')
+        }
+        
+        throw new Error(`Error al subir archivo: ${uploadError.message}`)
+      }
+
+      console.log('Archivo subido exitosamente:', uploadData)
+
+      // Download to local machine
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      const { data: publicUrl } = supabase.storage
+        .from('reports')
+        .getPublicUrl(`ocupacion/${fileName}`)
+
+      toast.success('Reporte exportado y guardado correctamente')
+      console.log('Reporte guardado en servidor:', publicUrl.publicUrl)
+    } catch (error) {
+      console.error('Error completo:', error)
+      console.error('Tipo de error:', typeof error)
+      console.error('Mensaje de error:', error instanceof Error ? error.message : 'Error desconocido')
+      toast.error(`Error al exportar y guardar el reporte: ${error instanceof Error ? error.message : 'Error desconocido'}`)
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  // Calculate summary statistics
+  const summary = {
+    totalAssignments: report.length,
+    totalPeople: new Set(report.map(r => `${r.person_first_name} ${r.person_last_name}`)).size,
+    totalProjects: new Set(report.map(r => r.project_name)).size,
+    overallocated: report.filter(r => r.allocation > 100).length,
+    underutilized: report.filter(r => r.allocation < 50).length,
   }
 
   return (
@@ -46,49 +179,114 @@ export function ReportModal() {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Reporte de Ocupación</DialogTitle>
+          <DialogDescription>
+            Genera reportes de ocupación de personas por proyectos en un rango de fechas específico.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-4 flex-1 overflow-hidden">
+          {/* Controls */}
+          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
             <DatePickerWithRange
-              date={range || { from: new Date(), to: new Date() }}
+              date={range}
               setDate={setRange}
             />
-            <Button onClick={handleGenerate} disabled={loading || !range?.from || !range?.to}>
+            <Button onClick={handleGenerate} disabled={loading}>
               {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Generar
+              Generar Reporte
             </Button>
           </div>
 
           {report.length > 0 && (
-            <div className="overflow-auto border rounded-md">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Persona</TableHead>
-                    <TableHead>Proyecto</TableHead>
-                    <TableHead>Fechas</TableHead>
-                    <TableHead>Asignación (%)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {report.map(r => (
-                    <TableRow key={r.assignment_id}>
-                      <TableCell>
-                        {r.person_first_name} {r.person_last_name}
-                      </TableCell>
-                      <TableCell>{r.project_name}</TableCell>
-                      <TableCell>
-                        {r.assignment_start_date} → {r.assignment_end_date}
-                      </TableCell>
-                      <TableCell>{r.allocation}</TableCell>
+            <>
+              {/* Summary Cards */}
+              <div className="grid grid-cols-3 gap-4 w-full">
+                <Card className='bg-gray-100'>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-gray-600">Total Asignaciones</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{summary.totalAssignments}</div>
+                  </CardContent>
+                </Card>
+                <Card className='bg-gray-100'>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-gray-600">Personas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{summary.totalPeople}</div>
+                  </CardContent>
+                </Card>
+                <Card className='bg-gray-100'>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-gray-600">Proyectos</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{summary.totalProjects}</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Report Table */}
+              <div className="flex-1 overflow-auto border rounded-md">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-white z-10">
+                    <TableRow>
+                      <TableHead>Persona</TableHead>
+                      <TableHead>Perfil</TableHead>
+                      <TableHead>Proyecto</TableHead>
+                      <TableHead>Fechas</TableHead>
+                      <TableHead>Asignación</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {report.map(r => (
+                      <TableRow key={r.assignment_id}>
+                        <TableCell className="font-medium">
+                          {r.person_first_name} {r.person_last_name}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-600">
+                          {r.person_profile}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {r.project_name}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          <div>
+                            <div>{format(new Date(r.assignment_start_date), 'dd/MM/yyyy')}</div>
+                            <div className="text-gray-500">→</div>
+                            <div>{format(new Date(r.assignment_end_date), 'dd/MM/yyyy')}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {Math.round(r.allocation * 100)}%
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Export Button - Bottom Right */}
+              <div className="flex justify-end pt-4 border-t">
+                <Button onClick={handleExportAndSave} disabled={exporting}>
+                  {exporting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar y Guardar Excel
+                </Button>
+              </div>
+            </>
+          )}
+
+          {report.length === 0 && !loading && (
+            <div className="flex-1 flex items-center justify-center text-gray-500">
+              <div className="text-center">
+                <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>Selecciona un rango de fechas y genera un reporte</p>
+              </div>
             </div>
           )}
         </div>

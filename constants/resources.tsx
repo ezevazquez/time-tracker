@@ -7,4 +7,18 @@ export const RESOURCES: Partial<Record<ResourceNames, Resource>> = {
     icon: 'folder',
     path: '/projects',
   },
+  clients: {
+    slug: 'clients',
+    singularLabel: 'Cliente',
+    pluralLabel: 'Clientes',
+    icon: 'folder',
+    path: '/clients',
+  },
+  people: {
+    slug: 'people',
+    singularLabel: 'Persona',
+    pluralLabel: 'Personas',
+    icon: 'folder',
+    path: '/people',
+  },
 }

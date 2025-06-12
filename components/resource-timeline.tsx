@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -24,6 +24,7 @@ import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
 import { toUiAllocation } from '@/lib/assignments'
+import { getDisplayName, getInitials } from '@/lib/people'
 
 interface ResourceTimelineProps {
   people: Person[]
@@ -130,7 +131,7 @@ export function ResourceTimeline({
   // Get active people and projects
   const activePeople = people.filter(p => {
     // For debugging, let's show all people first
-    console.log('Person:', p.name, 'Status:', p.status, 'Profile:', p.profile)
+    console.log('Person:', getDisplayName(p), 'Status:', p.status, 'Profile:', p.profile)
     
     // Show all people, regardless of status
     // Apply filters if they exist
@@ -401,15 +402,11 @@ export function ResourceTimeline({
                       <div className="p-4 flex items-center space-x-3 w-full">
                         <Avatar className="h-10 w-10">
                           <AvatarFallback className="text-sm bg-gray-100 text-gray-600">
-                            {person.name
-                              .split(' ')
-                              .map(n => n[0])
-                              .join('')
-                              .slice(0, 2)}
+                            {getInitials(person)}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-gray-900 truncate">{person.name}</div>
+                          <div className="font-medium text-gray-900 truncate">{getDisplayName(person)}</div>
                           <div className="text-sm text-gray-500 truncate">{person.profile}</div>
                           <div className="text-xs text-gray-400">{person.type}</div>
                         </div>

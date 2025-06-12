@@ -8,6 +8,7 @@ import { Users, TrendingUp, TrendingDown } from 'lucide-react'
 import type { Person } from '@/types/people'
 import type { AssignmentWithRelations } from '@/types/assignment'
 import { PERSON_STATUS } from '@/constants/people'
+import { getDisplayName, getInitials } from '@/lib/people'
 
 interface ResourceUtilizationProps {
   people: Person[]
@@ -92,17 +93,13 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
             >
               <Avatar className="h-10 w-10">
                 <AvatarFallback className="text-sm bg-gray-100">
-                  {person.name
-                    .split(' ')
-                    .map(n => n[0])
-                    .join('')
-                    .slice(0, 2)}
+                  {getInitials(person)}
                 </AvatarFallback>
               </Avatar>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <p className="text-sm font-medium text-gray-900 truncate">{person.name}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{getDisplayName(person)}</p>
                   {person.isOverallocated && (
                     <Badge variant="destructive" className="text-xs">
                       Sobreasignado
