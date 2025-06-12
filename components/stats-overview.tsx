@@ -109,21 +109,23 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
       {stats.map((stat, index) => (
-        <Card key={index} className="hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  {stat.total && <p className="text-sm text-gray-500">/{stat.total}</p>}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">{stat.description}</p>
-              </div>
-              <div className={`p-3 rounded-full ${stat.bgColor}`}>
+        <Card key={index} className="hover:shadow-md transition-shadow flex flex-col justify-between">
+          <CardContent className="p-4 h-full flex flex-col justify-between">
+            <div className="flex items-start justify-between">
+              <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+              <div className={`p-2 rounded-full ${stat.bgColor}`}>
                 <stat.icon className={`h-5 w-5 ${stat.color}`} />
               </div>
             </div>
+  
+            <div className="mt-4">
+              <div className="flex items-baseline gap-1">
+                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                {stat.total && <p className="text-sm text-gray-500">/{stat.total}</p>}
+              </div>
+            </div>
+  
+            <p className="text-xs text-gray-500 mt-auto pt-4">{stat.description}</p>
           </CardContent>
         </Card>
       ))}
