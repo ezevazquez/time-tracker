@@ -7,28 +7,21 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { toast } from 'sonner'
 
-import {
-  ArrowLeft,
-  Calendar,
-  User,
-  Building2,
-  Clock,
-  Edit,
-  Trash2,
-  AlertCircle,
-} from 'lucide-react'
+import { ArrowLeft, Calendar, User, Building2, Clock, Edit, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-
 import { useProjects } from '@/hooks/use-projects'
 import { projectsService } from '@/lib/services/projects.service'
 import type { ProjectWithClient } from '@/types/project'
 import { PROJECT_STATUS_OPTIONS } from '@/constants/projects'
-
+import { ResourceLoading } from '@/components/ui/resource-loading'
+import { ResourceError } from '@/components/ui/resource-error'
+import { RESOURCES } from '@/constants/resources'
+import { Resource } from '@/types'
+import { ResourceNotFound } from '@/components/resource-not-found'
 
 const getProjectStatusLabel = (status: string) =>
   PROJECT_STATUS_OPTIONS.find(opt => opt.value === status)?.label || status
@@ -42,7 +35,6 @@ const getProjectStatusBadgeClass = (status: string) => {
   }
   return variants[status] || 'bg-gray-100 text-gray-800 border-gray-200'
 }
-
 
 export default function ProjectShowPage() {
   const { deleteProject } = useProjects()
@@ -97,90 +89,15 @@ export default function ProjectShowPage() {
   }
 
   if (loading) {
-    return (
-      <main className="flex-1 container mx-auto px-4 py-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="h-10 w-10 bg-gray-200 rounded-md animate-pulse" />
-            <div className="space-y-2">
-              <div className="h-8 w-64 bg-gray-200 rounded animate-pulse" />
-              <div className="h-4 w-48 bg-gray-200 rounded animate-pulse" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="h-4 w-full bg-gray-200 rounded animate-pulse" />
-                  <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse" />
-                  <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="h-4 w-full bg-gray-200 rounded animate-pulse" />
-                  <div className="h-4 w-2/3 bg-gray-200 rounded animate-pulse" />
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </main>
-    )
+    return <ResourceLoading />
   }
 
   if (error) {
-    return (
-      <main className="flex-1 container mx-auto px-4 py-6">
-        <div className="max-w-4xl mx-auto">
-          <Alert className="border-red-200 bg-red-50">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="text-red-800">
-              Error al cargar el proyecto: {error}
-            </AlertDescription>
-          </Alert>
-          <div className="mt-6">
-            <Button asChild>
-              <Link href="/projects">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver a la lista
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </main>
-    )
+    return <ResourceError error={error} resource={RESOURCES.projects as Resource} />
   }
 
   if (!project) {
-    return (
-      <main className="flex-1 container mx-auto px-4 py-6">
-        <div className="max-w-4xl mx-auto">
-          <Alert className="border-yellow-200 bg-yellow-50">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="text-yellow-800">Proyecto no encontrado</AlertDescription>
-          </Alert>
-          <div className="mt-6">
-            <Button asChild>
-              <Link href="/projects">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver a la lista
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </main>
-    )
+    return <ResourceNotFound resource={RESOURCES.projects as Resource} />
   }
 
   return (
@@ -245,7 +162,6 @@ export default function ProjectShowPage() {
                   <Badge className={getProjectStatusBadgeClass(project.status)}>
                     {getProjectStatusLabel(project.status)}
                   </Badge>
-
                 </div>
               </CardContent>
             </Card>
@@ -290,7 +206,7 @@ export default function ProjectShowPage() {
                       {Math.ceil(
                         (new Date(project.end_date).getTime() -
                           new Date(project.start_date).getTime()) /
-                        (1000 * 60 * 60 * 24)
+                          (1000 * 60 * 60 * 24)
                       )}{' '}
                       días
                     </p>
