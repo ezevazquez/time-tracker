@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
 import { CalendarIcon, ArrowLeft } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,12 +22,23 @@ import {
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { cn } from '@/lib/utils'
-import { usePeople, useProjects, useAssignments } from '@/hooks/use-data'
-import type { Assignment, Person, Project } from '@/lib/supabase'
-import { getTotalAllocationForPersonInRange } from '@/lib/database'
+
+import { cn } from '@/utils/classnames'
 import { useToast } from '@/hooks/use-toast'
-import { toDbAllocation, toUiAllocation, ALLOCATION_VALUES } from '@/lib/assignments'
+
+import { usePeople } from '@/hooks/use-people'
+import { useProjects } from '@/hooks/use-projects'
+import { useAssignments } from '@/hooks/use-assignments'
+
+import type { Assignment } from '@/types/assignment'
+import type { Person } from '@/types/people'
+import type { Project } from '@/types/project'
+
+import { assignmentsService } from '@/lib/services/assignments.service'
+import { toDbAllocation, toUiAllocation } from '@/lib/assignments'
+import { ASSIGNMENT_ALLOCATION_VALUES } from '@/constants/assignments'
+
+
 
 const formSchema = z
   .object({
@@ -117,7 +129,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
         assigned_role: values.assigned_role || null,
         updated_at: new Date().toISOString(),
       }
-      const { projectedMax } = await getTotalAllocationForPersonInRange(
+      const { projectedMax } = await assignmentsService.getTotalAllocationForPersonInRange(
         values.person_id,
         format(values.start_date, 'yyyy-MM-dd'),
         format(values.end_date, 'yyyy-MM-dd'),
@@ -174,7 +186,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
     )
   }
 
-  const activePeople = people.filter((p: Person) => p.status === 'Active' || p.status === 'Paused')
+  const activePeople = people.filter((p: Person) => p.status === 'Activo' || p.status === 'Pausado')
   const activeProjects = projects.filter((p: Project) => p.status === 'In Progress')
 
   return (
@@ -335,7 +347,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                     <SelectValue placeholder="Seleccionar asignación" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ALLOCATION_VALUES.map(val => (
+                    {ASSIGNMENT_ALLOCATION_VALUES.map(val => (
                       <SelectItem key={val} value={String(toUiAllocation(val))}>
                         {toUiAllocation(val)}%
                       </SelectItem>

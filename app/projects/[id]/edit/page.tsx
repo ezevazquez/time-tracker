@@ -7,6 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { format } from 'date-fns'
 import { CalendarIcon, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -35,10 +37,14 @@ import {
 } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
-import { toast } from 'sonner'
-import { projectsService, clientsService } from '@/lib/database'
-import type { Project, Client } from '@/lib/supabase'
+
+import { cn } from '@/utils/classnames'
+import { projectsService } from '@/lib/services/projects.service'
+import { clientsService } from '@/lib/services/clients.service'
+import type { Project } from '@/types/project'
+import type { Client } from '@/types/client'
+import { PROJECT_STATUS_OPTIONS, PROJECT_STATUS } from '@/constants/projects'
+
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),
@@ -68,7 +74,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       description: '',
       start_date: null,
       end_date: null,
-      status: 'In Progress',
+      status: PROJECT_STATUS.IN_PROGRESS,
       client_id: null,
     },
   })
@@ -307,11 +313,13 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="In Progress">En Progreso</SelectItem>
-                          <SelectItem value="On Hold">En Pausa</SelectItem>
-                          <SelectItem value="Finished">Finalizado</SelectItem>
-                          <SelectItem value="Not Started">No Iniciado</SelectItem>
+                          {PROJECT_STATUS_OPTIONS.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
+
                       </Select>
                       <FormMessage />
                     </FormItem>

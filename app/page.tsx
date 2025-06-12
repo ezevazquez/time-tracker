@@ -2,8 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import { usePeople, useProjects, useAssignments, useClients } from '@/hooks/use-data'
+
+import { usePeople } from '@/hooks/use-people'
+import { useProjects } from '@/hooks/use-projects'
+import { useAssignments } from '@/hooks/use-assignments'
+import { useClients } from '@/hooks/use-clients'
+
+import { supabase, isSupabaseConfigured } from '@/lib/supabase/client'
 
 import { Card } from '@/components/ui/card'
 import { DashboardHeader } from '@/components/dashboard-header'

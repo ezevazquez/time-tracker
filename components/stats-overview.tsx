@@ -2,7 +2,10 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Users, Briefcase, Calendar, Building2, TrendingUp, AlertTriangle } from 'lucide-react'
-import type { Person, Project, AssignmentWithRelations, Client } from '@/lib/supabase'
+import type { Person } from '@/types/people'
+import type { Project } from '@/types/project'
+import type { AssignmentWithRelations } from '@/types/assignment'
+import type { Client } from '@/types/client'
 
 interface StatsOverviewProps {
   people: Person[]
@@ -13,7 +16,7 @@ interface StatsOverviewProps {
 
 export function StatsOverview({ people, projects, assignments, clients }: StatsOverviewProps) {
   // Calculate stats
-  const activePeople = people.filter(p => p.status === 'Active').length
+  const activePeople = people.filter(p => p.status === 'Activo').length
   const activeProjects = projects.filter(p => p.status === 'In Progress').length
   const totalAssignments = assignments.length
   const totalClients = clients.length

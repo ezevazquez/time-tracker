@@ -2,7 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Users, FolderOpen, Calendar, TrendingUp } from 'lucide-react'
-import type { Person, Project, AssignmentWithRelations } from '@/lib/supabase'
+import type { Person } from '@/types/people'
+import type { Project } from '@/types/project'
+import type { AssignmentWithRelations } from '@/types/assignment'
 
 interface DashboardStatsProps {
   people: Person[]
@@ -12,8 +14,8 @@ interface DashboardStatsProps {
 
 export function DashboardStats({ people, projects, assignments }: DashboardStatsProps) {
   // Calculate active counts
-  const activePeople = people.filter(p => p.status === 'activo').length
-  const activeProjects = projects.filter(p => p.status === 'activo').length
+  const activePeople = people.filter(p => p.status === 'Activo').length
+  const activeProjects = projects.filter(p => p.status === 'In Progress').length
   const activeAssignments = assignments.filter(a => {
     const endDate = new Date(a.end_date)
     const today = new Date()

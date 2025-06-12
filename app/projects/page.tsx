@@ -1,11 +1,20 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { TableResource } from '@/components/ui/table-resource'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -13,13 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useProjects } from '@/hooks/use-data'
-import { toast } from 'sonner'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { TableResource } from '@/components/ui/table-resource'
+
+import { useProjects } from '@/hooks/use-projects'
 import { projectColumns } from '@/constants/resource-columns/projectColumns'
+import { PROJECT_STATUS_OPTIONS } from '@/constants/projects'
+
+import type { Project } from '@/types/project'
 import type { ResourceAction, ResourceColumn } from '@/types'
-import type { Project } from '@/lib/supabase'
+
+
 
 export default function ProjectsPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -66,7 +78,7 @@ export default function ProjectsPage() {
         console.error('Error deleting project:', error)
       }
     }
-  }
+  }  
 
   const actions: ResourceAction[] = [
     {
@@ -122,12 +134,14 @@ export default function ProjectsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los estados</SelectItem>
-              <SelectItem value="In Progress">En Progreso</SelectItem>
-              <SelectItem value="On Hold">En Pausa</SelectItem>
-              <SelectItem value="Finished">Finalizado</SelectItem>
-              <SelectItem value="Not Started">No Iniciado</SelectItem>
+              {PROJECT_STATUS_OPTIONS.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
+
         </CardContent>
       </Card>
 
