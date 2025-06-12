@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import type { Person } from '@/types/people'
 import type { AssignmentWithRelations } from '@/types/assignment'
+import { PERSON_STATUS, PERSON_PROFILE_LABELS } from '@/constants/people'
 
 interface TeamWorkloadChartProps {
   people: Person[]
@@ -13,39 +14,57 @@ interface TeamWorkloadChartProps {
 export function TeamWorkloadChart({ people, assignments }: TeamWorkloadChartProps) {
   const currentDate = new Date()
 
-  // Calculate current workload for each active person
-  const workloadData = people
-    .filter(person => person.status === 'Activo')
-    .map(person => {
-      const currentAssignments = assignments.filter(assignment => {
+  // Calculate percentage of people assigned per profile
+  const assignmentData = people
+    .filter(person => person.status === PERSON_STATUS.ACTIVE)
+    .reduce((acc, person) => {
+      const profile = person.profile
+      if (!acc[profile]) {
+        acc[profile] = {
+          profile,
+          totalPeople: 0,
+          assignedPeople: 0,
+        }
+      }
+
+      acc[profile].totalPeople += 1
+
+      // Check if person has any current assignments
+      const hasCurrentAssignment = assignments.some(assignment => {
         const start = new Date(assignment.start_date)
         const end = new Date(assignment.end_date)
         return assignment.person_id === person.id && start <= currentDate && end >= currentDate
       })
 
-      const totalAllocation = currentAssignments.reduce(
-        (sum, assignment) => sum + assignment.allocation * 100,
-        0
-      )
-
-      return {
-        name: person.name.split(' ')[0], // First name only
-        workload: Math.round(totalAllocation),
-        isOverallocated: totalAllocation > 100,
+      if (hasCurrentAssignment) {
+        acc[profile].assignedPeople += 1
       }
-    })
-    .sort((a, b) => b.workload - a.workload)
-    .slice(0, 8) // Show top 8 people
+      
+      return acc
+    }, {} as Record<string, { profile: string; totalPeople: number; assignedPeople: number }>)
+
+  // Convert to array and calculate percentage assigned per profile
+  const chartData = Object.values(assignmentData)
+    .map(item => ({
+      name: PERSON_PROFILE_LABELS[item.profile as keyof typeof PERSON_PROFILE_LABELS] || item.profile,
+      fullName: item.profile,
+      percentage: Math.round((item.assignedPeople / item.totalPeople) * 100),
+      totalPeople: item.totalPeople,
+      assignedPeople: item.assignedPeople,
+    }))
+    .sort((a, b) => b.percentage - a.percentage)
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload
       return (
         <div className="bg-white p-3 border rounded-lg shadow-lg">
-          <p className="font-medium">{label}</p>
+          <p className="font-medium">{data.fullName}</p>
           <p className="text-sm text-gray-600">
-            Carga: {data.workload}%
-            {data.isOverallocated && <span className="text-red-600 ml-2">(Sobreasignado)</span>}
+            Asignados: {data.assignedPeople} de {data.totalPeople}
+          </p>
+          <p className="text-sm text-gray-600">
+            Porcentaje: {data.percentage}%
           </p>
         </div>
       )
@@ -58,13 +77,13 @@ export function TeamWorkloadChart({ people, assignments }: TeamWorkloadChartProp
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-          Carga de Trabajo Actual
+          Asignación por equipo
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={workloadData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="name"
@@ -75,31 +94,21 @@ export function TeamWorkloadChart({ people, assignments }: TeamWorkloadChartProp
               />
               <YAxis
                 tick={{ fontSize: 12 }}
-                domain={[0, 'dataMax']}
+                domain={[0, 100]}
                 tickFormatter={value => `${value}%`}
               />
               <Tooltip content={<CustomTooltip />} />
               <Bar
-                dataKey="workload"
+                dataKey="percentage"
                 fill="#10B981"
                 radius={[4, 4, 0, 0]}
               >
-                {workloadData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.isOverallocated ? '#EF4444' : '#10B981'} />
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.percentage === 100 ? '#10B981' : entry.percentage > 50 ? '#F59E0B' : '#EF4444'} />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </div>
-        <div className="flex items-center justify-center gap-4 mt-4 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-500 rounded"></div>
-            <span>Normal</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-500 rounded"></div>
-            <span>Sobreasignado</span>
-          </div>
         </div>
       </CardContent>
     </Card>

@@ -49,7 +49,7 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
 
   const stats = [
     {
-      title: 'Equipo Activo',
+      title: 'Equipo activo',
       value: activePeople,
       total: people.length,
       icon: Users,
@@ -67,7 +67,7 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
       description: overallocatedCount > 0 ? 'Requieren atención' : 'Todo bajo control',
     },
     {
-      title: 'Utilización Promedio',
+      title: 'Utilización promedio',
       value: `${avgUtilization}%`,
       total: null,
       icon: TrendingUp,
@@ -91,7 +91,7 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
       description: `${currentAssignments.length} activas`,
     },
     {
-      title: 'Proyectos Activos',
+      title: 'Proyectos activos',
       value: activeProjects,
       total: projects.length,
       icon: Briefcase,

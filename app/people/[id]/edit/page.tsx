@@ -40,7 +40,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/utils/classnames'
 import { peopleService } from '@/lib/services/people.service'
 import type { Person } from '@/types/people'
-import { PERSON_STATUS_OPTIONS, PERSON_TYPE_OPTIONS } from '@/constants/people'
+import { PERSON_STATUS_OPTIONS, PERSON_TYPE_OPTIONS, PERSON_PROFILE_OPTIONS, PERSON_STATUS, PERSON_TYPE } from '@/constants/people'
 
 
 
@@ -49,10 +49,10 @@ const formSchema = z.object({
   profile: z.string().min(2, { message: 'El perfil debe tener al menos 2 caracteres' }),
   start_date: z.date({ required_error: 'La fecha de inicio es requerida' }),
   end_date: z.date().nullable().optional(),
-  status: z.enum(['Activo', 'Pausado', 'Terminado'], {
+  status: z.enum([PERSON_STATUS.ACTIVE, PERSON_STATUS.PAUSED, PERSON_STATUS.TERMINATED], {
     required_error: 'El estado es requerido',
   }),
-  type: z.enum(['Internal', 'External'], {
+  type: z.enum([PERSON_TYPE.INTERNAL, PERSON_TYPE.EXTERNAL], {
     required_error: 'El tipo es requerido',
   }),
 })
@@ -72,8 +72,8 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
       profile: '',
       start_date: new Date(),
       end_date: null,
-      status: 'Activo',
-      type: 'Internal',
+      status: PERSON_STATUS.ACTIVE,
+      type: PERSON_TYPE.INTERNAL,
     },
   })
 
@@ -189,7 +189,18 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                   <FormItem>
                     <FormLabel>Perfil</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ej: Desarrollador Frontend" {...field} />
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un perfil" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PERSON_PROFILE_OPTIONS.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -288,7 +299,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Estado</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecciona un estado" />
@@ -313,7 +324,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecciona un tipo" />
