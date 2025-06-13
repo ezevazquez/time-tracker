@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback, useImperativeHandle, forwardRef } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -23,7 +23,7 @@ import { FiltersPopover } from './filters-popover'
 import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
-import { fteToPercentage, parseDateFromString } from '@/lib/assignments'
+import { fteToPercentage, parseDateFromString, isOverallocated } from '@/lib/assignments'
 import { getDisplayName, getInitials } from '@/lib/people'
 
 interface ResourceTimelineProps {
@@ -38,6 +38,7 @@ interface ResourceTimelineProps {
   }
   onFiltersChange: (filters: any) => void
   onClearFilters: () => void
+  onScrollToTodayRef?: (ref: (() => void) | null) => void
 }
 
 // Generate a color based on a string (project name)
@@ -64,14 +65,15 @@ function stringToColor(str: string) {
   return colors[Math.abs(hash) % colors.length]
 }
 
-export function ResourceTimeline({
+export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, ResourceTimelineProps>(({
   people,
   projects,
   assignments,
   filters,
   onFiltersChange,
   onClearFilters,
-}: ResourceTimelineProps) {
+  onScrollToTodayRef,
+}, ref) => {
   // State for visible date range (for infinite scroll)
   const [visibleDateRange, setVisibleDateRange] = useState({
     start: subMonths(new Date(), 1),
@@ -129,7 +131,30 @@ export function ResourceTimeline({
   }
 
   // Get active people and projects
-  const activePeople = people.filter(p => p.status === 'Active' || p.status === 'Paused')
+  const activePeople = useMemo(() => {
+    let filteredPeople = people.filter(p => p.status === 'Active' || p.status === 'Paused')
+
+    // Apply overallocated filter if enabled
+    if (filters.overallocatedOnly) {
+      const currentDate = new Date()
+      filteredPeople = filteredPeople.filter(person => {
+        // Get current assignments for this person
+        const personCurrentAssignments = assignments.filter(a => {
+          const start = parseDateFromString(a.start_date)
+          const end = parseDateFromString(a.end_date)
+          return a.person_id === person.id && start <= currentDate && end >= currentDate
+        })
+        
+        // Calculate total FTE for this person
+        const totalFte = personCurrentAssignments.reduce((sum, a) => sum + a.allocation, 0)
+        
+        // Only include people who are overallocated
+        return isOverallocated(totalFte)
+      })
+    }
+
+    return filteredPeople
+  }, [people, assignments, filters.overallocatedOnly])
 
   const timelineData = activePeople.map(person => {
     const personAssignments = assignments.filter(a => a.person_id === person.id)
@@ -188,7 +213,7 @@ export function ResourceTimeline({
   }
 
   // Function to scroll to today
-  const scrollToToday = () => {
+  const scrollToToday = useCallback(() => {
     const scrollContainer = scrollContainerRef.current
     if (!scrollContainer) return
 
@@ -203,7 +228,7 @@ export function ResourceTimeline({
       left: Math.max(0, scrollPosition),
       behavior: 'smooth',
     })
-  }
+  }, [visibleDateRange.start, DAY_WIDTH])
 
   // Calculate bar position and width for Resource Guru style
   const calculateBarDimensions = (assignment: AssignmentWithRelations) => {
@@ -248,7 +273,7 @@ export function ResourceTimeline({
     })
 
     if (currentMonth && currentDays.length) {
-      groups.push({ month: currentMonth, days: currentDays })
+      groups.push({ month: currentMonth, days: [...currentDays] })
     }
 
     return groups
@@ -269,31 +294,21 @@ export function ResourceTimeline({
     scrollContainer.scrollLeft = Math.max(0, scrollPosition)
   }, [])
 
+  // Expose scrollToToday function to parent
+  useImperativeHandle(ref, () => ({
+    scrollToToday
+  }), [scrollToToday])
+
+  // Notify parent of scrollToToday function
+  useEffect(() => {
+    if (onScrollToTodayRef) {
+      onScrollToTodayRef(scrollToToday)
+    }
+  }, [onScrollToTodayRef, scrollToToday])
+
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-white">
-      {/* Fixed Top Bar */}
-      <div
-        className="flex-shrink-0 bg-white border-b border-gray-200 px-6 flex items-center justify-between"
-        style={{ height: `${TOP_BAR_HEIGHT}px` }}
-      >
-        {/* Left: Today Button */}
-        <Button onClick={scrollToToday} variant="outline" size="sm" className="h-8">
-          <CalendarDays className="h-4 w-4 mr-2" />
-          Hoy
-        </Button>
-
-        {/* Right: Filters Button */}
-        <FiltersPopover
-          people={people}
-          projects={projects}
-          filters={filters}
-          onFiltersChange={onFiltersChange}
-          onClearFilters={onClearFilters}
-          showDateRange={false}
-        />
-      </div>
-
-      {/* Timeline container - takes remaining height */}
+    <div className="h-full flex flex-col bg-white">
+      {/* Timeline container - takes full height with its own scroll */}
       <div className="flex-1 min-h-0 relative">
         {/* Main scrollable container */}
         <div
@@ -538,4 +553,4 @@ export function ResourceTimeline({
       </div>
     </div>
   )
-}
+})

@@ -231,11 +231,6 @@ export function FiltersPopover({
               </Label>
             </div>
           </CardContent>
-          <CardFooter className="pt-2 pb-4 flex justify-end">
-            <Button size="sm" onClick={() => setOpen(false)}>
-              Aplicar
-            </Button>
-          </CardFooter>
         </Card>
       </PopoverContent>
     </Popover>
