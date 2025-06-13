@@ -29,16 +29,19 @@ import * as XLSX from 'xlsx'
 import { toast } from 'sonner'
 
 interface ReportData {
-  assignment_id: string
+  person_id: string
   person_first_name: string
   person_last_name: string
   person_profile: string
+  person_status: string
   project_name: string
   project_status: string
-  assignment_start_date: string
-  assignment_end_date: string
   allocation: number
+  allocation_percentage: number
+  start_date: string
+  end_date: string
   assigned_role?: string
+  is_bench: boolean
 }
 
 export function ReportModal() {
@@ -78,20 +81,22 @@ export function ReportModal() {
       return
     }
 
-    // Prepare data for Excel with exact columns requested
+    // Prepare data for Excel with FTE information
     const excelData = data.map(item => ({
       'First Name': item.person_first_name,
       'Last Name': item.person_last_name,
       'Profile': item.person_profile,
-      'Project': item.project_name,
-      'Fecha Inicio': format(new Date(item.assignment_start_date), 'dd/MM/yyyy'),
-      'Fecha Fin': format(new Date(item.assignment_end_date), 'dd/MM/yyyy'),
-      'Asignación': Math.round(item.allocation * 100)
+      'Project': item.is_bench ? 'Bench' : item.project_name,
+      'Fecha Inicio': format(new Date(item.start_date), 'dd/MM/yyyy'),
+      'Fecha Fin': format(new Date(item.end_date), 'dd/MM/yyyy'),
+      'Asignación %': item.allocation_percentage,
+      'FTE': item.allocation.toFixed(2),
+      'Tipo': item.is_bench ? 'Bench' : 'Proyecto'
     }))
 
     const worksheet = XLSX.utils.json_to_sheet(excelData)
     const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Reporte Ocupación')
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Reporte FTE')
 
     return workbook
   }
@@ -165,9 +170,11 @@ export function ReportModal() {
   const summary = {
     totalAssignments: report.length,
     totalPeople: new Set(report.map(r => `${r.person_first_name} ${r.person_last_name}`)).size,
-    totalProjects: new Set(report.map(r => r.project_name)).size,
-    overallocated: report.filter(r => r.allocation > 100).length,
-    underutilized: report.filter(r => r.allocation < 50).length,
+    totalProjects: new Set(report.filter(r => !r.is_bench).map(r => r.project_name)).size,
+    totalBench: report.filter(r => r.is_bench).length,
+    totalFTE: report.reduce((sum, r) => sum + r.allocation, 0),
+    overallocated: report.filter(r => r.allocation > 1.0).length,
+    underutilized: report.filter(r => r.allocation < 0.5).length,
   }
 
   return (
@@ -203,13 +210,14 @@ export function ReportModal() {
           {report.length > 0 && (
             <>
               {/* Summary Cards */}
-              <div className="grid grid-cols-3 gap-4 w-full">
+              <div className="grid grid-cols-4 gap-4 w-full">
                 <Card className='bg-gray-100'>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-gray-600">Total Asignaciones</CardTitle>
+                    <CardTitle className="text-sm text-gray-600">Total FTE</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{summary.totalAssignments}</div>
+                    <div className="text-2xl font-bold">{summary.totalFTE.toFixed(2)}</div>
+                    <div className="text-xs text-gray-500">{summary.totalAssignments} asignaciones</div>
                   </CardContent>
                 </Card>
                 <Card className='bg-gray-100'>
@@ -228,6 +236,15 @@ export function ReportModal() {
                     <div className="text-2xl font-bold">{summary.totalProjects}</div>
                   </CardContent>
                 </Card>
+                <Card className='bg-gray-100'>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-gray-600">Bench</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{summary.totalBench}</div>
+                    <div className="text-xs text-gray-500">asignaciones</div>
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Report Table */}
@@ -243,26 +260,39 @@ export function ReportModal() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {report.map(r => (
-                      <TableRow key={r.assignment_id}>
+                    {report.map((r, index) => (
+                      <TableRow 
+                        key={`${r.person_id}-${r.project_name}-${index}`}
+                        className={r.is_bench ? 'bg-gray-50' : ''}
+                      >
                         <TableCell className="font-medium">
                           {r.person_first_name} {r.person_last_name}
                         </TableCell>
                         <TableCell className="text-sm text-gray-600">
                           {r.person_profile}
                         </TableCell>
-                        <TableCell className="font-medium">
-                          {r.project_name}
+                        <TableCell className="text-sm">
+                          <div className={`font-medium ${r.is_bench ? 'text-gray-600 italic' : 'text-blue-600'}`}>
+                            {r.is_bench ? 'Bench' : r.project_name}
+                          </div>
+                          {!r.is_bench && r.assigned_role && (
+                            <div className="text-xs text-gray-500">{r.assigned_role}</div>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm">
                           <div>
-                            <div>{format(new Date(r.assignment_start_date), 'dd/MM/yyyy')}</div>
+                            <div>{format(new Date(r.start_date), 'dd/MM/yyyy')}</div>
                             <div className="text-gray-500">→</div>
-                            <div>{format(new Date(r.assignment_end_date), 'dd/MM/yyyy')}</div>
+                            <div>{format(new Date(r.end_date), 'dd/MM/yyyy')}</div>
                           </div>
                         </TableCell>
-                        <TableCell className="font-medium">
-                          {Math.round(r.allocation * 100)}%
+                        <TableCell className="text-sm">
+                          <div className={`font-medium ${r.is_bench ? 'text-gray-600' : 'text-green-600'}`}>
+                            {r.allocation_percentage}%
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {r.allocation.toFixed(2)} FTE
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

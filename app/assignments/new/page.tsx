@@ -1,11 +1,14 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Save, AlertTriangle, CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -27,6 +30,7 @@ import {
 } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { OverallocationModal } from '@/components/overallocation-modal'
 
 import { cn } from '@/utils/classnames'
 import { useToast } from '@/hooks/use-toast'
@@ -34,17 +38,22 @@ import { useToast } from '@/hooks/use-toast'
 import { usePeople } from '@/hooks/use-people'
 import { useProjects } from '@/hooks/use-projects'
 import { useAssignments } from '@/hooks/use-assignments'
+import { useAssignmentValidation } from '@/hooks/use-assignment-validation'
 
 import { assignmentsService } from '@/lib/services/assignments.service'
-import { toDbAllocation } from '@/lib/assignments'
+import { toDbAllocation, percentageToFte, toISODateString, debugDate, normalizeDate } from '@/lib/assignments'
 import { ASSIGNMENT_ALLOCATION_VALUES as ALLOCATION_VALUES } from '@/constants/assignments'
+import { AssignmentSummary } from '@/components/assignment-summary'
 
+import type { Person } from '@/types/people'
+import type { Project } from '@/types/project'
 
 export default function NewAssignmentPage() {
   const router = useRouter()
   const { people, loading: peopleLoading } = usePeople()
   const { projects, loading: projectsLoading } = useProjects()
   const { createAssignment } = useAssignments()
+  const { validateAssignment, getOverallocationMessage, isValidating } = useAssignmentValidation()
   const { toast } = useToast()
 
   const [formData, setFormData] = useState({
@@ -58,75 +67,96 @@ export default function NewAssignmentPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [warnings, setWarnings] = useState<string[]>([])
+  const [showOverallocationModal, setShowOverallocationModal] = useState(false)
+  const [overallocationData, setOverallocationData] = useState<any>(null)
+  const [pendingFormData, setPendingFormData] = useState<any>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!formData.person_id || !formData.project_id || !formData.start_date || !formData.end_date) {
-      setWarnings(['Todos los campos marcados con * son obligatorios'])
-      return
-    }
+    setIsSubmitting(true)
 
     try {
-      setIsSubmitting(true)
-      console.log('Submitting assignment with data:', formData)
-
-      const result = await assignmentsService.getTotalAllocationForPersonInRange(
-        formData.person_id,
-        format(formData.start_date, 'yyyy-MM-dd'),
-        format(formData.end_date, 'yyyy-MM-dd')
-      )
-
-      const projected = result.projectedMax + formData.allocation / 100
-      if (projected > 1) {
-        toast({
-          id: `assignment-overalloc-warning-${Date.now()}`,
-          title: 'Advertencia de sobreasignación',
-          description: `Esta persona alcanzará el ${Math.round(projected * 100)}% de asignación.`,
-          variant: 'destructive',
-        })
-      }
-
+      // Usar el estado formData en lugar de FormData
       const assignmentData = {
         person_id: formData.person_id,
         project_id: formData.project_id,
-        start_date: format(formData.start_date, 'yyyy-MM-dd'),
-        end_date: format(formData.end_date, 'yyyy-MM-dd'),
-        allocation: toDbAllocation(formData.allocation),
-        assigned_role: formData.assigned_role || null,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        allocation: formData.allocation,
+        assigned_role: formData.assigned_role,
+        is_billable: true
       }
 
-      console.log('Creating assignment with data:', assignmentData)
+      // Validar que todos los campos requeridos estén completos
+      if (!assignmentData.person_id || !assignmentData.project_id || !assignmentData.start_date || !assignmentData.end_date) {
+        alert('Todos los campos marcados con * son obligatorios')
+        setIsSubmitting(false)
+        return
+      }
 
-      await createAssignment(assignmentData)
+      // Validar sobreasignación antes de crear usando FTE
+      const validationResult = await validateAssignment(
+        null, // new assignment
+        assignmentData.person_id,
+        assignmentData.start_date,
+        assignmentData.end_date,
+        percentageToFte(assignmentData.allocation) // convert to FTE
+      )
 
-      toast({
-        id: `assignment-created-${Date.now()}`,
-        title: 'Asignación creada',
-        description: 'La asignación se ha creado exitosamente.',
+      // Si hay sobreasignación, mostrar modal
+      if (validationResult.isOverallocated) {
+        const selectedPerson = people.find(p => p.id === assignmentData.person_id)
+        const selectedProject = projects.find(p => p.id === assignmentData.project_id)
+        
+        setOverallocationData({
+          personName: `${selectedPerson?.first_name} ${selectedPerson?.last_name}`,
+          projectName: selectedProject?.name || '',
+          allocation: assignmentData.allocation,
+          overallocatedDates: validationResult.overallocatedDates
+        })
+        setPendingFormData(assignmentData)
+        setShowOverallocationModal(true)
+        setIsSubmitting(false)
+        return
+      }
+
+      // Si no hay sobreasignación, crear directamente
+      console.log('🚀 Creando asignación con fechas:')
+      debugDate(assignmentData.start_date, 'Start Date')
+      debugDate(assignmentData.end_date, 'End Date')
+      
+      await createAssignment({
+        ...assignmentData,
+        start_date: toISODateString(assignmentData.start_date),
+        end_date: toISODateString(assignmentData.end_date),
+        allocation: toDbAllocation(assignmentData.allocation)
       })
-
       router.push('/assignments')
-    } catch (error: any) {
-      console.error('Error creating assignment:', error)
-      console.error('Error type:', typeof error)
-      console.error('Error constructor:', error?.constructor?.name)
-      console.error('Error message:', error?.message)
-      console.error('Error details:', error?.details)
-      console.error('Error hint:', error?.hint)
-      console.error('Error code:', error?.code)
-      console.error('Full error object:', JSON.stringify(error, null, 2))
-      
-      const errorMessage = error?.message || error?.details || error?.hint || 'Error desconocido al crear la asignación'
-      
-      toast({
-        id: `assignment-create-error-${Date.now()}`,
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      })
+    } catch (error) {
+      console.error('Error al crear la asignación:', error)
+      alert('Error al crear la asignación')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleConfirmOverallocation = async () => {
+    if (!pendingFormData) return
+    
+    try {
+      await createAssignment({
+        ...pendingFormData,
+        start_date: toISODateString(pendingFormData.start_date),
+        end_date: toISODateString(pendingFormData.end_date),
+        allocation: toDbAllocation(pendingFormData.allocation)
+      })
+      setShowOverallocationModal(false)
+      setOverallocationData(null)
+      setPendingFormData(null)
+      router.push('/assignments')
+    } catch (error) {
+      console.error('Error al crear la asignación:', error)
+      alert('Error al crear la asignación')
     }
   }
 
@@ -149,7 +179,7 @@ export default function NewAssignmentPage() {
   }
 
   // Check for conflicts when form data changes
-  React.useEffect(() => {
+  useEffect(() => {
     checkForConflicts()
   }, [formData])
 
@@ -159,13 +189,11 @@ export default function NewAssignmentPage() {
   // Debug logging
   console.log('All people:', people)
   console.log('People count:', people.length)
-  console.log('People statuses:', people.map(p => ({ name: p.name, status: p.status })))
+  console.log('People statuses:', people.map(p => ({ name: `${p.first_name} ${p.last_name}`, status: p.status })))
 
   // Show all people instead of filtering by status
-  const activePeople = people
-  const activeProjects = projects.filter(
-    p => p.status === 'In Progress' || p.status === 'Not Started'
-  )
+  const activePeople = people.filter((p: Person) => p.status === 'Active' || p.status === 'Paused')
+  const activeProjects = projects.filter((p: Project) => p.status === 'In Progress')
 
   if (peopleLoading || projectsLoading) {
     return (
@@ -246,7 +274,7 @@ export default function NewAssignmentPage() {
                       {activePeople.map(person => (
                         <SelectItem key={person.id} value={person.id}>
                           <div>
-                            <div className="font-medium">{person.name}</div>
+                            <div className="font-medium">{person.first_name} {person.last_name}</div>
                             <div className="text-sm text-muted-foreground">{person.profile}</div>
                           </div>
                         </SelectItem>
@@ -297,7 +325,13 @@ export default function NewAssignmentPage() {
                       <Calendar
                         mode="single"
                         selected={formData.start_date}
-                        onSelect={date => setFormData({ ...formData, start_date: date })}
+                        onSelect={date => {
+                          if (date) {
+                            const normalizedDate = normalizeDate(date)
+                            console.log('📅 Start date selected:', { original: date, normalized: normalizedDate })
+                            setFormData({ ...formData, start_date: normalizedDate })
+                          }
+                        }}
                         initialFocus
                       />
                     </PopoverContent>
@@ -327,7 +361,13 @@ export default function NewAssignmentPage() {
                       <Calendar
                         mode="single"
                         selected={formData.end_date}
-                        onSelect={date => setFormData({ ...formData, end_date: date })}
+                        onSelect={date => {
+                          if (date) {
+                            const normalizedDate = normalizeDate(date)
+                            console.log('📅 End date selected:', { original: date, normalized: normalizedDate })
+                            setFormData({ ...formData, end_date: normalizedDate })
+                          }
+                        }}
                         initialFocus
                       />
                     </PopoverContent>
@@ -365,34 +405,15 @@ export default function NewAssignmentPage() {
               </div>
 
               {/* Summary */}
-              {selectedPerson && selectedProject && (
-                <Card className="bg-muted/50">
-                  <CardContent className="pt-6">
-                    <h3 className="font-medium mb-2">Resumen de la Asignación</h3>
-                    <div className="space-y-1 text-sm">
-                      <div>
-                        <strong>Persona:</strong> {selectedPerson.name} ({selectedPerson.profile})
-                      </div>
-                      <div>
-                        <strong>Proyecto:</strong> {selectedProject.name}
-                      </div>
-                      <div>
-                        <strong>Dedicación:</strong> {formData.allocation}%
-                      </div>
-                      {formData.assigned_role && (
-                        <div>
-                          <strong>Rol:</strong> {formData.assigned_role}
-                        </div>
-                      )}
-                      {formData.start_date && formData.end_date && (
-                        <div>
-                          <strong>Período:</strong> {format(formData.start_date, 'dd/MM/yyyy')} -{' '}
-                          {format(formData.end_date, 'dd/MM/yyyy')}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+              {selectedPerson && selectedProject && formData.start_date && formData.end_date && (
+                <AssignmentSummary
+                  person={selectedPerson}
+                  project={selectedProject}
+                  startDate={formData.start_date}
+                  endDate={formData.end_date}
+                  allocation={formData.allocation}
+                  assignedRole={formData.assigned_role}
+                />
               )}
 
               <div className="flex gap-4 pt-6">
@@ -412,6 +433,23 @@ export default function NewAssignmentPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de sobreasignación */}
+      {overallocationData && (
+        <OverallocationModal
+          isOpen={showOverallocationModal}
+          onClose={() => {
+            setShowOverallocationModal(false)
+            setOverallocationData(null)
+            setPendingFormData(null)
+          }}
+          onConfirm={handleConfirmOverallocation}
+          personName={overallocationData.personName}
+          projectName={overallocationData.projectName}
+          allocation={overallocationData.allocation}
+          overallocatedDates={overallocationData.overallocatedDates}
+        />
+      )}
     </main>
   )
 }

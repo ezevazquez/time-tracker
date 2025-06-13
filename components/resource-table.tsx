@@ -18,7 +18,8 @@ import { FiltersPopover } from './filters-popover'
 import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
-import { toUiAllocation } from '@/lib/assignments'
+import { fteToPercentage, parseDateFromString } from '@/lib/assignments'
+import { getDisplayName } from '@/lib/people'
 
 interface ResourceTableProps {
   people: Person[]
@@ -98,16 +99,16 @@ export function ResourceTable({
                     <TableCell>
                       <div className="text-sm">
                         <div className="font-medium">
-                          {format(new Date(a.start_date), 'dd MMM yyyy', { locale: es })}
+                          {format(parseDateFromString(a.start_date), 'dd MMM yyyy', { locale: es })}
                         </div>
                         <div className="text-muted-foreground">
-                          {format(new Date(a.end_date), 'dd MMM yyyy', { locale: es })}
+                          {format(parseDateFromString(a.end_date), 'dd MMM yyyy', { locale: es })}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{person?.name || 'N/A'}</div>
+                        <div className="font-medium">{person ? getDisplayName(person) : 'N/A'}</div>
                         <div className="text-sm text-muted-foreground">{person?.profile || ''}</div>
                       </div>
                     </TableCell>
@@ -124,7 +125,7 @@ export function ResourceTable({
                           variant={isOverallocated ? 'destructive' : 'secondary'}
                           className="text-xs"
                         >
-                          {toUiAllocation(a.allocation)}%
+                          {fteToPercentage(a.allocation)}%
                         </Badge>
                         {isOverallocated && <AlertTriangle className="h-4 w-4 text-destructive" />}
                       </div>

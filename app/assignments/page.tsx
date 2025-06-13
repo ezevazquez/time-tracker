@@ -9,13 +9,13 @@ import { Button } from '@/components/ui/button'
 import { ResourceTimeline } from '@/components/resource-timeline'
 import { ResourceTable } from '@/components/resource-table'
 import { ReportModal } from '@/components/report-modal'
+import { Card } from '@/components/ui/card'
 
 import { usePeople } from '@/hooks/use-people'
 import { useProjects } from '@/hooks/use-projects'
 import { useAssignments } from '@/hooks/use-assignments'
 
 import { supabase } from '@/lib/supabase/client'
-
 
 export default function AssignmentsPage() {
   const router = useRouter()
@@ -170,6 +170,11 @@ export default function AssignmentsPage() {
           </div>
         </div>
       </div>
+
+      {/* Filters */}
+      <Card className="mb-6">
+        {/* Rest of the component content */}
+      </Card>
 
       {/* Content */}
       <div className="flex-1 min-h-0 flex flex-col">
