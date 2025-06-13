@@ -58,12 +58,15 @@ export default function ProjectShowPage() {
         setLoading(true)
         setError(null)
         const data = await projectsService.getById(id)
+
         let { data: activityLogs, error } = await supabase.rpc('get_project_activity_logs', {
           p_project_id: id,
         })
-        if (error) console.error(error)
-        else console.log(data)
-        console.log('Activity Logs:', activityLogs)
+
+        if (error) {
+          console.error(error)
+        }
+
         if (data) {
           data.activity_logs = activityLogs || []
         }
