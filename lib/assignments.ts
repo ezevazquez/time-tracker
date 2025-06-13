@@ -124,3 +124,88 @@ export function groupAssignmentsByPerson(assignments: Assignment[]): Record<stri
     return acc
   }, {} as Record<string, Assignment[]>)
 }
+
+/**
+ * Normaliza una fecha para que sea exactamente medianoche en la zona horaria local
+ * Esto evita problemas de zona horaria al convertir a string
+ */
+export function normalizeDate(date: Date): Date {
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  const day = date.getDate()
+  
+  // Crear una nueva fecha a medianoche en la zona horaria local
+  return new Date(year, month, day, 0, 0, 0, 0)
+}
+
+/**
+ * Convierte una fecha a formato ISO sin zona horaria para evitar problemas de conversión
+ * Usa una aproximación más robusta para evitar problemas de zona horaria
+ */
+export function toISODateString(date: Date): string {
+  // Normalizar la fecha primero
+  const normalizedDate = normalizeDate(date)
+  
+  // Extraer año, mes y día directamente sin considerar zona horaria
+  const year = normalizedDate.getFullYear()
+  const month = String(normalizedDate.getMonth() + 1).padStart(2, '0')
+  const day = String(normalizedDate.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+/**
+ * Función de debug para verificar fechas
+ */
+export function debugDate(date: Date, label: string = 'Date'): void {
+  console.log(`🔍 ${label}:`, {
+    original: date,
+    toString: date.toString(),
+    toISOString: date.toISOString(),
+    toLocaleDateString: date.toLocaleDateString(),
+    toLocaleDateStringCA: date.toLocaleDateString('en-CA'),
+    getFullYear: date.getFullYear(),
+    getMonth: date.getMonth() + 1,
+    getDate: date.getDate(),
+    getTimezoneOffset: date.getTimezoneOffset()
+  })
+}
+
+/**
+ * Crea una fecha local sin problemas de zona horaria
+ */
+export function createLocalDate(year: number, month: number, day: number): Date {
+  return new Date(year, month - 1, day)
+}
+
+/**
+ * Convierte una fecha de string a Date local
+ */
+export function parseLocalDate(dateString: string): Date {
+  const [year, month, day] = dateString.split('-').map(Number)
+  return createLocalDate(year, month, day)
+}
+
+/**
+ * Crea una fecha local sin problemas de zona horaria usando UTC
+ */
+export function createUTCDate(year: number, month: number, day: number): Date {
+  return new Date(Date.UTC(year, month - 1, day))
+}
+
+/**
+ * Convierte una fecha a formato ISO usando UTC para evitar problemas de zona horaria
+ */
+export function toISODateStringUTC(date: Date): string {
+  const utcDate = createUTCDate(date.getFullYear(), date.getMonth() + 1, date.getDate())
+  return utcDate.toISOString().split('T')[0]
+}
+
+/**
+ * Parsea una fecha desde string sin problemas de zona horaria
+ * Cuando Supabase devuelve "2025-06-09", esta función la convierte correctamente
+ */
+export function parseDateFromString(dateString: string): Date {
+  const [year, month, day] = dateString.split('-').map(Number)
+  // Crear fecha en zona horaria local para evitar conversiones UTC
+  return new Date(year, month - 1, day)
+}

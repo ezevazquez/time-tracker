@@ -23,7 +23,7 @@ import { FiltersPopover } from './filters-popover'
 import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
-import { fteToPercentage } from '@/lib/assignments'
+import { fteToPercentage, parseDateFromString } from '@/lib/assignments'
 import { getDisplayName, getInitials } from '@/lib/people'
 
 interface ResourceTimelineProps {
@@ -118,8 +118,8 @@ export function ResourceTimeline({
   // Get assignments for a person within the visible date range
   const getPersonAssignments = (personId: string) => {
     return assignments.filter(assignment => {
-      const startDate = new Date(assignment.start_date)
-      const endDate = new Date(assignment.end_date)
+      const startDate = parseDateFromString(assignment.start_date)
+      const endDate = parseDateFromString(assignment.end_date)
       return (
         assignment.person_id === personId &&
         startDate <= endOfMonth(visibleDateRange.end) &&
@@ -211,8 +211,8 @@ export function ResourceTimeline({
 
   // Calculate bar position and width for Resource Guru style
   const calculateBarDimensions = (assignment: AssignmentWithRelations) => {
-    const startDate = new Date(assignment.start_date)
-    const endDate = new Date(assignment.end_date)
+    const startDate = parseDateFromString(assignment.start_date)
+    const endDate = parseDateFromString(assignment.end_date)
     const visibleStart = startOfMonth(visibleDateRange.start)
 
     // Clamp dates to visible range boundaries

@@ -9,7 +9,7 @@ import type { Person } from '@/types/people'
 import type { AssignmentWithRelations } from '@/types/assignment'
 import { PERSON_STATUS } from '@/constants/people'
 import { getDisplayName, getInitials } from '@/lib/people'
-import { isOverallocated, fteToPercentage, getUtilizationStatus } from '@/lib/assignments'
+import { isOverallocated, fteToPercentage, getUtilizationStatus, parseDateFromString } from '@/lib/assignments'
 
 interface ResourceUtilizationProps {
   people: Person[]
@@ -35,8 +35,8 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
     .filter(person => person.status === PERSON_STATUS.ACTIVE)
     .map(person => {
       const currentAssignments = assignments.filter(assignment => {
-        const start = new Date(assignment.start_date)
-        const end = new Date(assignment.end_date)
+        const start = parseDateFromString(assignment.start_date)
+        const end = parseDateFromString(assignment.end_date)
         return assignment.person_id === person.id && start <= currentDate && end >= currentDate
       })
 

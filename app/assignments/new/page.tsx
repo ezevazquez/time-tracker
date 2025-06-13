@@ -41,7 +41,7 @@ import { useAssignments } from '@/hooks/use-assignments'
 import { useAssignmentValidation } from '@/hooks/use-assignment-validation'
 
 import { assignmentsService } from '@/lib/services/assignments.service'
-import { toDbAllocation, percentageToFte } from '@/lib/assignments'
+import { toDbAllocation, percentageToFte, toISODateString, debugDate, normalizeDate } from '@/lib/assignments'
 import { ASSIGNMENT_ALLOCATION_VALUES as ALLOCATION_VALUES } from '@/constants/assignments'
 import { AssignmentSummary } from '@/components/assignment-summary'
 
@@ -121,10 +121,14 @@ export default function NewAssignmentPage() {
       }
 
       // Si no hay sobreasignación, crear directamente
+      console.log('🚀 Creando asignación con fechas:')
+      debugDate(assignmentData.start_date, 'Start Date')
+      debugDate(assignmentData.end_date, 'End Date')
+      
       await createAssignment({
         ...assignmentData,
-        start_date: format(assignmentData.start_date, 'yyyy-MM-dd'),
-        end_date: format(assignmentData.end_date, 'yyyy-MM-dd'),
+        start_date: toISODateString(assignmentData.start_date),
+        end_date: toISODateString(assignmentData.end_date),
         allocation: toDbAllocation(assignmentData.allocation)
       })
       router.push('/assignments')
@@ -142,8 +146,8 @@ export default function NewAssignmentPage() {
     try {
       await createAssignment({
         ...pendingFormData,
-        start_date: format(pendingFormData.start_date, 'yyyy-MM-dd'),
-        end_date: format(pendingFormData.end_date, 'yyyy-MM-dd'),
+        start_date: toISODateString(pendingFormData.start_date),
+        end_date: toISODateString(pendingFormData.end_date),
         allocation: toDbAllocation(pendingFormData.allocation)
       })
       setShowOverallocationModal(false)
@@ -321,7 +325,13 @@ export default function NewAssignmentPage() {
                       <Calendar
                         mode="single"
                         selected={formData.start_date}
-                        onSelect={date => setFormData({ ...formData, start_date: date })}
+                        onSelect={date => {
+                          if (date) {
+                            const normalizedDate = normalizeDate(date)
+                            console.log('📅 Start date selected:', { original: date, normalized: normalizedDate })
+                            setFormData({ ...formData, start_date: normalizedDate })
+                          }
+                        }}
                         initialFocus
                       />
                     </PopoverContent>
@@ -351,7 +361,13 @@ export default function NewAssignmentPage() {
                       <Calendar
                         mode="single"
                         selected={formData.end_date}
-                        onSelect={date => setFormData({ ...formData, end_date: date })}
+                        onSelect={date => {
+                          if (date) {
+                            const normalizedDate = normalizeDate(date)
+                            console.log('📅 End date selected:', { original: date, normalized: normalizedDate })
+                            setFormData({ ...formData, end_date: normalizedDate })
+                          }
+                        }}
                         initialFocus
                       />
                     </PopoverContent>

@@ -9,7 +9,7 @@ import { es } from 'date-fns/locale'
 import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
-import { fteToPercentage } from '@/lib/assignments'
+import { fteToPercentage, parseDateFromString } from '@/lib/assignments'
 import { getDisplayName, getInitials } from '@/lib/people'
 
 interface RecentActivityProps {
@@ -25,8 +25,8 @@ export function RecentActivity({ assignments, people, projects }: RecentActivity
   // Get recent and upcoming assignments
   const recentActivity = assignments
     .filter(assignment => {
-      const startDate = new Date(assignment.start_date)
-      const endDate = new Date(assignment.end_date)
+      const startDate = parseDateFromString(assignment.start_date)
+      const endDate = parseDateFromString(assignment.end_date)
 
       // Recently started (within last 7 days) or starting soon (within next 7 days)
       return (
@@ -36,12 +36,12 @@ export function RecentActivity({ assignments, people, projects }: RecentActivity
         (isAfter(endDate, addDays(currentDate, -7)) && isBefore(endDate, addDays(currentDate, 1)))
       )
     })
-    .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+    .sort((a, b) => parseDateFromString(a.start_date).getTime() - parseDateFromString(b.start_date).getTime())
     .slice(0, 6)
 
   const getActivityType = (assignment: AssignmentWithRelations) => {
-    const startDate = new Date(assignment.start_date)
-    const endDate = new Date(assignment.end_date)
+    const startDate = parseDateFromString(assignment.start_date)
+    const endDate = parseDateFromString(assignment.end_date)
 
     if (isAfter(endDate, addDays(currentDate, -7)) && isBefore(endDate, addDays(currentDate, 1))) {
       return { type: 'completed', label: 'Completado', color: 'bg-green-100 text-green-800' }
@@ -95,7 +95,7 @@ export function RecentActivity({ assignments, people, projects }: RecentActivity
                   <div className="flex items-center gap-4 text-xs text-gray-500">
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      {format(new Date(assignment.start_date), 'dd MMM', { locale: es })}
+                      {format(parseDateFromString(assignment.start_date), 'dd MMM', { locale: es })}
                     </span>
                     <span>{fteToPercentage(assignment.allocation)}%</span>
                   </div>

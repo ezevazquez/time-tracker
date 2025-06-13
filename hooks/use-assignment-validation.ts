@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { assignmentsService } from '@/lib/services/assignments.service'
-import { format } from 'date-fns'
+import { toISODateString } from '@/lib/assignments'
 import { fteToPercentage } from '@/lib/assignments'
 
 interface ValidationResult {
@@ -35,8 +35,8 @@ export function useAssignmentValidation() {
     setValidationError(null)
 
     try {
-      const formattedStartDate = format(startDate, 'yyyy-MM-dd')
-      const formattedEndDate = format(endDate, 'yyyy-MM-dd')
+      const formattedStartDate = toISODateString(startDate)
+      const formattedEndDate = toISODateString(endDate)
 
       console.log('📞 Llamando a checkAssignmentOverallocation con:', {
         assignmentId,
@@ -87,7 +87,7 @@ export function useAssignmentValidation() {
 
     if (dateCount === 1) {
       const date = new Date(result.overallocatedDates[0].date)
-      return `Sobreasignación del ${maxPercentage}% el ${format(date, 'dd/MM/yyyy')}`
+      return `Sobreasignación del ${maxPercentage}% el ${toISODateString(date)}`
     } else {
       return `Sobreasignación del ${maxPercentage}% en ${dateCount} días del período`
     }

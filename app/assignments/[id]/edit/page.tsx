@@ -37,7 +37,7 @@ import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 
 import { assignmentsService } from '@/lib/services/assignments.service'
-import { toDbAllocation, fromDbAllocation, percentageToFte, fteToPercentage } from '@/lib/assignments'
+import { toDbAllocation, fromDbAllocation, percentageToFte, fteToPercentage, toISODateString, normalizeDate } from '@/lib/assignments'
 import { ASSIGNMENT_ALLOCATION_VALUES } from '@/constants/assignments'
 import { OverallocationModal } from '@/components/overallocation-modal'
 
@@ -167,8 +167,8 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
       const updatedAssignment = {
         person_id: values.person_id,
         project_id: values.project_id,
-        start_date: format(values.start_date, 'yyyy-MM-dd'),
-        end_date: format(values.end_date, 'yyyy-MM-dd'),
+        start_date: toISODateString(values.start_date),
+        end_date: toISODateString(values.end_date),
         allocation: toDbAllocation(values.allocation),
         assigned_role: values.assigned_role || null,
         updated_at: new Date().toISOString(),
@@ -197,8 +197,8 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
       const updatedAssignment = {
         person_id: pendingFormData.person_id,
         project_id: pendingFormData.project_id,
-        start_date: format(pendingFormData.start_date, 'yyyy-MM-dd'),
-        end_date: format(pendingFormData.end_date, 'yyyy-MM-dd'),
+        start_date: toISODateString(pendingFormData.start_date),
+        end_date: toISODateString(pendingFormData.end_date),
         allocation: toDbAllocation(pendingFormData.allocation),
         assigned_role: pendingFormData.assigned_role || null,
       }
@@ -354,7 +354,13 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                       <Calendar
                         mode="single"
                         selected={form.watch('start_date')}
-                        onSelect={date => date && form.setValue('start_date', date)}
+                        onSelect={date => {
+                          if (date) {
+                            const normalizedDate = normalizeDate(date)
+                            console.log('📅 Start date selected (edit):', { original: date, normalized: normalizedDate })
+                            form.setValue('start_date', normalizedDate)
+                          }
+                        }}
                         initialFocus
                       />
                     </PopoverContent>
@@ -389,7 +395,13 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                       <Calendar
                         mode="single"
                         selected={form.watch('end_date')}
-                        onSelect={date => date && form.setValue('end_date', date)}
+                        onSelect={date => {
+                          if (date) {
+                            const normalizedDate = normalizeDate(date)
+                            console.log('📅 End date selected (edit):', { original: date, normalized: normalizedDate })
+                            form.setValue('end_date', normalizedDate)
+                          }
+                        }}
                         initialFocus
                       />
                     </PopoverContent>

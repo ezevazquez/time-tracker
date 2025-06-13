@@ -7,7 +7,7 @@ import { format, differenceInDays, isAfter, isBefore, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
-import { fteToPercentage } from '@/lib/assignments'
+import { fteToPercentage, parseDateFromString } from '@/lib/assignments'
 
 interface UpcomingDeadlinesProps {
   projects: Project[]
@@ -40,8 +40,8 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
     ...assignments
       .filter(
         assignment =>
-          isAfter(new Date(assignment.end_date), currentDate) &&
-          isBefore(new Date(assignment.end_date), twoWeeksFromNow)
+          isAfter(parseDateFromString(assignment.end_date), currentDate) &&
+          isBefore(parseDateFromString(assignment.end_date), twoWeeksFromNow)
       )
       .map(assignment => {
         const project = projects.find(p => p.id === assignment.project_id)
@@ -49,7 +49,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
           id: assignment.id,
           type: 'assignment' as const,
           title: project?.name || 'Proyecto desconocido',
-          date: new Date(assignment.end_date),
+          date: parseDateFromString(assignment.end_date),
           status: project?.status || 'Unknown',
           allocation: assignment.allocation,
         }

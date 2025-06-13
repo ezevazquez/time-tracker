@@ -18,7 +18,7 @@ import { FiltersPopover } from './filters-popover'
 import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
-import { fteToPercentage } from '@/lib/assignments'
+import { fteToPercentage, parseDateFromString } from '@/lib/assignments'
 import { getDisplayName } from '@/lib/people'
 
 interface ResourceTableProps {
@@ -99,10 +99,10 @@ export function ResourceTable({
                     <TableCell>
                       <div className="text-sm">
                         <div className="font-medium">
-                          {format(new Date(a.start_date), 'dd MMM yyyy', { locale: es })}
+                          {format(parseDateFromString(a.start_date), 'dd MMM yyyy', { locale: es })}
                         </div>
                         <div className="text-muted-foreground">
-                          {format(new Date(a.end_date), 'dd MMM yyyy', { locale: es })}
+                          {format(parseDateFromString(a.end_date), 'dd MMM yyyy', { locale: es })}
                         </div>
                       </div>
                     </TableCell>
