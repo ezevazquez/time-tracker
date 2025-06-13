@@ -173,9 +173,12 @@ export function ReportModal() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8">
+        <Button 
+          size="sm" 
+          className="h-8 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm"
+        >
           <CalendarRange className="mr-2 h-4 w-4" />
-          Nuevo reporte
+          Reporte
         </Button>
       </DialogTrigger>
 
@@ -306,7 +309,7 @@ export function ReportModal() {
                 <Button onClick={handleExportAndSave} disabled={exporting}>
                   {exporting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   <Download className="h-4 w-4 mr-2" />
-                  Exportar y Guardar Excel
+                  Descargar Excel
                 </Button>
               </div>
             </>
