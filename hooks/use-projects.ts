@@ -4,34 +4,83 @@ import { useState, useEffect } from 'react'
 import { projectsService } from '@/lib/services/projects.service'
 import type { Project } from '@/types/project'
 
+interface ProjectWithFTE extends Project {
+  assignedFTE?: number
+}
+
 export function useProjects() {
-  const [projects, setProjects] = useState<Project[]>([])
+  const [projects, setProjects] = useState<ProjectWithFTE[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const fetchProjects = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const projectsData = await projectsService.getAll()
+      
+      // Obtener FTE asignado para cada proyecto
+      const projectsWithFTE = await Promise.all(
+        projectsData.map(async (project) => {
+          try {
+            const assignedFTE = await projectsService.getAssignedFTE(project.id)
+            return { ...project, assignedFTE }
+          } catch (error) {
+            console.error(`Error getting FTE for project ${project.id}:`, error)
+            return { ...project, assignedFTE: 0 }
+          }
+        })
+      )
+      
+      setProjects(projectsWithFTE)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar proyectos')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
-    projectsService.getAll()
-      .then(setProjects)
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false))
+    fetchProjects()
   }, [])
 
   const createProject = async (project: Omit<Project, 'id' | 'created_at' | 'updated_at'>) => {
-    const newProject = await projectsService.create(project)
-    setProjects(prev => [...prev, newProject])
-    return newProject
+    try {
+      const newProject = await projectsService.create(project)
+      setProjects(prev => [{ ...newProject, assignedFTE: 0 }, ...prev])
+      return newProject
+    } catch (err) {
+      throw err
+    }
   }
 
-  const updateProject = async (id: string, updates: Partial<Project>) => {
-    const updated = await projectsService.update(id, updates)
-    setProjects(prev => prev.map(p => (p.id === id ? updated : p)))
-    return updated
+  const updateProject = async (id: string, project: Partial<Project>) => {
+    try {
+      const updatedProject = await projectsService.update(id, project)
+      setProjects(prev => prev.map(p => p.id === id ? { ...updatedProject, assignedFTE: p.assignedFTE } : p))
+      return updatedProject
+    } catch (err) {
+      throw err
+    }
   }
 
   const deleteProject = async (id: string) => {
-    await projectsService.delete(id)
-    setProjects(prev => prev.filter(p => p.id !== id))
+    try {
+      await projectsService.delete(id)
+      setProjects(prev => prev.filter(p => p.id !== id))
+    } catch (err) {
+      throw err
+    }
   }
 
-  return { projects, loading, error, createProject, updateProject, deleteProject }
+  return {
+    projects,
+    loading,
+    error,
+    createProject,
+    updateProject,
+    deleteProject,
+    refetch: fetchProjects
+  }
 }

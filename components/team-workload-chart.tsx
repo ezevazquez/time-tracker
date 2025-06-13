@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import type { Person } from '@/types/people'
 import type { AssignmentWithRelations } from '@/types/assignment'
 import { PERSON_STATUS, PERSON_PROFILE_LABELS } from '@/constants/people'
+import { parseDateFromString } from '@/lib/assignments'
 
 interface TeamWorkloadChartProps {
   people: Person[]
@@ -31,8 +32,8 @@ export function TeamWorkloadChart({ people, assignments }: TeamWorkloadChartProp
 
       // Check if person has any current assignments
       const hasCurrentAssignment = assignments.some(assignment => {
-        const start = new Date(assignment.start_date)
-        const end = new Date(assignment.end_date)
+        const start = parseDateFromString(assignment.start_date)
+        const end = parseDateFromString(assignment.end_date)
         return assignment.person_id === person.id && start <= currentDate && end >= currentDate
       })
 

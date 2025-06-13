@@ -27,8 +27,6 @@ export const TableResource = <T extends { id: string }>({
   description,
   actions,
 }: TableResourceProps<T>) => {
-  console.log('TableResource items:', items)
-
   return (
     <Card>
       {(title || description) && (

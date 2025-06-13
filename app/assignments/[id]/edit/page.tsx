@@ -6,7 +6,8 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
-import { CalendarIcon, ArrowLeft } from 'lucide-react'
+import { CalendarIcon, ArrowLeft, Users, Briefcase } from 'lucide-react'
+import Link from 'next/link'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,21 +25,21 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 import { cn } from '@/utils/classnames'
-import { useToast } from '@/hooks/use-toast'
 
 import { usePeople } from '@/hooks/use-people'
 import { useProjects } from '@/hooks/use-projects'
 import { useAssignments } from '@/hooks/use-assignments'
+import { useAssignmentValidation } from '@/hooks/use-assignment-validation'
 
 import type { Assignment } from '@/types/assignment'
 import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 
 import { assignmentsService } from '@/lib/services/assignments.service'
-import { toDbAllocation, toUiAllocation } from '@/lib/assignments'
+import { toDbAllocation, fromDbAllocation, percentageToFte, fteToPercentage, toISODateString, normalizeDate, parseDateFromString } from '@/lib/assignments'
 import { ASSIGNMENT_ALLOCATION_VALUES } from '@/constants/assignments'
-
-
+import { OverallocationModal } from '@/components/overallocation-modal'
+import { toast } from 'sonner'
 
 const formSchema = z
   .object({
@@ -50,6 +51,7 @@ const formSchema = z
       message: 'La asignación debe ser 25%, 50%, 75% o 100%',
     }),
     assigned_role: z.string().optional(),
+    is_billable: z.boolean(),
   })
   .refine(data => data.end_date >= data.start_date, {
     message: 'La fecha de fin debe ser posterior a la fecha de inicio',
@@ -59,15 +61,19 @@ const formSchema = z
 export default function EditAssignmentPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [showOverallocationModal, setShowOverallocationModal] = useState(false)
+  const [overallocationData, setOverallocationData] = useState<any>(null)
+  const [pendingFormData, setPendingFormData] = useState<any>(null)
   const [assignment, setAssignment] = useState<Assignment | null>(null)
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showResetButton, setShowResetButton] = useState(false)
   const { id } = use(params)
 
   const { people } = usePeople()
   const { projects } = useProjects()
-  const { assignments, updateAssignment } = useAssignments()
-  const { toast } = useToast()
+  const { assignments, updateAssignment, deleteAssignment } = useAssignments()
+  const { validateAssignment, getOverallocationMessage } = useAssignmentValidation()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -94,10 +100,11 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
         form.reset({
           person_id: foundAssignment.person_id,
           project_id: foundAssignment.project_id,
-          start_date: new Date(foundAssignment.start_date),
-          end_date: new Date(foundAssignment.end_date),
-          allocation: toUiAllocation(foundAssignment.allocation),
+          start_date: parseDateFromString(foundAssignment.start_date),
+          end_date: parseDateFromString(foundAssignment.end_date),
+          allocation: fromDbAllocation(foundAssignment.allocation),
           assigned_role: foundAssignment.assigned_role || '',
+          is_billable: foundAssignment.is_billable ?? true,
         })
       } catch (err) {
         console.error('Error loading assignment:', err)
@@ -112,48 +119,128 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
     }
   }, [id, assignments, form])
 
+  // Timer para mostrar botón de reset si isLoading se cuelga
+  useEffect(() => {
+    let timer: NodeJS.Timeout
+    if (isLoading) {
+      timer = setTimeout(() => {
+        setShowResetButton(true)
+      }, 5000) // 5 segundos
+    } else {
+      setShowResetButton(false)
+    }
+    return () => clearTimeout(timer)
+  }, [isLoading])
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!assignment) return
 
-    try {
-      setIsLoading(true)
-      setError(null)
+    // Validar sobreasignación antes de actualizar usando FTE
+    const validationResult = await validateAssignment(
+      id,
+      values.person_id,
+      toISODateString(values.start_date),
+      toISODateString(values.end_date),
+      toDbAllocation(values.allocation)
+    )
 
-      // Only include the actual database columns
+    if (validationResult.isOverallocated) {
+      const selectedPerson = people.find(p => p.id === values.person_id)
+      const selectedProject = projects.find(p => p.id === values.project_id)
+      
+      setOverallocationData({
+        personName: `${selectedPerson?.first_name} ${selectedPerson?.last_name}`,
+        projectName: selectedProject?.name || '',
+        allocation: fromDbAllocation(toDbAllocation(values.allocation)),
+        overallocatedDates: validationResult.overallocatedDays || []
+      })
+      setPendingFormData(values)
+      setShowOverallocationModal(true)
+      return
+    }
+
+    // Si no hay sobreasignación, actualizar directamente
+    setIsLoading(true)
+    setError(null)
+
+    try {
       const updatedAssignment = {
         person_id: values.person_id,
         project_id: values.project_id,
-        start_date: format(values.start_date, 'yyyy-MM-dd'),
-        end_date: format(values.end_date, 'yyyy-MM-dd'),
+        start_date: toISODateString(values.start_date),
+        end_date: toISODateString(values.end_date),
         allocation: toDbAllocation(values.allocation),
         assigned_role: values.assigned_role || null,
+        is_billable: values.is_billable,
         updated_at: new Date().toISOString(),
       }
-      const { projectedMax } = await assignmentsService.getTotalAllocationForPersonInRange(
-        values.person_id,
-        format(values.start_date, 'yyyy-MM-dd'),
-        format(values.end_date, 'yyyy-MM-dd'),
-        assignment.id
-      )
 
-      const projected = projectedMax + values.allocation / 100
-
-      if (projected > 1) {
-        toast({
-          id: 'assignment-edit-overalloc-warning',
-          title: 'Advertencia',
-          description: `Esta persona alcanzará el ${Math.round(projected * 100)}% de asignación.`,
-          variant: 'destructive',
-        })
-      }
-
-      await updateAssignment(assignment.id, updatedAssignment)
+      await updateAssignment(id, updatedAssignment)
       router.push('/assignments')
     } catch (err) {
       console.error('Error updating assignment:', err)
-      setError(err instanceof Error ? err.message : 'Error al actualizar la asignación')
+      toast.error('No se pudo actualizar la asignación')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleConfirmOverallocation = async () => {
+    if (!pendingFormData) return
+    
+    setIsLoading(true)
+    
+    try {
+      const updatedAssignment = {
+        person_id: pendingFormData.person_id,
+        project_id: pendingFormData.project_id,
+        start_date: toISODateString(pendingFormData.start_date),
+        end_date: toISODateString(pendingFormData.end_date),
+        allocation: toDbAllocation(pendingFormData.allocation),
+        assigned_role: pendingFormData.assigned_role || null,
+        is_billable: pendingFormData.is_billable,
+      }
+
+      await updateAssignment(id, updatedAssignment)
+      setShowOverallocationModal(false)
+      setOverallocationData(null)
+      setPendingFormData(null)
+      router.push('/assignments')
+    } catch (err) {
+      console.error('Error updating assignment:', err)
+      toast.error('No se pudo actualizar la asignación')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleStartDateSelect = (date: Date | undefined) => {
+    if (date) {
+      const normalizedDate = normalizeDate(date)
+      form.setValue('start_date', normalizedDate)
+    }
+  }
+
+  const handleEndDateSelect = (date: Date | undefined) => {
+    if (date) {
+      const normalizedDate = normalizeDate(date)
+      form.setValue('end_date', normalizedDate)
+    }
+  }
+
+  const handleDeleteAssignment = async () => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar esta asignación? Esta acción no se puede deshacer.')) {
+      try {
+        setIsLoading(true)
+        await deleteAssignment(id)
+        toast.success('Asignación eliminada correctamente')
+        router.push('/assignments')
+      } catch (error) {
+        console.error('Error deleting assignment:', error)
+        toast.error('Error al eliminar la asignación')
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -186,7 +273,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
     )
   }
 
-  const activePeople = people.filter((p: Person) => p.status === 'Activo' || p.status === 'Pausado')
+  const activePeople = people.filter((p: Person) => p.status === 'Active' || p.status === 'Paused')
   const activeProjects = projects.filter((p: Project) => p.status === 'In Progress')
 
   return (
@@ -219,51 +306,39 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="person_id">Persona *</Label>
-                  <Select
-                    value={form.watch('person_id')}
-                    onValueChange={value => form.setValue('person_id', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar persona" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activePeople.map((person: Person) => (
-                        <SelectItem key={person.id} value={person.id}>
-                          {person.name} - {person.profile}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.person_id && (
-                    <p className="text-sm text-red-500">
-                      {form.formState.errors.person_id.message}
+                  <Label htmlFor="person_id">Persona</Label>
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-900">
+                        {activePeople.find(p => p.id === form.watch('person_id'))?.first_name} {activePeople.find(p => p.id === form.watch('person_id'))?.last_name}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {activePeople.find(p => p.id === form.watch('person_id'))?.profile}
                     </p>
-                  )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    La persona no se puede cambiar en una asignación existente
+                  </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="project_id">Proyecto *</Label>
-                  <Select
-                    value={form.watch('project_id')}
-                    onValueChange={value => form.setValue('project_id', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar proyecto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activeProjects.map((project: Project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.project_id && (
-                    <p className="text-sm text-red-500">
-                      {form.formState.errors.project_id.message}
+                  <Label htmlFor="project_id">Proyecto</Label>
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-900">
+                        {activeProjects.find(p => p.id === form.watch('project_id'))?.name}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Estado: {activeProjects.find(p => p.id === form.watch('project_id'))?.status}
                     </p>
-                  )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    El proyecto no se puede cambiar en una asignación existente
+                  </p>
                 </div>
               </div>
 
@@ -291,7 +366,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                       <Calendar
                         mode="single"
                         selected={form.watch('start_date')}
-                        onSelect={date => date && form.setValue('start_date', date)}
+                        onSelect={handleStartDateSelect}
                         initialFocus
                       />
                     </PopoverContent>
@@ -326,7 +401,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                       <Calendar
                         mode="single"
                         selected={form.watch('end_date')}
-                        onSelect={date => date && form.setValue('end_date', date)}
+                        onSelect={handleEndDateSelect}
                         initialFocus
                       />
                     </PopoverContent>
@@ -348,8 +423,8 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                   </SelectTrigger>
                   <SelectContent>
                     {ASSIGNMENT_ALLOCATION_VALUES.map(val => (
-                      <SelectItem key={val} value={String(toUiAllocation(val))}>
-                        {toUiAllocation(val)}%
+                      <SelectItem key={val} value={String(fteToPercentage(val))}>
+                        {fteToPercentage(val)}%
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -374,23 +449,79 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                 )}
               </div>
 
-              <div className="flex justify-end space-x-4 pt-6">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="is_billable"
+                    {...form.register('is_billable')}
+                    className="rounded border-gray-300"
+                  />
+                  <Label htmlFor="is_billable">Facturable</Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Marca esta opción si la asignación es facturable al cliente
+                </p>
+              </div>
+
+              <div className="flex gap-4 pt-6">
                 <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.push('/assignments')}
+                  type="submit"
+                  className="flex-1"
                   disabled={isLoading}
                 >
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isLoading}>
                   {isLoading ? 'Actualizando...' : 'Actualizar Asignación'}
                 </Button>
+                <Button type="button" variant="outline" asChild>
+                  <Link href="/assignments">Cancelar</Link>
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="destructive" 
+                  onClick={handleDeleteAssignment}
+                  disabled={isLoading}
+                >
+                  Eliminar
+                </Button>
               </div>
+              
+              {showResetButton && (
+                <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                  <p className="text-sm text-orange-800 mb-2">
+                    ⚠️ El botón parece estar colgado. Si no responde:
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      setIsLoading(false)
+                      setShowResetButton(false)
+                    }}
+                    className="text-orange-700 border-orange-300 hover:bg-orange-100"
+                  >
+                    Resetear estado
+                  </Button>
+                </div>
+              )}
             </form>
           </CardContent>
         </Card>
       </div>
+      {overallocationData && (
+        <OverallocationModal
+          isOpen={showOverallocationModal}
+          onClose={() => {
+            setShowOverallocationModal(false)
+            setOverallocationData(null)
+            setPendingFormData(null)
+          }}
+          onConfirm={handleConfirmOverallocation}
+          personName={overallocationData.personName}
+          projectName={overallocationData.projectName}
+          allocation={overallocationData.allocation}
+          overallocatedDates={overallocationData.overallocatedDates}
+        />
+      )}
     </div>
   )
 }

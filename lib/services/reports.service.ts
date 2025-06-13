@@ -1,102 +1,118 @@
 import { supabase } from '@/lib/supabase/client'
+import { parseDateFromString } from '@/lib/assignments'
 
-export async function fetchOcupationReport(initial: string, final: string) {
-  // First, let's try the RPC function
-  const { data: rpcData, error: rpcError } = await supabase.rpc('ocupation_report_between', {
-    initial_date: initial,
-    final_date: final,
-  })
+interface FTEReportData {
+  person_id: string
+  person_first_name: string
+  person_last_name: string
+  person_profile: string
+  person_status: string
+  project_name: string
+  project_status: string
+  allocation: number
+  allocation_percentage: number
+  start_date: string
+  end_date: string
+  assigned_role?: string
+  is_bench: boolean
+  is_billable: boolean
+}
 
-  if (!rpcError && rpcData) {
-    console.log('RPC data:', rpcData)
-    
-    // RPC doesn't include profile, so we need to fetch it separately
-    const personIds = [...new Set(rpcData.map((item: any) => item.person_id))]
-    
-    if (personIds.length > 0) {
-      const { data: peopleData, error: peopleError } = await supabase
-        .from('people')
-        .select('id, profile')
-        .in('id', personIds)
+export async function fetchOcupationReport(startDate: string, endDate: string): Promise<FTEReportData[]> {
+  try {
+    // Fetch all people
+    const { data: people, error: peopleError } = await supabase
+      .from('people')
+      .select('id, first_name, last_name, profile, status')
+      .eq('status', 'Active')
+
+    if (peopleError) throw peopleError
+
+    // Fetch all assignments in the date range
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('assignments')
+      .select('*, projects(*)')
+      .gte('start_date', startDate)
+      .lte('end_date', endDate)
+
+    if (assignmentsError) throw assignmentsError
+
+    const fteReportData: FTEReportData[] = []
+
+    // Para cada persona, calcular sus asignaciones y bench
+    for (const person of people) {
+      const personAssignments = assignments.filter(a => a.person_id === person.id)
       
-      if (!peopleError && peopleData) {
-        // Create a map of person_id to profile
-        const profileMap = peopleData.reduce((acc, person) => {
-          acc[person.id] = person.profile
-          return acc
-        }, {} as Record<string, string>)
+      if (personAssignments.length === 0) {
+        // Persona sin asignaciones = 100% bench
+        fteReportData.push({
+          person_id: person.id,
+          person_first_name: person.first_name,
+          person_last_name: person.last_name,
+          person_profile: person.profile,
+          person_status: person.status,
+          project_name: 'Bench',
+          project_status: 'Bench',
+          allocation: 1.0,
+          allocation_percentage: 100,
+          start_date: startDate,
+          end_date: endDate,
+          assigned_role: 'Sin asignación',
+          is_bench: true,
+          is_billable: false
+        })
+      } else {
+        // Crear filas para cada asignación directamente
+        for (const assignment of personAssignments) {
+          const project = Array.isArray(assignment.projects) ? assignment.projects[0] : assignment.projects
+          
+          fteReportData.push({
+            person_id: person.id,
+            person_first_name: person.first_name,
+            person_last_name: person.last_name,
+            person_profile: person.profile,
+            person_status: person.status,
+            project_name: project?.name || 'Proyecto sin nombre',
+            project_status: project?.status || 'Sin estado',
+            allocation: assignment.allocation,
+            allocation_percentage: Math.round(assignment.allocation * 100),
+            start_date: assignment.start_date,
+            end_date: assignment.end_date,
+            assigned_role: assignment.assigned_role || '',
+            is_bench: false,
+            is_billable: assignment.is_billable !== false
+          })
+        }
+
+        // Calcular bench (tiempo libre) si hay espacio disponible
+        const totalAssigned = personAssignments.reduce((sum, a) => sum + a.allocation, 0)
+        const benchAllocation = Math.max(0, 1.0 - totalAssigned)
         
-        // Enhance RPC data with profile information
-        const enhancedData = rpcData.map((item: any) => ({
-          ...item,
-          person_profile: profileMap[item.person_id] || 'Sin perfil'
-        }))
-        
-        console.log('Enhanced RPC data with profiles:', enhancedData)
-        return enhancedData
+        if (benchAllocation > 0) {
+          fteReportData.push({
+            person_id: person.id,
+            person_first_name: person.first_name,
+            person_last_name: person.last_name,
+            person_profile: person.profile,
+            person_status: person.status,
+            project_name: 'Bench',
+            project_status: 'Bench',
+            allocation: benchAllocation,
+            allocation_percentage: Math.round(benchAllocation * 100),
+            start_date: startDate,
+            end_date: endDate,
+            assigned_role: 'Sin asignación',
+            is_bench: true,
+            is_billable: false
+          })
+        }
       }
     }
-    
-    // If we can't get profiles, return RPC data as is
-    return rpcData
-  }
 
-  // If RPC fails, fallback to direct query
-  console.log('RPC failed, using direct query. Error:', rpcError)
-  
-  const { data, error } = await supabase
-    .from('assignments')
-    .select(`
-      id,
-      start_date,
-      end_date,
-      allocation,
-      assigned_role,
-      people (
-        first_name,
-        last_name,
-        profile,
-        status
-      ),
-      projects (
-        name,
-        status
-      )
-    `)
-    .gte('start_date', initial)
-    .lte('end_date', final)
-    .order('start_date', { ascending: true })
+    return fteReportData
 
-  if (error) {
-    console.error('Error fetching report:', error)
+  } catch (error) {
+    console.error('Error in fetchOcupationReport:', error)
     return []
   }
-
-  console.log('Raw data from Supabase:', data)
-
-  // Transform the data to match the expected format
-  const transformedData = data?.map(item => {
-    const person = Array.isArray(item.people) ? item.people[0] : item.people
-    const project = Array.isArray(item.projects) ? item.projects[0] : item.projects
-    
-    console.log('Person data:', person)
-    console.log('Project data:', project)
-    
-    return {
-      assignment_id: item.id,
-      person_first_name: person?.first_name || '',
-      person_last_name: person?.last_name || '',
-      person_profile: person?.profile || 'Sin perfil',
-      person_status: person?.status || '',
-      project_name: project?.name || '',
-      project_status: project?.status || '',
-      assignment_start_date: item.start_date,
-      assignment_end_date: item.end_date,
-      allocation: item.allocation || 0,
-      assigned_role: item.assigned_role || ''
-    }
-  }) || []
-
-  console.log('Transformed data:', transformedData)
-  return transformedData
 }

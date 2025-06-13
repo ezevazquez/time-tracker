@@ -9,39 +9,57 @@ import type { Person } from '@/types/people'
 import type { AssignmentWithRelations } from '@/types/assignment'
 import { PERSON_STATUS } from '@/constants/people'
 import { getDisplayName, getInitials } from '@/lib/people'
+import { isOverallocated, fteToPercentage, getUtilizationStatus, parseDateFromString } from '@/lib/assignments'
 
 interface ResourceUtilizationProps {
   people: Person[]
   assignments: AssignmentWithRelations[]
 }
 
+interface UtilizationData extends Person {
+  utilization: number
+  totalFte: number
+  assignmentsCount: number
+  isOverallocated: boolean
+  isUnderutilized: boolean
+  utilizationStatus: 'overallocated' | 'optimal' | 'underutilized'
+  color: string
+  bgColor: string
+}
+
 export function ResourceUtilization({ people, assignments }: ResourceUtilizationProps) {
   const currentDate = new Date()
 
-  // Calculate utilization for each active person
-  const utilizationData = people
+  // Calculate utilization for each active person using FTE
+  const utilizationData: UtilizationData[] = people
     .filter(person => person.status === PERSON_STATUS.ACTIVE)
     .map(person => {
       const currentAssignments = assignments.filter(assignment => {
-        const start = new Date(assignment.start_date)
-        const end = new Date(assignment.end_date)
+        const start = parseDateFromString(assignment.start_date)
+        const end = parseDateFromString(assignment.end_date)
         return assignment.person_id === person.id && start <= currentDate && end >= currentDate
       })
 
-      const totalAllocation = currentAssignments.reduce(
-        (sum, assignment) => sum + assignment.allocation * 100,
+      const totalFte = currentAssignments.reduce(
+        (sum, assignment) => sum + assignment.allocation,
         0
       )
 
+      const utilizationStatus = getUtilizationStatus(totalFte)
+
       return {
         ...person,
-        utilization: Math.round(totalAllocation),
+        utilization: utilizationStatus.percentage,
+        totalFte,
         assignmentsCount: currentAssignments.length,
-        isOverallocated: totalAllocation > 100,
-        isUnderutilized: totalAllocation < 50,
+        isOverallocated: isOverallocated(totalFte),
+        isUnderutilized: totalFte < 0.5,
+        utilizationStatus: utilizationStatus.status,
+        color: utilizationStatus.color,
+        bgColor: utilizationStatus.bgColor,
       }
     })
-    .sort((a, b) => b.utilization - a.utilization)
+    .sort((a, b) => b.totalFte - a.totalFte)
 
   const avgUtilization =
     utilizationData.length > 0
@@ -123,13 +141,7 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
                 <div className="flex items-center gap-2">
                   <Progress value={Math.min(person.utilization, 100)} className="flex-1 h-2" />
                   <span
-                    className={`text-sm font-medium min-w-[3rem] text-right ${
-                      person.isOverallocated
-                        ? 'text-red-600'
-                        : person.isUnderutilized
-                          ? 'text-yellow-600'
-                          : 'text-green-600'
-                    }`}
+                    className={`text-sm font-medium min-w-[3rem] text-right ${person.color}`}
                   >
                     {person.utilization}%
                   </span>
