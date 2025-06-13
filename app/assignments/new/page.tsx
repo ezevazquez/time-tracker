@@ -76,8 +76,31 @@ export default function NewAssignmentPage() {
     setIsSubmitting(true)
 
     try {
-      setIsSubmitting(true)
-      
+      // Validar sobreasignación antes de crear
+      const validationResult = await validateAssignment(
+        null,
+        formData.person_id,
+        toISODateString(formData.start_date!),
+        toISODateString(formData.end_date!),
+        percentageToFte(formData.allocation)
+      )
+
+      if (validationResult.isOverallocated) {
+        const selectedPerson = people.find(p => p.id === formData.person_id)
+        const selectedProject = projects.find(p => p.id === formData.project_id)
+        
+        setOverallocationData({
+          personName: `${selectedPerson?.first_name} ${selectedPerson?.last_name}`,
+          projectName: selectedProject?.name || '',
+          allocation: formData.allocation,
+          overallocatedDates: validationResult.overallocatedDays || []
+        })
+        setPendingFormData(formData)
+        setShowOverallocationModal(true)
+        setIsSubmitting(false)
+        return
+      }
+
       const assignmentData = {
         person_id: formData.person_id,
         project_id: formData.project_id,
@@ -102,19 +125,25 @@ export default function NewAssignmentPage() {
     if (!pendingFormData) return
     
     try {
-      await createAssignment({
-        ...pendingFormData,
+      const assignmentData = {
+        person_id: pendingFormData.person_id,
+        project_id: pendingFormData.project_id,
         start_date: toISODateString(pendingFormData.start_date),
         end_date: toISODateString(pendingFormData.end_date),
-        allocation: toDbAllocation(pendingFormData.allocation)
-      })
+        allocation: percentageToFte(pendingFormData.allocation),
+        assigned_role: pendingFormData.assigned_role,
+        is_billable: pendingFormData.is_billable
+      }
+
+      await createAssignment(assignmentData)
       setShowOverallocationModal(false)
       setOverallocationData(null)
       setPendingFormData(null)
+      toast.success('Asignación creada exitosamente')
       router.push('/assignments')
     } catch (error) {
       console.error('Error al crear la asignación:', error)
-      alert('Error al crear la asignación')
+      toast.error('Error al crear la asignación')
     }
   }
 

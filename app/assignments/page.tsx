@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { ResourceTimeline } from '@/components/resource-timeline'
 import { ResourceTable } from '@/components/resource-table'
-import { ReportModal } from '@/components/report-modal'
+
 import { FiltersPopover } from '@/components/filters-popover'
 
 import { usePeople } from '@/hooks/use-people'
@@ -175,7 +175,7 @@ export default function AssignmentsPage() {
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold">Asignaciones</h1>
             <div className="flex gap-2 flex-wrap items-center">
-              <ReportModal />
+              
               <Link href="/assignments/new">
                 <Button size="sm" className="h-8">
                   <Plus className="mr-2 h-4 w-4" />

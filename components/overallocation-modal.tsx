@@ -5,11 +5,11 @@ import { AlertTriangle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { fteToPercentage } from '@/lib/assignments'
 
 interface OverallocationDate {
   date: string
-  totalAllocation: number // FTE (0.0-1.0)
+  total_allocation: number // FTE (0.0-1.0)
+  message?: string
 }
 
 interface OverallocationModalProps {
@@ -58,6 +58,10 @@ export function OverallocationModal({
     return 'bg-yellow-100 text-yellow-800 border-yellow-200'
   }
 
+  const formatPercentage = (fte: number) => {
+    return Math.round(fte * 100)
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -91,26 +95,45 @@ export function OverallocationModal({
           {/* Días con sobreasignación */}
           <div>
             <div className="text-sm font-medium text-gray-900 mb-2">
-              Días con sobreasignación:
+              Días con sobreasignación ({overallocatedDates.length} día{overallocatedDates.length !== 1 ? 's' : ''}):
             </div>
             <div className="max-h-48 overflow-y-auto border rounded-lg">
               <div className="space-y-1 p-2">
-                {overallocatedDates.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded border">
-                    <span className="text-sm text-gray-700">
-                      {formatDate(item.date)}
-                    </span>
-                    <Badge 
-                      variant="outline" 
-                      className={`text-xs font-medium ${getSeverityColor(item.totalAllocation)}`}
-                    >
-                      {fteToPercentage(item.totalAllocation)}%
-                    </Badge>
+                {overallocatedDates.length > 0 ? (
+                  overallocatedDates.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded border">
+                      <span className="text-sm text-gray-700">
+                        {formatDate(item.date)}
+                      </span>
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs font-medium ${getSeverityColor(item.total_allocation)}`}
+                      >
+                        {formatPercentage(item.total_allocation)}%
+                      </Badge>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-gray-500 p-2 text-center">
+                    No se pudieron calcular los días específicos
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
+
+          {/* Resumen de sobreasignación */}
+          {overallocatedDates.length > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="text-sm text-blue-800">
+                <p className="font-medium mb-1">Resumen:</p>
+                <p>
+                  {personName} estará sobreasignado en {overallocatedDates.length} día{overallocatedDates.length !== 1 ? 's' : ''} 
+                  con un máximo de {Math.max(...overallocatedDates.map(d => formatPercentage(d.total_allocation)))}% de asignación.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Advertencia */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
