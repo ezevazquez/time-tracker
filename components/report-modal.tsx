@@ -286,9 +286,6 @@ export function ReportModal() {
                           <div className={`font-medium ${r.is_bench ? 'text-gray-600' : 'text-green-600'}`}>
                             {r.allocation_percentage}%
                           </div>
-                          <div className="text-xs text-gray-500">
-                            {r.allocation.toFixed(2)} FTE
-                          </div>
                         </TableCell>
                         <TableCell className="text-sm">
                           <span className="text-sm font-medium">{r.allocation.toFixed(2)}</span>
