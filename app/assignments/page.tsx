@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Plus, List, CalendarDays } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { ResourceTimeline } from '@/components/resource-timeline'
 import { ResourceTable } from '@/components/resource-table'
 import { ReportModal } from '@/components/report-modal'
@@ -174,35 +175,7 @@ export default function AssignmentsPage() {
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold">Asignaciones</h1>
             <div className="flex gap-2 flex-wrap items-center">
-              {/* Filters */}
-              <FiltersPopover
-                people={people}
-                projects={projects}
-                filters={filters}
-                onFiltersChange={setFilters}
-                onClearFilters={clearFilters}
-                showDateRange={viewMode === 'list'}
-              />
-              
               <ReportModal />
-              <Button
-                variant="outline"
-                onClick={() => setViewMode(viewMode === 'timeline' ? 'list' : 'timeline')}
-                size="sm"
-                className="h-8"
-              >
-                {viewMode === 'timeline' ? (
-                  <>
-                    <List className="mr-2 h-4 w-4" />
-                    Ver como lista
-                  </>
-                ) : (
-                  <>
-                    <CalendarDays className="mr-2 h-4 w-4" />
-                    Ver como timeline
-                  </>
-                )}
-              </Button>
               <Link href="/assignments/new">
                 <Button size="sm" className="h-8">
                   <Plus className="mr-2 h-4 w-4" />
@@ -210,6 +183,40 @@ export default function AssignmentsPage() {
                 </Button>
               </Link>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Second Header - Filters and Toggle */}
+      <div className="flex-shrink-0 border-b bg-gray-50 py-2">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-end gap-2">
+            <FiltersPopover
+              people={people}
+              projects={projects}
+              filters={filters}
+              onFiltersChange={setFilters}
+              onClearFilters={clearFilters}
+              showDateRange={viewMode === 'list'}
+            />
+            <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {
+              if (value) setViewMode(value as 'timeline' | 'list')
+            }} className="bg-gray-100 p-1 rounded-lg shadow-sm">
+              <ToggleGroupItem 
+                value="timeline" 
+                aria-label="Ver como timeline" 
+                className="rounded-md data-[state=on]:bg-white data-[state=on]:shadow-md data-[state=on]:text-blue-600 data-[state=off]:text-gray-500 data-[state=off]:hover:text-gray-700 transition-all duration-200"
+              >
+                <CalendarDays className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="list" 
+                aria-label="Ver como lista" 
+                className="rounded-md data-[state=on]:bg-white data-[state=on]:shadow-md data-[state=on]:text-blue-600 data-[state=off]:text-gray-500 data-[state=off]:hover:text-gray-700 transition-all duration-200"
+              >
+                <List className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
         </div>
       </div>

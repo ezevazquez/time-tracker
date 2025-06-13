@@ -144,10 +144,10 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
           const end = parseDateFromString(a.end_date)
           return a.person_id === person.id && start <= currentDate && end >= currentDate
         })
-        
+
         // Calculate total FTE for this person
         const totalFte = personCurrentAssignments.reduce((sum, a) => sum + a.allocation, 0)
-        
+
         // Only include people who are overallocated
         return isOverallocated(totalFte)
       })
@@ -288,11 +288,14 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
     if (!scrollContainer) return
 
     const visibleStart = startOfMonth(visibleDateRange.start)
+    const today = new Date()
     const todayIndex = differenceInDays(today, visibleStart)
-    const scrollPosition = todayIndex * DAY_WIDTH - scrollContainer.clientWidth / 2
+
+    // Position today at 25% of the visible width (left-aligned) instead of centered
+    const scrollPosition = todayIndex * DAY_WIDTH - scrollContainer.clientWidth * 0.2
 
     scrollContainer.scrollLeft = Math.max(0, scrollPosition)
-  }, [])
+  }, [visibleDateRange.start, DAY_WIDTH])
 
   // Expose scrollToToday function to parent
   useImperativeHandle(ref, () => ({
@@ -331,8 +334,8 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
                 className="sticky left-0 z-30 bg-gray-50 border-r border-gray-200 flex items-center px-4 justify-end"
                 style={{ width: `${SIDEBAR_WIDTH}px` }}
               >
-                <Button onClick={scrollToToday} variant="default" size="sm" className="h-6 px-2 text-xs bg-blue-600 hover:bg-blue-700 text-white">
-                  <CalendarDays className="h-3 w-3 mr-1" />
+                <Button onClick={scrollToToday} variant="default" size="sm" className="h-8 px-4 text-sm bg-blue-600 hover:bg-blue-700 text-white">
+                  <CalendarDays className="h-4 w-4 mr-2" />
                   Hoy
                 </Button>
               </div>
@@ -408,7 +411,7 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
                   >
                     {/* Sidebar */}
                     <div
-                      className="sticky left-0 z-10 bg-white border-r border-gray-200 flex items-center"
+                      className="sticky left-0 z-20 bg-white border-r border-gray-200 flex items-center"
                       style={{ width: `${SIDEBAR_WIDTH}px` }}
                     >
                       <div className="p-4 flex items-center space-x-3 w-full">
@@ -458,11 +461,22 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
                           (totalAssignments + 1)
                         const top = verticalGap + idx * (assignmentHeight + verticalGap)
 
-                        // Calculate sticky behavior
-                        const barStart = dimensions.left
-                        const barEnd = dimensions.left + dimensions.width
+                        // Calculate sticky behavior using real dates, not clamped ones
+                        const startDate = parseDateFromString(assignment.start_date)
+                        const endDate = parseDateFromString(assignment.end_date)
+                        const visibleStart = startOfMonth(visibleDateRange.start)
+                        
+                        // Calculate real positions without clamping
+                        const realStartIndex = differenceInDays(startDate, visibleStart)
+                        const realDuration = differenceInDays(endDate, startDate) + 1
+                        
+                        const barStart = realStartIndex * DAY_WIDTH
+                        const barEnd = barStart + (realDuration * DAY_WIDTH)
                         const labelMaxWidth = barEnd - scrollLeft
                         const isSticky = scrollLeft > barStart && scrollLeft < barEnd
+                        
+                        // Calculate dynamic left position for sticky label
+                        const stickyLeft = isSticky ? SIDEBAR_WIDTH : 0
 
                         return (
                           <Tooltip key={assignment.id}>
@@ -482,7 +496,7 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
                                   <div
                                     className={`${isSticky ? 'sticky' : ''}`}
                                     style={{
-                                      left: `${SIDEBAR_WIDTH}px`,
+                                      left: `${stickyLeft}px`,
                                       maxWidth: `${labelMaxWidth}px`,
                                       background: isSticky ? 'inherit' : 'none',
                                     }}
@@ -529,7 +543,7 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
                       {/* Today marker */}
                       {days.some(day => isSameDay(day, today)) && (
                         <div
-                          className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-10 pointer-events-none opacity-70"
+                          className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-5 pointer-events-none opacity-70"
                           style={{
                             left: `${differenceInDays(today, startOfMonth(visibleDateRange.start)) * DAY_WIDTH + DAY_WIDTH / 2}px`,
                           }}
