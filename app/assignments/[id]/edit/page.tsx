@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
-import { CalendarIcon, ArrowLeft } from 'lucide-react'
+import { CalendarIcon, ArrowLeft, Users, Briefcase } from 'lucide-react'
 import Link from 'next/link'
 
 import { Button } from '@/components/ui/button'
@@ -25,7 +25,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 import { cn } from '@/utils/classnames'
-import { useToast } from '@/hooks/use-toast'
 
 import { usePeople } from '@/hooks/use-people'
 import { useProjects } from '@/hooks/use-projects'
@@ -40,6 +39,7 @@ import { assignmentsService } from '@/lib/services/assignments.service'
 import { toDbAllocation, fromDbAllocation, percentageToFte, fteToPercentage, toISODateString, normalizeDate, parseDateFromString } from '@/lib/assignments'
 import { ASSIGNMENT_ALLOCATION_VALUES } from '@/constants/assignments'
 import { OverallocationModal } from '@/components/overallocation-modal'
+import { toast } from 'sonner'
 
 const formSchema = z
   .object({
@@ -72,9 +72,8 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
 
   const { people } = usePeople()
   const { projects } = useProjects()
-  const { assignments, updateAssignment } = useAssignments()
+  const { assignments, updateAssignment, deleteAssignment } = useAssignments()
   const { validateAssignment, getOverallocationMessage } = useAssignmentValidation()
-  const { toast } = useToast()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -180,11 +179,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
       router.push('/assignments')
     } catch (err) {
       console.error('Error updating assignment:', err)
-      toast({
-        title: 'Error',
-        description: 'No se pudo actualizar la asignación',
-        variant: 'destructive',
-      })
+      toast.error('No se pudo actualizar la asignación')
     } finally {
       setIsLoading(false)
     }
@@ -213,11 +208,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
       router.push('/assignments')
     } catch (err) {
       console.error('Error updating assignment:', err)
-      toast({
-        title: 'Error',
-        description: 'No se pudo actualizar la asignación',
-        variant: 'destructive',
-      })
+      toast.error('No se pudo actualizar la asignación')
     } finally {
       setIsLoading(false)
     }
@@ -234,6 +225,22 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
     if (date) {
       const normalizedDate = normalizeDate(date)
       form.setValue('end_date', normalizedDate)
+    }
+  }
+
+  const handleDeleteAssignment = async () => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar esta asignación? Esta acción no se puede deshacer.')) {
+      try {
+        setIsLoading(true)
+        await deleteAssignment(id)
+        toast.success('Asignación eliminada correctamente')
+        router.push('/assignments')
+      } catch (error) {
+        console.error('Error deleting assignment:', error)
+        toast.error('Error al eliminar la asignación')
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -299,51 +306,39 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="person_id">Persona *</Label>
-                  <Select
-                    value={form.watch('person_id')}
-                    onValueChange={value => form.setValue('person_id', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar persona" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activePeople.map((person: Person) => (
-                        <SelectItem key={person.id} value={person.id}>
-                          {person.first_name} {person.last_name} - {person.profile}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.person_id && (
-                    <p className="text-sm text-red-500">
-                      {form.formState.errors.person_id.message}
+                  <Label htmlFor="person_id">Persona</Label>
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-900">
+                        {activePeople.find(p => p.id === form.watch('person_id'))?.first_name} {activePeople.find(p => p.id === form.watch('person_id'))?.last_name}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {activePeople.find(p => p.id === form.watch('person_id'))?.profile}
                     </p>
-                  )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    La persona no se puede cambiar en una asignación existente
+                  </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="project_id">Proyecto *</Label>
-                  <Select
-                    value={form.watch('project_id')}
-                    onValueChange={value => form.setValue('project_id', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar proyecto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activeProjects.map((project: Project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.project_id && (
-                    <p className="text-sm text-red-500">
-                      {form.formState.errors.project_id.message}
+                  <Label htmlFor="project_id">Proyecto</Label>
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-900">
+                        {activeProjects.find(p => p.id === form.watch('project_id'))?.name}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Estado: {activeProjects.find(p => p.id === form.watch('project_id'))?.status}
                     </p>
-                  )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    El proyecto no se puede cambiar en una asignación existente
+                  </p>
                 </div>
               </div>
 
@@ -479,6 +474,14 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                 </Button>
                 <Button type="button" variant="outline" asChild>
                   <Link href="/assignments">Cancelar</Link>
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="destructive" 
+                  onClick={handleDeleteAssignment}
+                  disabled={isLoading}
+                >
+                  Eliminar
                 </Button>
               </div>
               
