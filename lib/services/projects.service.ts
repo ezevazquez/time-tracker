@@ -69,15 +69,29 @@ export const projectsService = {
   },
 
   async getAssignedFTE(projectId: string): Promise<number> {
+    const today = new Date().toISOString().split('T')[0]
+    
     const { data, error } = await supabase
       .from('assignments')
-      .select('allocation')
+      .select('allocation, start_date, end_date')
       .eq('project_id', projectId)
-      .gte('end_date', new Date().toISOString().split('T')[0]) // Solo asignaciones activas
+      .gte('end_date', today) // Solo asignaciones activas
 
     if (error) throw error
     
-    const totalAssigned = data?.reduce((sum, assignment) => sum + assignment.allocation, 0) || 0
+    const totalAssigned = data?.reduce((sum, assignment) => {
+      // Calcular la duración en días
+      const startDate = new Date(assignment.start_date)
+      const endDate = new Date(assignment.end_date)
+      const durationInDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+      
+      // Convertir a FTE mensual (30.44 días por mes)
+      const daysPerMonth = 30.44
+      const fteMonths = (assignment.allocation * durationInDays) / daysPerMonth
+      
+      return sum + fteMonths
+    }, 0) || 0
+    
     return totalAssigned
   }
 }
