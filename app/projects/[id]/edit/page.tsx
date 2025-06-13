@@ -49,37 +49,37 @@ import { Resource } from '@/types'
 import { RESOURCES } from '@/constants/resources'
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),
-  description: z.string().optional(),
+  name: z.string().min(1, 'El nombre es requerido'),
+  description: z.string().nullable().optional(),
   start_date: z.date().nullable().optional(),
   end_date: z.date().nullable().optional(),
-  status: z.enum(['In Progress', 'Finished', 'On Hold', 'Not Started'], {
-    required_error: 'El estado es requerido',
-  }),
+  status: z.enum(['In Progress', 'Finished', 'On Hold', 'Not Started']),
   client_id: z.string().nullable().optional(),
   fte: z.number().nullable().optional(),
+  project_code: z.string().nullable().optional(),
 })
+
+type FormData = z.infer<typeof formSchema>
 
 export default function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params)
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
   const [project, setProject] = useState<Project | null>(null)
   const [clients, setClients] = useState<Client[]>([])
-  const [isLoadingProject, setIsLoadingProject] = useState(true)
-  const [isLoadingClients, setIsLoadingClients] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const router = useRouter()
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       description: '',
-      start_date: null,
-      end_date: null,
-      status: PROJECT_STATUS.IN_PROGRESS,
-      client_id: null,
-      fte: null,
+      start_date: undefined,
+      end_date: undefined,
+      status: 'Not Started',
+      client_id: '',
+      fte: undefined,
+      project_code: '',
     },
   })
 
@@ -87,14 +87,14 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     async function fetchClients() {
       try {
-        setIsLoadingClients(true)
+        setLoading(true)
         const clientsData = await clientsService.getAll()
         setClients(clientsData)
       } catch (err) {
         console.error('Error fetching clients:', err)
         // Don't set error here, as we can still edit the project without clients
       } finally {
-        setIsLoadingClients(false)
+        setLoading(false)
       }
     }
 
@@ -105,7 +105,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     async function fetchProject() {
       try {
-        setIsLoadingProject(true)
+        setLoading(true)
         const projectData = await projectsService.getById(unwrappedParams.id)
         if (projectData) {
           setProject(projectData)
@@ -118,24 +118,25 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
             status: projectData.status,
             client_id: projectData.client_id,
             fte: projectData.fte,
+            project_code: projectData.project_code || '',
           })
         } else {
-          setError('Proyecto no encontrado')
+          console.error('Proyecto no encontrado')
         }
       } catch (err) {
         console.error('Error fetching project:', err)
-        setError(err instanceof Error ? err.message : 'Error al cargar el proyecto')
+        console.error(err instanceof Error ? err.message : 'Error al cargar el proyecto')
       } finally {
-        setIsLoadingProject(false)
+        setLoading(false)
       }
     }
 
     fetchProject()
   }, [unwrappedParams.id, form])
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: FormData) {
     try {
-      setIsLoading(true)
+      setSaving(true)
       
       const updateData = {
         ...values,
@@ -150,11 +151,11 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       console.error('Error updating project:', error)
       toast.error('Error al actualizar el proyecto')
     } finally {
-      setIsLoading(false)
+      setSaving(false)
     }
   }
 
-  if (isLoadingProject) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -163,10 +164,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
     )
-  }
-
-  if (error) {
-    return <ResourceError error={error} resource={RESOURCES.projects as Resource} />
   }
 
   return (
@@ -193,6 +190,28 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                     <FormControl>
                       <Input placeholder="Nombre del proyecto" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="project_code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Código del Proyecto</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value || 'No asignado'}
+                        disabled
+                        className="bg-gray-50 text-gray-500"
+                      />
+                    </FormControl>
+                    <p className="text-sm text-muted-foreground">
+                      Código único generado automáticamente (no editable)
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -378,8 +397,8 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                 <Button variant="outline" type="button" onClick={() => router.push('/projects')}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button type="submit" disabled={saving}>
+                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Guardar Cambios
                 </Button>
               </div>

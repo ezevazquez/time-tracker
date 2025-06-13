@@ -18,6 +18,16 @@ interface ProjectWithFTE extends Project {
 
 export const projectColumns = [
   {
+    title: 'Código',
+    render: (project: ProjectWithFTE) => (
+      <div className="font-mono text-sm">
+        {project.project_code || (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </div>
+    ),
+  },
+  {
     title: 'Nombre',
     render: (project: ProjectWithFTE) => project.name,
   },

@@ -165,6 +165,19 @@ export default function NewProjectPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="project_code">Código del Proyecto</Label>
+                  <Input
+                    id="project_code"
+                    value="Se generará automáticamente"
+                    disabled
+                    className="bg-gray-50 text-gray-500"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Código único de 2 letras + 2 números (ej: AB12)
+                  </p>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="client">Cliente</Label>
                   <Select
                     value={formData.client_id || ''}
