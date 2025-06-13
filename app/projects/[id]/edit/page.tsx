@@ -136,11 +136,14 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsLoading(true)
-      await projectsService.update(unwrappedParams.id, {
+      
+      const updateData = {
         ...values,
         start_date: values.start_date ? values.start_date.toISOString() : null,
         end_date: values.end_date ? values.end_date.toISOString() : null,
-      })
+      }
+      
+      await projectsService.update(unwrappedParams.id, updateData)
       toast.success('Proyecto actualizado correctamente')
       router.push('/projects')
     } catch (error) {

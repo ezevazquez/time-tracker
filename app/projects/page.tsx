@@ -31,7 +31,9 @@ import { PROJECT_STATUS_OPTIONS } from '@/constants/projects'
 import type { Project } from '@/types/project'
 import type { ResourceAction, ResourceColumn } from '@/types'
 
-
+interface ProjectWithFTE extends Project {
+  assignedFTE?: number
+}
 
 export default function ProjectsPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -154,7 +156,7 @@ export default function ProjectsPage() {
         <CardContent>
           <TableResource
             items={filteredProjects}
-            columns={projectColumns as ResourceColumn<Project>[]}
+            columns={projectColumns as ResourceColumn<ProjectWithFTE>[]}
             actions={actions}
           />
         </CardContent>
