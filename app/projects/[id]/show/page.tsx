@@ -22,6 +22,9 @@ import { ResourceError } from '@/components/ui/resource-error'
 import { RESOURCES } from '@/constants/resources'
 import { Resource } from '@/types'
 import { ResourceNotFound } from '@/components/resource-not-found'
+import { TableResource } from '@/components/ui/table-resource'
+import { activityLogsColumns } from '@/constants/resource-columns/activityLogsColumns'
+import { supabase } from '@/lib/supabase/client'
 
 const getProjectStatusLabel = (status: string) =>
   PROJECT_STATUS_OPTIONS.find(opt => opt.value === status)?.label || status
@@ -55,6 +58,15 @@ export default function ProjectShowPage() {
         setLoading(true)
         setError(null)
         const data = await projectsService.getById(id)
+        let { data: activityLogs, error } = await supabase.rpc('get_project_activity_logs', {
+          p_project_id: id,
+        })
+        if (error) console.error(error)
+        else console.log(data)
+        console.log('Activity Logs:', activityLogs)
+        if (data) {
+          data.activity_logs = activityLogs || []
+        }
         setProject(data)
       } catch (err) {
         setError('Error al cargar el proyecto')
@@ -320,6 +332,19 @@ export default function ProjectShowPage() {
               </CardContent>
             </Card>
           </div>
+        </div>
+        <div className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Historial de acciones</CardTitle>
+              <CardDescription>
+                Aquí puedes ver un registro de todas las acciones realizadas en este proyecto.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              <TableResource items={project.activity_logs || []} columns={activityLogsColumns} />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </main>

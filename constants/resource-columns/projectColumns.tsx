@@ -1,17 +1,8 @@
 import { Badge } from '@/components/ui/badge'
-import { Project } from '@/lib/supabase'
+import { Project } from '@/types/project'
 import { getDuration } from '@/utils/getDuration'
 import { getStatusBadge } from '@/utils/getStatusBadge'
 import { getStatusLabel } from '@/utils/getStatusLabel'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
-import { Plus, Search, MoreHorizontal, Edit, Trash2, Calendar, Eye } from 'lucide-react'
 
 export const projectColumns = [
   {
