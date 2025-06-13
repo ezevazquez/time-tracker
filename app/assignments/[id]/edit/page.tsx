@@ -29,6 +29,7 @@ import { useToast } from '@/hooks/use-toast'
 import { usePeople } from '@/hooks/use-people'
 import { useProjects } from '@/hooks/use-projects'
 import { useAssignments } from '@/hooks/use-assignments'
+import { useAssignmentValidation } from '@/hooks/use-assignment-validation'
 
 import type { Assignment } from '@/types/assignment'
 import type { Person } from '@/types/people'
@@ -37,8 +38,6 @@ import type { Project } from '@/types/project'
 import { assignmentsService } from '@/lib/services/assignments.service'
 import { toDbAllocation, toUiAllocation } from '@/lib/assignments'
 import { ASSIGNMENT_ALLOCATION_VALUES } from '@/constants/assignments'
-
-
 
 const formSchema = z
   .object({
@@ -67,6 +66,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
   const { people } = usePeople()
   const { projects } = useProjects()
   const { assignments, updateAssignment } = useAssignments()
+  const { validateAssignment, getOverallocationMessage } = useAssignmentValidation()
   const { toast } = useToast()
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -119,6 +119,31 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
       setIsLoading(true)
       setError(null)
 
+      // Validar sobreasignación antes de actualizar
+      const validationResult = await validateAssignment(
+        id,
+        values.person_id,
+        values.start_date,
+        values.end_date,
+        values.allocation / 100 // convert to decimal
+      )
+
+      // Si hay sobreasignación, mostrar confirmación
+      if (validationResult.isOverallocated) {
+        const confirmed = window.confirm(
+          `⚠️ Sobreasignación detectada!\n\n` +
+          `La persona estará asignada más del 100% en algunos días:\n` +
+          validationResult.overallocatedDates.map(d => 
+            `${d.date}: ${(d.totalAllocation * 100).toFixed(0)}%`
+          ).join('\n') +
+          `\n\n¿Deseas continuar de todas formas?`
+        )
+        
+        if (!confirmed) {
+          return
+        }
+      }
+
       // Only include the actual database columns
       const updatedAssignment = {
         person_id: values.person_id,
@@ -129,25 +154,8 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
         assigned_role: values.assigned_role || null,
         updated_at: new Date().toISOString(),
       }
-      const { projectedMax } = await assignmentsService.getTotalAllocationForPersonInRange(
-        values.person_id,
-        format(values.start_date, 'yyyy-MM-dd'),
-        format(values.end_date, 'yyyy-MM-dd'),
-        assignment.id
-      )
 
-      const projected = projectedMax + values.allocation / 100
-
-      if (projected > 1) {
-        toast({
-          id: 'assignment-edit-overalloc-warning',
-          title: 'Advertencia',
-          description: `Esta persona alcanzará el ${Math.round(projected * 100)}% de asignación.`,
-          variant: 'destructive',
-        })
-      }
-
-      await updateAssignment(assignment.id, updatedAssignment)
+      await updateAssignment(id, updatedAssignment)
       router.push('/assignments')
     } catch (err) {
       console.error('Error updating assignment:', err)
@@ -186,7 +194,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
     )
   }
 
-  const activePeople = people.filter((p: Person) => p.status === 'Activo' || p.status === 'Pausado')
+  const activePeople = people.filter((p: Person) => p.status === 'Active' || p.status === 'Paused')
   const activeProjects = projects.filter((p: Project) => p.status === 'In Progress')
 
   return (
@@ -230,7 +238,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                     <SelectContent>
                       {activePeople.map((person: Person) => (
                         <SelectItem key={person.id} value={person.id}>
-                          {person.name} - {person.profile}
+                          {person.first_name} {person.last_name} - {person.profile}
                         </SelectItem>
                       ))}
                     </SelectContent>

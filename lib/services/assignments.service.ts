@@ -99,4 +99,49 @@ export const assignmentsService = {
 
     return { projectedMax }
   },
+
+  async checkAssignmentOverallocation(
+    assignmentId: string | null,
+    personId: string,
+    startDate: string,
+    endDate: string,
+    allocation: number
+  ): Promise<{ isOverallocated: boolean; overallocatedDates: Array<{ date: string; totalAllocation: number }> }> {
+    console.log('🚀 checkAssignmentOverallocation llamado con:', {
+      assignmentId,
+      personId,
+      startDate,
+      endDate,
+      allocation
+    })
+
+    const { data, error } = await supabase.rpc('check_assignment_overallocation', {
+      _assignment_id: assignmentId,
+      _person_id: personId,
+      _start_date: startDate,
+      _end_date: endDate,
+      _allocation: allocation
+    })
+
+    console.log('📡 Respuesta de Supabase RPC:', { data, error })
+
+    if (error) {
+      console.error('❌ Error en RPC:', error)
+      throw new Error(`Error checking assignment overallocation: ${error.message}`)
+    }
+
+    const overallocatedDates = data || []
+    const isOverallocated = overallocatedDates.length > 0
+
+    const result = {
+      isOverallocated,
+      overallocatedDates: overallocatedDates.map((item: any) => ({
+        date: item.overallocated_date,
+        totalAllocation: item.total_allocation
+      }))
+    }
+
+    console.log('📊 Resultado procesado:', result)
+    return result
+  },
 }

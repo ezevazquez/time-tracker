@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Save, AlertTriangle, CalendarIcon } from 'lucide-react'
@@ -34,17 +34,22 @@ import { useToast } from '@/hooks/use-toast'
 import { usePeople } from '@/hooks/use-people'
 import { useProjects } from '@/hooks/use-projects'
 import { useAssignments } from '@/hooks/use-assignments'
+import { useAssignmentValidation } from '@/hooks/use-assignment-validation'
 
 import { assignmentsService } from '@/lib/services/assignments.service'
 import { toDbAllocation } from '@/lib/assignments'
 import { ASSIGNMENT_ALLOCATION_VALUES as ALLOCATION_VALUES } from '@/constants/assignments'
+import { AssignmentSummary } from '@/components/assignment-summary'
 
+import type { Person } from '@/types/people'
+import type { Project } from '@/types/project'
 
 export default function NewAssignmentPage() {
   const router = useRouter()
   const { people, loading: peopleLoading } = usePeople()
   const { projects, loading: projectsLoading } = useProjects()
   const { createAssignment } = useAssignments()
+  const { validateAssignment, getOverallocationMessage, isValidating } = useAssignmentValidation()
   const { toast } = useToast()
 
   const [formData, setFormData] = useState({
@@ -71,20 +76,29 @@ export default function NewAssignmentPage() {
       setIsSubmitting(true)
       console.log('Submitting assignment with data:', formData)
 
-      const result = await assignmentsService.getTotalAllocationForPersonInRange(
+      // Validar sobreasignación antes de crear
+      const validationResult = await validateAssignment(
+        null, // new assignment
         formData.person_id,
-        format(formData.start_date, 'yyyy-MM-dd'),
-        format(formData.end_date, 'yyyy-MM-dd')
+        formData.start_date,
+        formData.end_date,
+        formData.allocation / 100 // convert to decimal
       )
 
-      const projected = result.projectedMax + formData.allocation / 100
-      if (projected > 1) {
-        toast({
-          id: `assignment-overalloc-warning-${Date.now()}`,
-          title: 'Advertencia de sobreasignación',
-          description: `Esta persona alcanzará el ${Math.round(projected * 100)}% de asignación.`,
-          variant: 'destructive',
-        })
+      // Si hay sobreasignación, mostrar confirmación
+      if (validationResult.isOverallocated) {
+        const confirmed = window.confirm(
+          `⚠️ Sobreasignación detectada!\n\n` +
+          `La persona estará asignada más del 100% en algunos días:\n` +
+          validationResult.overallocatedDates.map(d => 
+            `${d.date}: ${(d.totalAllocation * 100).toFixed(0)}%`
+          ).join('\n') +
+          `\n\n¿Deseas continuar de todas formas?`
+        )
+        
+        if (!confirmed) {
+          return
+        }
       }
 
       const assignmentData = {
@@ -107,24 +121,9 @@ export default function NewAssignmentPage() {
       })
 
       router.push('/assignments')
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating assignment:', error)
-      console.error('Error type:', typeof error)
-      console.error('Error constructor:', error?.constructor?.name)
-      console.error('Error message:', error?.message)
-      console.error('Error details:', error?.details)
-      console.error('Error hint:', error?.hint)
-      console.error('Error code:', error?.code)
-      console.error('Full error object:', JSON.stringify(error, null, 2))
-      
-      const errorMessage = error?.message || error?.details || error?.hint || 'Error desconocido al crear la asignación'
-      
-      toast({
-        id: `assignment-create-error-${Date.now()}`,
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      })
+      setWarnings([error instanceof Error ? error.message : 'Error al crear la asignación'])
     } finally {
       setIsSubmitting(false)
     }
@@ -149,7 +148,7 @@ export default function NewAssignmentPage() {
   }
 
   // Check for conflicts when form data changes
-  React.useEffect(() => {
+  useEffect(() => {
     checkForConflicts()
   }, [formData])
 
@@ -159,13 +158,11 @@ export default function NewAssignmentPage() {
   // Debug logging
   console.log('All people:', people)
   console.log('People count:', people.length)
-  console.log('People statuses:', people.map(p => ({ name: p.name, status: p.status })))
+  console.log('People statuses:', people.map(p => ({ name: `${p.first_name} ${p.last_name}`, status: p.status })))
 
   // Show all people instead of filtering by status
-  const activePeople = people
-  const activeProjects = projects.filter(
-    p => p.status === 'In Progress' || p.status === 'Not Started'
-  )
+  const activePeople = people.filter((p: Person) => p.status === 'Active' || p.status === 'Paused')
+  const activeProjects = projects.filter((p: Project) => p.status === 'In Progress')
 
   if (peopleLoading || projectsLoading) {
     return (
@@ -246,7 +243,7 @@ export default function NewAssignmentPage() {
                       {activePeople.map(person => (
                         <SelectItem key={person.id} value={person.id}>
                           <div>
-                            <div className="font-medium">{person.name}</div>
+                            <div className="font-medium">{person.first_name} {person.last_name}</div>
                             <div className="text-sm text-muted-foreground">{person.profile}</div>
                           </div>
                         </SelectItem>
@@ -365,34 +362,15 @@ export default function NewAssignmentPage() {
               </div>
 
               {/* Summary */}
-              {selectedPerson && selectedProject && (
-                <Card className="bg-muted/50">
-                  <CardContent className="pt-6">
-                    <h3 className="font-medium mb-2">Resumen de la Asignación</h3>
-                    <div className="space-y-1 text-sm">
-                      <div>
-                        <strong>Persona:</strong> {selectedPerson.name} ({selectedPerson.profile})
-                      </div>
-                      <div>
-                        <strong>Proyecto:</strong> {selectedProject.name}
-                      </div>
-                      <div>
-                        <strong>Dedicación:</strong> {formData.allocation}%
-                      </div>
-                      {formData.assigned_role && (
-                        <div>
-                          <strong>Rol:</strong> {formData.assigned_role}
-                        </div>
-                      )}
-                      {formData.start_date && formData.end_date && (
-                        <div>
-                          <strong>Período:</strong> {format(formData.start_date, 'dd/MM/yyyy')} -{' '}
-                          {format(formData.end_date, 'dd/MM/yyyy')}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+              {selectedPerson && selectedProject && formData.start_date && formData.end_date && (
+                <AssignmentSummary
+                  person={selectedPerson}
+                  project={selectedProject}
+                  startDate={formData.start_date}
+                  endDate={formData.end_date}
+                  allocation={formData.allocation}
+                  assignedRole={formData.assigned_role}
+                />
               )}
 
               <div className="flex gap-4 pt-6">
