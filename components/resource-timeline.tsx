@@ -328,12 +328,13 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
             >
               {/* Header left corner - Team Member label */}
               <div
-                className="sticky left-0 z-30 bg-gray-50 border-r border-gray-200 flex items-center px-4"
+                className="sticky left-0 z-30 bg-gray-50 border-r border-gray-200 flex items-center px-4 justify-end"
                 style={{ width: `${SIDEBAR_WIDTH}px` }}
               >
-                <div className="font-medium text-gray-700 text-sm uppercase tracking-wide">
-                  Miembro del equipo
-                </div>
+                <Button onClick={scrollToToday} variant="default" size="sm" className="h-6 px-2 text-xs bg-blue-600 hover:bg-blue-700 text-white">
+                  <CalendarDays className="h-3 w-3 mr-1" />
+                  Hoy
+                </Button>
               </div>
 
               {/* Header timeline section */}

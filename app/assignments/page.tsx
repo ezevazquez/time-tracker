@@ -174,14 +174,6 @@ export default function AssignmentsPage() {
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold">Asignaciones</h1>
             <div className="flex gap-2 flex-wrap items-center">
-              {/* Today button - only show in timeline view */}
-              {viewMode === 'timeline' && (
-                <Button onClick={handleScrollToToday} variant="outline" size="sm" className="h-8">
-                  <CalendarDays className="h-4 w-4 mr-2" />
-                  Hoy
-                </Button>
-              )}
-              
               {/* Filters */}
               <FiltersPopover
                 people={people}
