@@ -7,7 +7,6 @@ import { AlertTriangle, Calendar, TrendingUp } from 'lucide-react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 
 import type { Project } from '@/types/project'
 import type { Assignment } from '@/types/assignment'
@@ -17,7 +16,7 @@ import {
   calculateOverallocationPercentage 
 } from '@/lib/utils/fte-calculations'
 
-interface OverallocatedProjectsProps {
+interface OverallocatedProjectsChartProps {
   projects: Project[]
   assignments: Assignment[]
 }
@@ -30,7 +29,7 @@ interface ProjectWithOverallocation {
   isOverallocated: boolean
 }
 
-export function OverallocatedProjects({ projects, assignments }: OverallocatedProjectsProps) {
+export function OverallocatedProjectsChart({ projects, assignments }: OverallocatedProjectsChartProps) {
   const router = useRouter()
 
   // Calcular FTE asignado por proyecto y detectar sobre-asignaciones
@@ -64,24 +63,21 @@ export function OverallocatedProjects({ projects, assignments }: OverallocatedPr
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-green-600" />
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <AlertTriangle className="h-4 w-4 text-green-600" />
             Proyectos Sobre-asignados
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs">
             Estado de asignación de recursos
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-6">
+          <div className="text-center py-4">
             <div className="text-green-600 mb-2">
-              <AlertTriangle className="h-8 w-8 mx-auto" />
+              <AlertTriangle className="h-6 w-6 mx-auto" />
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               No hay proyectos sobre-asignados
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Todos los proyectos están dentro de su capacidad FTE
             </p>
           </div>
         </CardContent>
@@ -92,33 +88,33 @@ export function OverallocatedProjects({ projects, assignments }: OverallocatedPr
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-red-600" />
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <AlertTriangle className="h-4 w-4 text-red-600" />
           Proyectos Sobre-asignados
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs">
           {projectsWithOverallocation.length} proyecto{projectsWithOverallocation.length !== 1 ? 's' : ''} con sobre-asignación
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {projectsWithOverallocation.slice(0, 5).map(({ project, assignedFTE, totalFTE, overallocationPercentage }) => (
+        <div className="space-y-3">
+          {projectsWithOverallocation.slice(0, 4).map(({ project, assignedFTE, totalFTE, overallocationPercentage }) => (
             <div
               key={project.id}
-              className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+              className="p-2 border rounded text-xs hover:bg-gray-50 cursor-pointer transition-colors"
               onClick={() => router.push(`/projects/${project.id}/show`)}
             >
-              <div className="flex items-start justify-between mb-2">
+              <div className="flex items-start justify-between mb-1">
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-sm truncate">
+                  <h4 className="font-medium truncate">
                     {project.project_code && (
-                      <span className="font-mono text-xs text-muted-foreground mr-2">
+                      <span className="font-mono text-muted-foreground mr-1">
                         {project.project_code}
                       </span>
                     )}
                     {project.name}
                   </h4>
-                  <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2 mt-1 text-muted-foreground">
                     {project.start_date && (
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
@@ -126,23 +122,23 @@ export function OverallocatedProjects({ projects, assignments }: OverallocatedPr
                       </div>
                     )}
                     {project.end_date && (
-                      <span>-</span>
-                    )}
-                    {project.end_date && (
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {format(new Date(project.end_date), 'MMM yyyy', { locale: es })}
-                      </div>
+                      <>
+                        <span>-</span>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {format(new Date(project.end_date), 'MMM yyyy', { locale: es })}
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
-                <Badge variant="destructive" className="text-xs">
+                <Badge variant="destructive" className="text-xs ml-2">
                   +{overallocationPercentage}%
                 </Badge>
               </div>
               
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
                   <span className="text-muted-foreground">FTE:</span>
                   <span className="font-medium">
                     {assignedFTE.toFixed(1)}/{totalFTE.toFixed(1)}
@@ -150,22 +146,20 @@ export function OverallocatedProjects({ projects, assignments }: OverallocatedPr
                 </div>
                 <div className="flex items-center gap-1 text-red-600">
                   <TrendingUp className="h-3 w-3" />
-                  <span>Sobre-asignado</span>
+                  <span className="text-xs">Sobre-asignado</span>
                 </div>
               </div>
             </div>
           ))}
           
-          {projectsWithOverallocation.length > 5 && (
-            <div className="pt-2 border-t">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
+          {projectsWithOverallocation.length > 4 && (
+            <div className="pt-2 border-t text-center">
+              <button
+                className="text-xs text-blue-600 hover:text-blue-800"
                 onClick={() => router.push('/projects')}
               >
-                Ver todos los proyectos ({projectsWithOverallocation.length})
-              </Button>
+                Ver todos ({projectsWithOverallocation.length})
+              </button>
             </div>
           )}
         </div>

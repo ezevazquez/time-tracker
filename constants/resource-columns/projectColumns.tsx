@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge'
 import { getStatusBadge } from '@/utils/getStatusBadge'
 import { getStatusLabel } from '@/utils/getStatusLabel'
 import type { Project } from '@/types/project'
+import { calculateFTEUtilization, isProjectOverallocated, calculateOverallocationPercentage } from '@/lib/utils/fte-calculations'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,8 +52,10 @@ export const projectColumns = [
         return <span className="text-muted-foreground">No definido</span>
       }
       
-      const percentage = Math.round((assigned / total) * 100)
-      const isOverallocated = assigned > total
+      const isOverallocated = isProjectOverallocated(assigned, total)
+      const percentage = isOverallocated 
+        ? calculateOverallocationPercentage(assigned, total)
+        : calculateFTEUtilization(assigned, total)
       
       return (
         <div className="flex items-center gap-2">
@@ -63,7 +66,7 @@ export const projectColumns = [
             variant={isOverallocated ? 'destructive' : assigned === total ? 'default' : 'secondary'}
             className="text-xs"
           >
-            {percentage}%
+            {isOverallocated ? `+${percentage}%` : `${percentage}%`}
           </Badge>
         </div>
       )
