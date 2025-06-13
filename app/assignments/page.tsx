@@ -1,28 +1,30 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Plus, List, CalendarDays } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { ResourceTimeline } from '@/components/resource-timeline'
 import { ResourceTable } from '@/components/resource-table'
 import { ReportModal } from '@/components/report-modal'
-import { Card } from '@/components/ui/card'
+import { FiltersPopover } from '@/components/filters-popover'
 
 import { usePeople } from '@/hooks/use-people'
 import { useProjects } from '@/hooks/use-projects'
 import { useAssignments } from '@/hooks/use-assignments'
 
 import { supabase } from '@/lib/supabase/client'
-import { parseDateFromString } from '@/lib/assignments'
+import { parseDateFromString, isOverallocated } from '@/lib/assignments'
 
 export default function AssignmentsPage() {
   const router = useRouter()
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [mounted, setMounted] = useState(false)
   const [viewMode, setViewMode] = useState<'timeline' | 'list'>('timeline')
+  const scrollToTodayRef = useRef<(() => void) | null>(null)
 
   const defaultDateRange = {
     from: new Date(),
@@ -78,6 +80,23 @@ export default function AssignmentsPage() {
     })
   }
 
+  const handleScrollToToday = () => {
+    console.log('handleScrollToToday called, scrollToTodayRef.current:', scrollToTodayRef.current)
+    if (scrollToTodayRef.current) {
+      console.log('Calling scrollToTodayRef.current function')
+      scrollToTodayRef.current()
+    } else {
+      console.log('scrollToTodayRef.current is null or undefined')
+    }
+  }
+
+  const setScrollToTodayFunction = (fn: (() => void) | null) => {
+    console.log('setScrollToTodayFunction called with:', fn)
+    scrollToTodayRef.current = fn
+  }
+
+  const hasActiveFilters = filters.personProfile || filters.projectStatus || filters.overallocatedOnly
+
   const filteredAssignments = useMemo(() => {
     return assignments.filter(assignment => {
       // Find the person and project for this assignment
@@ -97,8 +116,22 @@ export default function AssignmentsPage() {
         if (end < filters.dateRange.from || start > filters.dateRange.to) return false
       }
 
-      // Overallocated filter
-      if (filters.overallocatedOnly && assignment.allocation <= 100) return false
+      // Overallocated filter - use FTE logic
+      if (filters.overallocatedOnly) {
+        // Get all current assignments for this person
+        const currentDate = new Date()
+        const personCurrentAssignments = assignments.filter(a => {
+          const start = parseDateFromString(a.start_date)
+          const end = parseDateFromString(a.end_date)
+          return a.person_id === assignment.person_id && start <= currentDate && end >= currentDate
+        })
+        
+        // Calculate total FTE for this person
+        const totalFte = personCurrentAssignments.reduce((sum, a) => sum + a.allocation, 0)
+        
+        // Only show assignments for people who are overallocated
+        if (!isOverallocated(totalFte)) return false
+      }
 
       return true
     })
@@ -135,32 +168,14 @@ export default function AssignmentsPage() {
   }
 
   return (
-    <main className="flex-1 w-full h-screen flex flex-col">
-      {/* Header -  */}
+    <main className="flex-1 w-full h-[92vh] flex flex-col">
+      {/* Fixed Header */}
       <div className="flex-shrink-0 border-b bg-white py-2">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold">Asignaciones</h1>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
               <ReportModal />
-              <Button
-                variant="outline"
-                onClick={() => setViewMode(viewMode === 'timeline' ? 'list' : 'timeline')}
-                size="sm"
-                className="h-8"
-              >
-                {viewMode === 'timeline' ? (
-                  <>
-                    <List className="mr-2 h-4 w-4" />
-                    Ver como lista
-                  </>
-                ) : (
-                  <>
-                    <CalendarDays className="mr-2 h-4 w-4" />
-                    Ver como timeline
-                  </>
-                )}
-              </Button>
               <Link href="/assignments/new">
                 <Button size="sm" className="h-8">
                   <Plus className="mr-2 h-4 w-4" />
@@ -172,13 +187,42 @@ export default function AssignmentsPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <Card className="mb-6">
-        {/* Rest of the component content */}
-      </Card>
+      {/* Second Header - Filters and Toggle */}
+      <div className="flex-shrink-0 border-b bg-gray-50 py-2">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-end gap-2">
+            <FiltersPopover
+              people={people}
+              projects={projects}
+              filters={filters}
+              onFiltersChange={setFilters}
+              onClearFilters={clearFilters}
+              showDateRange={viewMode === 'list'}
+            />
+            <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {
+              if (value) setViewMode(value as 'timeline' | 'list')
+            }} className="bg-gray-100 p-1 rounded-lg shadow-sm">
+              <ToggleGroupItem 
+                value="timeline" 
+                aria-label="Ver como timeline" 
+                className="rounded-md data-[state=on]:bg-white data-[state=on]:shadow-md data-[state=on]:text-blue-600 data-[state=off]:text-gray-500 data-[state=off]:hover:text-gray-700 transition-all duration-200"
+              >
+                <CalendarDays className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="list" 
+                aria-label="Ver como lista" 
+                className="rounded-md data-[state=on]:bg-white data-[state=on]:shadow-md data-[state=on]:text-blue-600 data-[state=off]:text-gray-500 data-[state=off]:hover:text-gray-700 transition-all duration-200"
+              >
+                <List className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+        </div>
+      </div>
 
-      {/* Content */}
-      <div className="flex-1 min-h-0 flex flex-col">
+      {/* Scrollable Content Area */}
+      <div className="flex-1 min-h-0 overflow-hidden">
         {viewMode === 'timeline' ? (
           <ResourceTimeline
             people={people}
@@ -187,9 +231,10 @@ export default function AssignmentsPage() {
             filters={filters}
             onFiltersChange={setFilters}
             onClearFilters={clearFilters}
+            onScrollToTodayRef={setScrollToTodayFunction}
           />
         ) : (
-          <div className="flex-1 min-h-0 overflow-auto">
+          <div className="h-full overflow-auto">
             <div className="container mx-auto px-4 py-4">
               <ResourceTable
                 people={people}

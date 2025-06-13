@@ -31,7 +31,7 @@ export async function fetchOcupationReport(startDate: string, endDate: string): 
     // Fetch all assignments in the date range
     const { data: assignments, error: assignmentsError } = await supabase
       .from('assignments')
-      .select('*')
+      .select('*, projects(*)')
       .gte('start_date', startDate)
       .lte('end_date', endDate)
 
@@ -62,31 +62,7 @@ export async function fetchOcupationReport(startDate: string, endDate: string): 
           is_billable: false
         })
       } else {
-        // Calcular asignaciones por día para el rango completo
-        const startDateObj = parseDateFromString(startDate)
-        const endDateObj = parseDateFromString(endDate)
-        const totalDays = Math.ceil((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1
-        
-        // Para cada día, calcular la asignación total
-        const dailyAllocations: { [date: string]: number } = {}
-        
-        for (let d = new Date(startDateObj); d <= endDateObj; d.setDate(d.getDate() + 1)) {
-          const dateStr = d.toISOString().split('T')[0]
-          let totalAllocation = 0
-          
-          for (const assignment of personAssignments) {
-            const assignmentStart = parseDateFromString(assignment.start_date)
-            const assignmentEnd = parseDateFromString(assignment.end_date)
-            
-            if (d >= assignmentStart && d <= assignmentEnd) {
-              totalAllocation += assignment.allocation
-            }
-          }
-          
-          dailyAllocations[dateStr] = totalAllocation
-        }
-
-        // Crear filas para cada asignación
+        // Crear filas para cada asignación directamente
         for (const assignment of personAssignments) {
           const project = Array.isArray(assignment.projects) ? assignment.projects[0] : assignment.projects
           
@@ -104,11 +80,11 @@ export async function fetchOcupationReport(startDate: string, endDate: string): 
             end_date: assignment.end_date,
             assigned_role: assignment.assigned_role || '',
             is_bench: false,
-            is_billable: assignment.is_billable
+            is_billable: assignment.is_billable !== false
           })
         }
 
-        // Calcular bench (tiempo libre)
+        // Calcular bench (tiempo libre) si hay espacio disponible
         const totalAssigned = personAssignments.reduce((sum, a) => sum + a.allocation, 0)
         const benchAllocation = Math.max(0, 1.0 - totalAssigned)
         

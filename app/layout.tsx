@@ -51,7 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center space-x-4">
                       <h1 className="text-xl font-semibold text-primary tracking-tight">
-                        <Link href="/">Revolt</Link>
+                        <Link href="/">MAES</Link>
                       </h1>
                       <div className="h-6 w-px bg-border mx-4 hidden sm:block" />
                       <MainNav />
