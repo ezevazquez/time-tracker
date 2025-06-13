@@ -1,6 +1,12 @@
 import { supabase } from '@/lib/supabase/client'
 import type { Assignment, AssignmentWithRelations } from '@/types/assignment'
 
+interface OverallocationResult {
+  isOverallocated: boolean
+  overallocatedDays: any[]
+  totalAllocation: number
+}
+
 // Function to generate a simple UUID
 function generateId(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -29,31 +35,23 @@ export const assignmentsService = {
   async create(
     assignment: Omit<Assignment, 'id' | 'created_at' | 'updated_at'>
   ): Promise<Assignment> {
-    console.log('AssignmentsService.create called with:', assignment)
-    
-    // Generate an id and add it to the insert data
+    const id = crypto.randomUUID()
     const insertData = {
-      id: generateId(),
-      ...assignment
+      id,
+      ...assignment,
+      created_at: new Date().toISOString().split('T')[0],
     }
-    
-    console.log('Insert data (with generated id):', insertData)
-    
-    const { data, error } = await supabase.from('assignments').insert(insertData).select().single()
-    
-    console.log('Supabase response - data:', data)
-    console.log('Supabase response - error:', error)
-    
+
+    const { data, error } = await supabase
+      .from('assignments')
+      .insert(insertData)
+      .select()
+      .single()
+
     if (error) {
-      console.error('Supabase error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      })
-      throw error
+      throw new Error(`Error creating assignment: ${error.message}`)
     }
-    
+
     return data
   },
 
@@ -106,42 +104,29 @@ export const assignmentsService = {
     startDate: string,
     endDate: string,
     allocation: number
-  ): Promise<{ isOverallocated: boolean; overallocatedDates: Array<{ date: string; totalAllocation: number }> }> {
-    console.log('🚀 checkAssignmentOverallocation llamado con:', {
-      assignmentId,
-      personId,
-      startDate,
-      endDate,
-      allocation
-    })
+  ): Promise<OverallocationResult> {
+    try {
+      const { data, error } = await supabase.rpc('check_assignment_overallocation', {
+        p_assignment_id: assignmentId,
+        p_person_id: personId,
+        p_start_date: startDate,
+        p_end_date: endDate,
+        p_allocation: allocation
+      })
 
-    const { data, error } = await supabase.rpc('check_assignment_overallocation', {
-      _assignment_id: assignmentId,
-      _person_id: personId,
-      _start_date: startDate,
-      _end_date: endDate,
-      _allocation: allocation
-    })
+      if (error) {
+        throw new Error(`Error checking overallocation: ${error.message}`)
+      }
 
-    console.log('📡 Respuesta de Supabase RPC:', { data, error })
+      const result: OverallocationResult = {
+        isOverallocated: data && data.length > 0,
+        overallocatedDays: data || [],
+        totalAllocation: data && data.length > 0 ? data[0].total_allocation : 0
+      }
 
-    if (error) {
-      console.error('❌ Error en RPC:', error)
-      throw new Error(`Error checking assignment overallocation: ${error.message}`)
+      return result
+    } catch (error) {
+      throw new Error(`Error checking overallocation: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
-
-    const overallocatedDates = data || []
-    const isOverallocated = overallocatedDates.length > 0
-
-    const result = {
-      isOverallocated,
-      overallocatedDates: overallocatedDates.map((item: any) => ({
-        date: item.overallocated_date,
-        totalAllocation: item.total_allocation
-      }))
-    }
-
-    console.log('📊 Resultado procesado:', result)
-    return result
   },
 }

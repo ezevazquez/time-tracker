@@ -8,6 +8,7 @@ import { usePeople } from '@/hooks/use-people'
 import { useProjects } from '@/hooks/use-projects'
 import { useAssignments } from '@/hooks/use-assignments'
 import { supabase } from '@/lib/supabase/client'
+import { parseDateFromString } from '@/lib/assignments'
 
 export function DebugOverallocation() {
   const [debugResult, setDebugResult] = useState<any>(null)
@@ -39,14 +40,14 @@ export function DebugOverallocation() {
 
       // 1. Verificar asignaciones existentes
       console.log('1. Verificando asignaciones existentes...')
-      const existingAssignments = assignments.filter(a => 
-        a.person_id === person.id && 
-        new Date(a.start_date) <= testDate && 
-        new Date(a.end_date) >= testDate
+      const overlappingAssignments = assignments.filter(a => 
+        a.person_id === person.id &&
+        parseDateFromString(a.start_date) <= testDate &&
+        parseDateFromString(a.end_date) >= testDate
       )
 
-      console.log('Asignaciones existentes en la fecha:', existingAssignments)
-      const totalExistingAllocation = existingAssignments.reduce((sum, a) => sum + a.allocation, 0)
+      console.log('Asignaciones existentes en la fecha:', overlappingAssignments)
+      const totalExistingAllocation = overlappingAssignments.reduce((sum, a) => sum + a.allocation, 0)
       console.log('Asignación total existente:', totalExistingAllocation)
 
       // 2. Crear primera asignación (75%)
@@ -57,7 +58,8 @@ export function DebugOverallocation() {
         start_date: dateStr,
         end_date: dateStr,
         allocation: 0.75,
-        assigned_role: 'Debug Test 1'
+        assigned_role: 'Debug Test 1',
+        is_billable: true
       })
 
       console.log('✅ Asignación 1 creada:', assignment1.id)
@@ -110,7 +112,7 @@ export function DebugOverallocation() {
         success: true,
         person: `${person.first_name} ${person.last_name}`,
         date: dateStr,
-        existingAssignments: existingAssignments.length,
+        existingAssignments: overlappingAssignments.length,
         totalExistingAllocation,
         totalAfterFirst,
         manualTotal,

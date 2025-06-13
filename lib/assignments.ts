@@ -156,18 +156,15 @@ export function toISODateString(date: Date): string {
 /**
  * Función de debug para verificar fechas
  */
-export function debugDate(date: Date, label: string = 'Date'): void {
-  console.log(`🔍 ${label}:`, {
+export function debugDate(date: Date | string, label: string = 'Date') {
+  const parsed = typeof date === 'string' ? new Date(date) : date
+  return {
     original: date,
-    toString: date.toString(),
-    toISOString: date.toISOString(),
-    toLocaleDateString: date.toLocaleDateString(),
-    toLocaleDateStringCA: date.toLocaleDateString('en-CA'),
-    getFullYear: date.getFullYear(),
-    getMonth: date.getMonth() + 1,
-    getDate: date.getDate(),
-    getTimezoneOffset: date.getTimezoneOffset()
-  })
+    parsed: parsed,
+    iso: parsed.toISOString(),
+    local: parsed.toLocaleDateString(),
+    timestamp: parsed.getTime()
+  }
 }
 
 /**

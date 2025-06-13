@@ -1,96 +1,77 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { assignmentsService } from '@/lib/services/assignments.service'
 import { toISODateString } from '@/lib/assignments'
 import { fteToPercentage } from '@/lib/assignments'
 
 interface ValidationResult {
-  isOverallocated: boolean
-  overallocatedDates: Array<{ date: string; totalAllocation: number }>
-  maxAllocation: number
   isValid: boolean
+  message: string
+  isOverallocated?: boolean
+  totalAllocation?: number
+  overallocatedDays?: any[]
 }
 
 export function useAssignmentValidation() {
   const [isValidating, setIsValidating] = useState(false)
   const [validationError, setValidationError] = useState<string | null>(null)
 
-  const validateAssignment = async (
-    assignmentId: string | null,
-    personId: string,
-    startDate: Date,
-    endDate: Date,
-    allocation: number // This should be FTE (0.0-1.0)
-  ): Promise<ValidationResult> => {
-    console.log('🔍 validateAssignment llamado con:', {
-      assignmentId,
-      personId,
-      startDate,
-      endDate,
-      allocation
-    })
-
-    setIsValidating(true)
-    setValidationError(null)
-
-    try {
-      const formattedStartDate = toISODateString(startDate)
-      const formattedEndDate = toISODateString(endDate)
-
-      console.log('📞 Llamando a checkAssignmentOverallocation con:', {
-        assignmentId,
-        personId,
-        formattedStartDate,
-        formattedEndDate,
-        allocation
-      })
-
-      const result = await assignmentsService.checkAssignmentOverallocation(
-        assignmentId,
-        personId,
-        formattedStartDate,
-        formattedEndDate,
-        allocation
-      )
-
-      console.log('📊 Resultado de checkAssignmentOverallocation:', result)
-
-      const maxAllocation = result.overallocatedDates.length > 0 
-        ? Math.max(...result.overallocatedDates.map(d => d.totalAllocation))
-        : allocation
-
-      const validationResult = {
-        isOverallocated: result.isOverallocated,
-        overallocatedDates: result.overallocatedDates,
-        maxAllocation,
-        isValid: !result.isOverallocated
+  const validateAssignment = useCallback(
+    async (
+      assignmentId: string | null,
+      personId: string,
+      startDate: string,
+      endDate: string,
+      allocation: number
+    ): Promise<ValidationResult> => {
+      if (!personId || !startDate || !endDate) {
+        return { isValid: false, message: 'Faltan datos requeridos' }
       }
 
-      console.log('✅ Resultado final de validación:', validationResult)
-      return validationResult
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error de validación'
-      console.error('❌ Error en validateAssignment:', error)
-      setValidationError(errorMessage)
-      throw error
-    } finally {
-      setIsValidating(false)
-    }
-  }
+      try {
+        const result = await assignmentsService.checkAssignmentOverallocation(
+          assignmentId,
+          personId,
+          startDate,
+          endDate,
+          allocation
+        )
+
+        if (result.isOverallocated) {
+          const totalAllocation = result.totalAllocation
+          const percentage = Math.round(totalAllocation * 100)
+          
+          return {
+            isValid: false,
+            message: `Sobreasignación detectada: ${percentage}% (máximo 100%)`,
+            isOverallocated: true,
+            totalAllocation,
+            overallocatedDays: result.overallocatedDays
+          }
+        }
+
+        return { isValid: true, message: 'Asignación válida' }
+      } catch (error) {
+        return {
+          isValid: false,
+          message: `Error de validación: ${error instanceof Error ? error.message : 'Error desconocido'}`
+        }
+      }
+    },
+    []
+  )
 
   const getOverallocationMessage = (result: ValidationResult): string => {
-    if (!result.isOverallocated) return ''
-
-    const maxPercentage = fteToPercentage(result.maxAllocation)
-    const dateCount = result.overallocatedDates.length
-
-    if (dateCount === 1) {
-      const date = new Date(result.overallocatedDates[0].date)
-      return `Sobreasignación del ${maxPercentage}% el ${toISODateString(date)}`
-    } else {
-      return `Sobreasignación del ${maxPercentage}% en ${dateCount} días del período`
+    if (!result.isOverallocated) {
+      return 'No hay sobreasignación'
     }
+
+    const totalAllocation = result.totalAllocation || 0
+    const percentage = Math.round(totalAllocation * 100)
+    const days = result.overallocatedDays?.length || 0
+
+    return `Sobreasignación detectada: ${percentage}% en ${days} día(s)`
   }
 
   return {

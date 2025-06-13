@@ -16,6 +16,7 @@ import { useProjects } from '@/hooks/use-projects'
 import { useAssignments } from '@/hooks/use-assignments'
 
 import { supabase } from '@/lib/supabase/client'
+import { parseDateFromString } from '@/lib/assignments'
 
 export default function AssignmentsPage() {
   const router = useRouter()
@@ -91,8 +92,8 @@ export default function AssignmentsPage() {
 
       // Date range filter (only for list view)
       if (viewMode === 'list') {
-        const start = new Date(assignment.start_date)
-        const end = new Date(assignment.end_date)
+        const start = parseDateFromString(assignment.start_date)
+        const end = parseDateFromString(assignment.end_date)
         if (end < filters.dateRange.from || start > filters.dateRange.to) return false
       }
 

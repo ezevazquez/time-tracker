@@ -33,7 +33,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { OverallocationModal } from '@/components/overallocation-modal'
 
 import { cn } from '@/utils/classnames'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
 
 import { usePeople } from '@/hooks/use-people'
 import { useProjects } from '@/hooks/use-projects'
@@ -54,7 +54,6 @@ export default function NewAssignmentPage() {
   const { projects, loading: projectsLoading } = useProjects()
   const { createAssignment } = useAssignments()
   const { validateAssignment, getOverallocationMessage, isValidating } = useAssignmentValidation()
-  const { toast } = useToast()
 
   const [formData, setFormData] = useState({
     person_id: '',
@@ -63,6 +62,7 @@ export default function NewAssignmentPage() {
     end_date: undefined as Date | undefined,
     allocation: 100, // Default to 100%
     assigned_role: '',
+    is_billable: true, // Default to true
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -76,65 +76,23 @@ export default function NewAssignmentPage() {
     setIsSubmitting(true)
 
     try {
-      // Usar el estado formData en lugar de FormData
+      setIsSubmitting(true)
+      
       const assignmentData = {
         person_id: formData.person_id,
         project_id: formData.project_id,
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        allocation: formData.allocation,
+        start_date: toISODateString(formData.start_date!),
+        end_date: toISODateString(formData.end_date!),
+        allocation: percentageToFte(formData.allocation),
         assigned_role: formData.assigned_role,
-        is_billable: true
+        is_billable: formData.is_billable
       }
 
-      // Validar que todos los campos requeridos estén completos
-      if (!assignmentData.person_id || !assignmentData.project_id || !assignmentData.start_date || !assignmentData.end_date) {
-        alert('Todos los campos marcados con * son obligatorios')
-        setIsSubmitting(false)
-        return
-      }
-
-      // Validar sobreasignación antes de crear usando FTE
-      const validationResult = await validateAssignment(
-        null, // new assignment
-        assignmentData.person_id,
-        assignmentData.start_date,
-        assignmentData.end_date,
-        percentageToFte(assignmentData.allocation) // convert to FTE
-      )
-
-      // Si hay sobreasignación, mostrar modal
-      if (validationResult.isOverallocated) {
-        const selectedPerson = people.find(p => p.id === assignmentData.person_id)
-        const selectedProject = projects.find(p => p.id === assignmentData.project_id)
-        
-        setOverallocationData({
-          personName: `${selectedPerson?.first_name} ${selectedPerson?.last_name}`,
-          projectName: selectedProject?.name || '',
-          allocation: assignmentData.allocation,
-          overallocatedDates: validationResult.overallocatedDates
-        })
-        setPendingFormData(assignmentData)
-        setShowOverallocationModal(true)
-        setIsSubmitting(false)
-        return
-      }
-
-      // Si no hay sobreasignación, crear directamente
-      console.log('🚀 Creando asignación con fechas:')
-      debugDate(assignmentData.start_date, 'Start Date')
-      debugDate(assignmentData.end_date, 'End Date')
-      
-      await createAssignment({
-        ...assignmentData,
-        start_date: toISODateString(assignmentData.start_date),
-        end_date: toISODateString(assignmentData.end_date),
-        allocation: toDbAllocation(assignmentData.allocation)
-      })
+      await createAssignment(assignmentData)
+      toast.success('Asignación creada exitosamente')
       router.push('/assignments')
     } catch (error) {
-      console.error('Error al crear la asignación:', error)
-      alert('Error al crear la asignación')
+      toast.error(error instanceof Error ? error.message : 'Error al crear la asignación')
     } finally {
       setIsSubmitting(false)
     }
@@ -186,14 +144,23 @@ export default function NewAssignmentPage() {
   const selectedPerson = people.find(p => p.id === formData.person_id)
   const selectedProject = projects.find(p => p.id === formData.project_id)
 
-  // Debug logging
-  console.log('All people:', people)
-  console.log('People count:', people.length)
-  console.log('People statuses:', people.map(p => ({ name: `${p.first_name} ${p.last_name}`, status: p.status })))
-
   // Show all people instead of filtering by status
   const activePeople = people.filter((p: Person) => p.status === 'Active' || p.status === 'Paused')
   const activeProjects = projects.filter((p: Project) => p.status === 'In Progress')
+
+  const handleStartDateSelect = (date: Date | undefined) => {
+    if (date) {
+      const normalizedDate = normalizeDate(date)
+      setFormData({ ...formData, start_date: normalizedDate })
+    }
+  }
+
+  const handleEndDateSelect = (date: Date | undefined) => {
+    if (date) {
+      const normalizedDate = normalizeDate(date)
+      setFormData({ ...formData, end_date: normalizedDate })
+    }
+  }
 
   if (peopleLoading || projectsLoading) {
     return (
@@ -325,13 +292,7 @@ export default function NewAssignmentPage() {
                       <Calendar
                         mode="single"
                         selected={formData.start_date}
-                        onSelect={date => {
-                          if (date) {
-                            const normalizedDate = normalizeDate(date)
-                            console.log('📅 Start date selected:', { original: date, normalized: normalizedDate })
-                            setFormData({ ...formData, start_date: normalizedDate })
-                          }
-                        }}
+                        onSelect={handleStartDateSelect}
                         initialFocus
                       />
                     </PopoverContent>
@@ -361,13 +322,7 @@ export default function NewAssignmentPage() {
                       <Calendar
                         mode="single"
                         selected={formData.end_date}
-                        onSelect={date => {
-                          if (date) {
-                            const normalizedDate = normalizeDate(date)
-                            console.log('📅 End date selected:', { original: date, normalized: normalizedDate })
-                            setFormData({ ...formData, end_date: normalizedDate })
-                          }
-                        }}
+                        onSelect={handleEndDateSelect}
                         initialFocus
                       />
                     </PopoverContent>
@@ -402,6 +357,22 @@ export default function NewAssignmentPage() {
                   onChange={e => setFormData({ ...formData, assigned_role: e.target.value })}
                   placeholder="Ej: Frontend Developer"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="is_billable"
+                    checked={formData.is_billable}
+                    onChange={e => setFormData({ ...formData, is_billable: e.target.checked })}
+                    className="rounded border-gray-300"
+                  />
+                  <Label htmlFor="is_billable">Facturable</Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Marca esta opción si la asignación es facturable al cliente
+                </p>
               </div>
 
               {/* Summary */}

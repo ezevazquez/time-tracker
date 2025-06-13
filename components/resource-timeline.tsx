@@ -129,19 +129,15 @@ export function ResourceTimeline({
   }
 
   // Get active people and projects
-  const activePeople = people.filter(p => {
-    // For debugging, let's show all people first
-    console.log('Person:', getDisplayName(p), 'Status:', p.status, 'Profile:', p.profile)
-    
-    // Show all people, regardless of status
-    // Apply filters if they exist
-    if (filters?.personProfile && p.profile !== filters.personProfile) return false
-    
-    return true
-  })
+  const activePeople = people.filter(p => p.status === 'Active' || p.status === 'Paused')
 
-  console.log('Active people count:', activePeople.length)
-  console.log('Total people:', people.length)
+  const timelineData = activePeople.map(person => {
+    const personAssignments = assignments.filter(a => a.person_id === person.id)
+    return {
+      person,
+      assignments: personAssignments
+    }
+  })
 
   // Handle scroll to dynamically load more months
   useEffect(() => {
@@ -502,6 +498,9 @@ export function ResourceTimeline({
                                 {assignment.assigned_role && (
                                   <p className="text-sm">Rol: {assignment.assigned_role}</p>
                                 )}
+                                <p className="text-sm">
+                                  Facturable: {assignment.is_billable ? 'Sí' : 'No'}
+                                </p>
                                 {project.description && (
                                   <p className="text-xs opacity-75">{project.description}</p>
                                 )}
