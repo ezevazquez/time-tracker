@@ -41,7 +41,7 @@ import { useAssignments } from '@/hooks/use-assignments'
 import { useAssignmentValidation } from '@/hooks/use-assignment-validation'
 
 import { assignmentsService } from '@/lib/services/assignments.service'
-import { toDbAllocation } from '@/lib/assignments'
+import { toDbAllocation, percentageToFte } from '@/lib/assignments'
 import { ASSIGNMENT_ALLOCATION_VALUES as ALLOCATION_VALUES } from '@/constants/assignments'
 import { AssignmentSummary } from '@/components/assignment-summary'
 
@@ -94,13 +94,13 @@ export default function NewAssignmentPage() {
         return
       }
 
-      // Validar sobreasignación antes de crear
+      // Validar sobreasignación antes de crear usando FTE
       const validationResult = await validateAssignment(
         null, // new assignment
         assignmentData.person_id,
         assignmentData.start_date,
         assignmentData.end_date,
-        assignmentData.allocation / 100 // convert to decimal
+        percentageToFte(assignmentData.allocation) // convert to FTE
       )
 
       // Si hay sobreasignación, mostrar modal

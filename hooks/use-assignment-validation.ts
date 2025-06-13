@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { assignmentsService } from '@/lib/services/assignments.service'
 import { format } from 'date-fns'
+import { fteToPercentage } from '@/lib/assignments'
 
 interface ValidationResult {
   isOverallocated: boolean
@@ -20,7 +21,7 @@ export function useAssignmentValidation() {
     personId: string,
     startDate: Date,
     endDate: Date,
-    allocation: number
+    allocation: number // This should be FTE (0.0-1.0)
   ): Promise<ValidationResult> => {
     console.log('🔍 validateAssignment llamado con:', {
       assignmentId,
@@ -81,7 +82,7 @@ export function useAssignmentValidation() {
   const getOverallocationMessage = (result: ValidationResult): string => {
     if (!result.isOverallocated) return ''
 
-    const maxPercentage = Math.round(result.maxAllocation * 100)
+    const maxPercentage = fteToPercentage(result.maxAllocation)
     const dateCount = result.overallocatedDates.length
 
     if (dateCount === 1) {

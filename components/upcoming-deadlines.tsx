@@ -7,6 +7,7 @@ import { format, differenceInDays, isAfter, isBefore, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
+import { fteToPercentage } from '@/lib/assignments'
 
 interface UpcomingDeadlinesProps {
   projects: Project[]
@@ -115,7 +116,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
 
                   {deadline.type === 'assignment' && deadline.allocation && (
                     <p className="text-xs text-gray-500 mt-1">
-                      Asignación: {Math.round(deadline.allocation * 100)}%
+                      Asignación: {fteToPercentage(deadline.allocation)}%
                     </p>
                   )}
                 </div>

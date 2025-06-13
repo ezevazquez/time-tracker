@@ -5,10 +5,11 @@ import { AlertTriangle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { fteToPercentage } from '@/lib/assignments'
 
 interface OverallocationDate {
   date: string
-  totalAllocation: number
+  totalAllocation: number // FTE (0.0-1.0)
 }
 
 interface OverallocationModalProps {
@@ -17,7 +18,7 @@ interface OverallocationModalProps {
   onConfirm: () => void
   personName: string
   projectName: string
-  allocation: number
+  allocation: number // Percentage (0-100)
   overallocatedDates: OverallocationDate[]
 }
 
@@ -51,9 +52,9 @@ export function OverallocationModal({
     })
   }
 
-  const getSeverityColor = (totalAllocation: number) => {
-    if (totalAllocation > 2.0) return 'bg-red-100 text-red-800 border-red-200'
-    if (totalAllocation > 1.5) return 'bg-orange-100 text-orange-800 border-orange-200'
+  const getSeverityColor = (totalFte: number) => {
+    if (totalFte > 2.0) return 'bg-red-100 text-red-800 border-red-200'
+    if (totalFte > 1.5) return 'bg-orange-100 text-orange-800 border-orange-200'
     return 'bg-yellow-100 text-yellow-800 border-yellow-200'
   }
 
@@ -103,7 +104,7 @@ export function OverallocationModal({
                       variant="outline" 
                       className={`text-xs font-medium ${getSeverityColor(item.totalAllocation)}`}
                     >
-                      {(item.totalAllocation * 100).toFixed(0)}%
+                      {fteToPercentage(item.totalAllocation)}%
                     </Badge>
                   </div>
                 ))}

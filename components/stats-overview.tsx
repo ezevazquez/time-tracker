@@ -7,6 +7,7 @@ import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
 import type { Client } from '@/types/client'
 import { ACTIVE_PERSON_STATUSES } from '@/constants/people'
+import { isOverallocated, fteToPercentage } from '@/lib/assignments'
 
 interface StatsOverviewProps {
   people: Person[]
@@ -22,7 +23,7 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
   const totalAssignments = assignments.length
   const totalClients = clients.length
 
-  // Calculate utilization
+  // Calculate utilization using FTE
   const currentDate = new Date()
   const currentAssignments = assignments.filter(a => {
     const start = new Date(a.start_date)
@@ -40,11 +41,11 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
       ? Math.round((assignedPeopleToday.size / totalActivePeople) * 100)
       : 0
   
-  // Overallocated people
+  // Overallocated people using FTE logic
   const overallocatedCount = people.filter(person => {
     const personAssignments = currentAssignments.filter(a => a.person_id === person.id)
-    const totalAllocation = personAssignments.reduce((sum, a) => sum + a.allocation, 0)
-    return totalAllocation > 100
+    const totalFte = personAssignments.reduce((sum, a) => sum + a.allocation, 0)
+    return isOverallocated(totalFte)
   }).length
 
   const stats = [

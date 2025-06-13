@@ -23,7 +23,7 @@ import { FiltersPopover } from './filters-popover'
 import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
-import { toUiAllocation } from '@/lib/assignments'
+import { fteToPercentage } from '@/lib/assignments'
 import { getDisplayName, getInitials } from '@/lib/people'
 
 interface ResourceTimelineProps {
@@ -380,7 +380,7 @@ export function ResourceTimeline({
                   <div className="px-3 py-2 text-white font-medium truncate h-full flex items-center text-sm">
                     <span className="truncate">{project.name}</span>
                     <span className="ml-2 bg-black/30 text-white text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                      {toUiAllocation(assignment.allocation)}%
+                      {fteToPercentage(assignment.allocation)}%
                     </span>
                   </div>
                 )
@@ -497,7 +497,7 @@ export function ResourceTimeline({
                                   {format(dimensions.endDate, 'dd MMM yyyy')}
                                 </p>
                                 <p className="text-sm">
-                                  {Math.round(assignment.allocation * 100)}% asignación
+                                  {fteToPercentage(assignment.allocation)}% asignación
                                 </p>
                                 {assignment.assigned_role && (
                                   <p className="text-sm">Rol: {assignment.assigned_role}</p>

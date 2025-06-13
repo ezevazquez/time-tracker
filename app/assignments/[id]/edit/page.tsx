@@ -37,7 +37,7 @@ import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 
 import { assignmentsService } from '@/lib/services/assignments.service'
-import { toDbAllocation, toUiAllocation } from '@/lib/assignments'
+import { toDbAllocation, fromDbAllocation, percentageToFte, fteToPercentage } from '@/lib/assignments'
 import { ASSIGNMENT_ALLOCATION_VALUES } from '@/constants/assignments'
 import { OverallocationModal } from '@/components/overallocation-modal'
 
@@ -102,7 +102,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
           project_id: foundAssignment.project_id,
           start_date: new Date(foundAssignment.start_date),
           end_date: new Date(foundAssignment.end_date),
-          allocation: toUiAllocation(foundAssignment.allocation),
+          allocation: fromDbAllocation(foundAssignment.allocation),
           assigned_role: foundAssignment.assigned_role || '',
         })
       } catch (err) {
@@ -134,13 +134,13 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!assignment) return
 
-    // Validar sobreasignación antes de actualizar
+    // Validar sobreasignación antes de actualizar usando FTE
     const validationResult = await validateAssignment(
       id,
       values.person_id,
       values.start_date,
       values.end_date,
-      values.allocation / 100 // convert to decimal
+      percentageToFte(values.allocation) // convert to FTE
     )
 
     // Si hay sobreasignación, mostrar confirmación
@@ -411,8 +411,8 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                   </SelectTrigger>
                   <SelectContent>
                     {ASSIGNMENT_ALLOCATION_VALUES.map(val => (
-                      <SelectItem key={val} value={String(toUiAllocation(val))}>
-                        {toUiAllocation(val)}%
+                      <SelectItem key={val} value={String(fteToPercentage(val))}>
+                        {fteToPercentage(val)}%
                       </SelectItem>
                     ))}
                   </SelectContent>

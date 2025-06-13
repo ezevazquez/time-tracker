@@ -18,7 +18,8 @@ import { FiltersPopover } from './filters-popover'
 import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
-import { toUiAllocation } from '@/lib/assignments'
+import { fteToPercentage } from '@/lib/assignments'
+import { getDisplayName } from '@/lib/people'
 
 interface ResourceTableProps {
   people: Person[]
@@ -107,7 +108,7 @@ export function ResourceTable({
                     </TableCell>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{person?.name || 'N/A'}</div>
+                        <div className="font-medium">{person ? getDisplayName(person) : 'N/A'}</div>
                         <div className="text-sm text-muted-foreground">{person?.profile || ''}</div>
                       </div>
                     </TableCell>
@@ -124,7 +125,7 @@ export function ResourceTable({
                           variant={isOverallocated ? 'destructive' : 'secondary'}
                           className="text-xs"
                         >
-                          {toUiAllocation(a.allocation)}%
+                          {fteToPercentage(a.allocation)}%
                         </Badge>
                         {isOverallocated && <AlertTriangle className="h-4 w-4 text-destructive" />}
                       </div>

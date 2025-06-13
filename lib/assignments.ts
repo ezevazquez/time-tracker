@@ -2,19 +2,73 @@ import { eachDayOfInterval, isWithinInterval } from 'date-fns'
 import type { Assignment } from '@/types/assignment'
 
 /**
- * Convierte un valor en porcentaje (UI) a decimal (DB)
- * Ej: 50 → 0.5
+ * Convierte un porcentaje (0-100) a FTE (0.0-1.0)
  */
-export function toDbAllocation(percent: number): number {
-  return percent / 100
+export function percentageToFte(percentage: number): number {
+  return percentage / 100
 }
 
 /**
- * Convierte un valor decimal (DB) a porcentaje (UI)
- * Ej: 0.5 → 50
+ * Convierte FTE (0.0-1.0) a porcentaje (0-100)
  */
-export function toUiAllocation(decimal: number): number {
-  return decimal * 100
+export function fteToPercentage(fte: number): number {
+  return Math.round(fte * 100)
+}
+
+/**
+ * Convierte FTE a formato de base de datos (decimal)
+ */
+export function toDbAllocation(percentage: number): number {
+  return percentageToFte(percentage)
+}
+
+/**
+ * Convierte formato de base de datos (decimal) a porcentaje
+ */
+export function fromDbAllocation(dbAllocation: number): number {
+  return fteToPercentage(dbAllocation)
+}
+
+/**
+ * Verifica si una asignación está sobreasignada basada en FTE
+ */
+export function isOverallocated(totalFte: number): boolean {
+  return totalFte > 1.0
+}
+
+/**
+ * Obtiene el estado de utilización basado en FTE
+ */
+export function getUtilizationStatus(totalFte: number): {
+  status: 'overallocated' | 'optimal' | 'underutilized'
+  percentage: number
+  color: string
+  bgColor: string
+} {
+  const percentage = fteToPercentage(totalFte)
+  
+  if (totalFte > 1.0) {
+    return {
+      status: 'overallocated',
+      percentage,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50'
+    }
+  } else if (totalFte < 0.5) {
+    return {
+      status: 'underutilized',
+      percentage,
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-50'
+    }
+  } else {
+    return {
+      status: 'optimal',
+      percentage,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50'
+    }
+  }
 }
 
 /**

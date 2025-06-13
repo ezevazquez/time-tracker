@@ -7,16 +7,17 @@ import { es } from 'date-fns/locale'
 import { Calendar, User, Briefcase, Percent, Clock } from 'lucide-react'
 import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
+import { fteToPercentage, getUtilizationStatus } from '@/lib/assignments'
 
 interface AssignmentSummaryProps {
   person: Person
   project: Project
   startDate: Date
   endDate: Date
-  allocation: number
+  allocation: number // Percentage (0-100)
   assignedRole?: string
   isOverallocated?: boolean
-  maxAllocation?: number
+  maxAllocation?: number // FTE (0.0-1.0)
 }
 
 export function AssignmentSummary({
@@ -32,7 +33,8 @@ export function AssignmentSummary({
   // Calculate FTE (Full Time Equivalent)
   const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
   const workingDays = daysDiff // Simplified - in real scenario you'd exclude weekends/holidays
-  const fteMonths = (allocation / 100) * (workingDays / 30.44) // Average days per month
+  const allocationFte = allocation / 100 // Convert percentage to FTE
+  const fteMonths = allocationFte * (workingDays / 30.44) // Average days per month
 
   const getStatusColor = () => {
     if (isOverallocated) return 'bg-red-100 text-red-800 border-red-300'
@@ -99,7 +101,7 @@ export function AssignmentSummary({
               </Badge>
               {isOverallocated && maxAllocation && (
                 <Badge variant="destructive" className="text-xs">
-                  Máx: {Math.round(maxAllocation * 100)}%
+                  Máx: {fteToPercentage(maxAllocation)}%
                 </Badge>
               )}
             </div>

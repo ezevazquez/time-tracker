@@ -9,6 +9,8 @@ import { es } from 'date-fns/locale'
 import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
+import { fteToPercentage } from '@/lib/assignments'
+import { getDisplayName, getInitials } from '@/lib/people'
 
 interface RecentActivityProps {
   assignments: AssignmentWithRelations[]
@@ -76,17 +78,13 @@ export function RecentActivity({ assignments, people, projects }: RecentActivity
               >
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="text-xs bg-gray-100">
-                    {person.name
-                      .split(' ')
-                      .map(n => n[0])
-                      .join('')
-                      .slice(0, 2)}
+                    {getInitials(person)}
                   </AvatarFallback>
                 </Avatar>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">{person.name}</p>
+                    <p className="text-sm font-medium text-gray-900 truncate">{getDisplayName(person)}</p>
                     <Badge variant="secondary" className={`text-xs ${activity.color}`}>
                       {activity.label}
                     </Badge>
@@ -99,7 +97,7 @@ export function RecentActivity({ assignments, people, projects }: RecentActivity
                       <Calendar className="h-3 w-3" />
                       {format(new Date(assignment.start_date), 'dd MMM', { locale: es })}
                     </span>
-                    <span>{Math.round(assignment.allocation * 100)}%</span>
+                    <span>{fteToPercentage(assignment.allocation)}%</span>
                   </div>
                 </div>
               </div>
