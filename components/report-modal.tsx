@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
 import {
   Dialog,
   DialogContent,
@@ -22,11 +21,14 @@ import {
 } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePickerWithRange } from '@/components/date-range-picker'
-import { CalendarRange, Loader2, Download, FileSpreadsheet, Save } from 'lucide-react'
+import { CalendarRange, Loader2, Download, FileSpreadsheet } from 'lucide-react'
 import { fetchOcupationReport } from '@/lib/services/reports.service'
 import { supabase } from '@/lib/supabase/client'
+import { parseDateFromString } from '@/lib/assignments'
 import * as XLSX from 'xlsx'
 import { toast } from 'sonner'
+import { cn } from '@/utils/classnames'
+import { Badge } from '@/components/ui/badge'
 
 interface ReportData {
   person_id: string
@@ -42,6 +44,7 @@ interface ReportData {
   end_date: string
   assigned_role?: string
   is_bench: boolean
+  is_billable: boolean
 }
 
 export function ReportModal() {
@@ -87,11 +90,12 @@ export function ReportModal() {
       'Last Name': item.person_last_name,
       'Profile': item.person_profile,
       'Project': item.is_bench ? 'Bench' : item.project_name,
-      'Fecha Inicio': format(new Date(item.start_date), 'dd/MM/yyyy'),
-      'Fecha Fin': format(new Date(item.end_date), 'dd/MM/yyyy'),
+      'Fecha Inicio': format(parseDateFromString(item.start_date), 'dd/MM/yyyy'),
+      'Fecha Fin': format(parseDateFromString(item.end_date), 'dd/MM/yyyy'),
       'Asignación %': item.allocation_percentage,
       'FTE': item.allocation.toFixed(2),
-      'Tipo': item.is_bench ? 'Bench' : 'Proyecto'
+      'Tipo': item.is_bench ? 'Bench' : 'Proyecto',
+      'Facturable': item.is_billable ? 'Sí' : 'No'
     }))
 
     const worksheet = XLSX.utils.json_to_sheet(excelData)
@@ -116,9 +120,6 @@ export function ReportModal() {
 
       const fileName = `reporte-ocupacion-${format(range!.from, 'yyyy-MM-dd')}-${format(range!.to, 'yyyy-MM-dd')}-${Date.now()}.xlsx`
       
-      console.log('Intentando subir archivo:', fileName)
-      console.log('Tamaño del archivo:', blob.size, 'bytes')
-      
       // Save to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('reports')
@@ -128,8 +129,6 @@ export function ReportModal() {
         })
 
       if (uploadError) {
-        console.error('Error de upload:', uploadError)
-        
         // Check if it's an RLS policy error
         if (uploadError.message?.includes('row-level security policy')) {
           throw new Error('Error de permisos: Necesitas configurar las políticas de Storage en Supabase. Ve a Storage → Policies → reports')
@@ -137,8 +136,6 @@ export function ReportModal() {
         
         throw new Error(`Error al subir archivo: ${uploadError.message}`)
       }
-
-      console.log('Archivo subido exitosamente:', uploadData)
 
       // Download to local machine
       const url = window.URL.createObjectURL(blob)
@@ -155,11 +152,7 @@ export function ReportModal() {
         .getPublicUrl(`ocupacion/${fileName}`)
 
       toast.success('Reporte exportado y guardado correctamente')
-      console.log('Reporte guardado en servidor:', publicUrl.publicUrl)
     } catch (error) {
-      console.error('Error completo:', error)
-      console.error('Tipo de error:', typeof error)
-      console.error('Mensaje de error:', error instanceof Error ? error.message : 'Error desconocido')
       toast.error(`Error al exportar y guardar el reporte: ${error instanceof Error ? error.message : 'Error desconocido'}`)
     } finally {
       setExporting(false)
@@ -257,13 +250,18 @@ export function ReportModal() {
                       <TableHead>Proyecto</TableHead>
                       <TableHead>Fechas</TableHead>
                       <TableHead>Asignación</TableHead>
+                      <TableHead>FTE</TableHead>
+                      <TableHead>Facturable</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {report.map((r, index) => (
                       <TableRow 
                         key={`${r.person_id}-${r.project_name}-${index}`}
-                        className={r.is_bench ? 'bg-gray-50' : ''}
+                        className={cn(
+                          r.is_bench && 'bg-gray-50 dark:bg-blue-950/20',
+                          'hover:bg-muted/50'
+                        )}
                       >
                         <TableCell className="font-medium">
                           {r.person_first_name} {r.person_last_name}
@@ -280,10 +278,8 @@ export function ReportModal() {
                           )}
                         </TableCell>
                         <TableCell className="text-sm">
-                          <div>
-                            <div>{format(new Date(r.start_date), 'dd/MM/yyyy')}</div>
-                            <div className="text-gray-500">→</div>
-                            <div>{format(new Date(r.end_date), 'dd/MM/yyyy')}</div>
+                          <div className="text-sm text-gray-600">
+                            {format(parseDateFromString(r.start_date), 'dd/MM/yyyy')} - {format(parseDateFromString(r.end_date), 'dd/MM/yyyy')}
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">
@@ -293,6 +289,14 @@ export function ReportModal() {
                           <div className="text-xs text-gray-500">
                             {r.allocation.toFixed(2)} FTE
                           </div>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          <span className="text-sm font-medium">{r.allocation.toFixed(2)}</span>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          <Badge variant={r.is_billable ? 'default' : 'secondary'} className="text-xs">
+                            {r.is_billable ? 'Sí' : 'No'}
+                          </Badge>
                         </TableCell>
                       </TableRow>
                     ))}

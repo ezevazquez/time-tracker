@@ -8,6 +8,7 @@ export interface Project {
     created_at: string
     updated_at: string
     client_id: string | null
+    fte: number | null // Total FTE requerido para el proyecto
   }
   
   export interface ProjectWithClient extends Project {

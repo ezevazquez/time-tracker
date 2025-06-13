@@ -57,6 +57,7 @@ const formSchema = z.object({
     required_error: 'El estado es requerido',
   }),
   client_id: z.string().nullable().optional(),
+  fte: z.number().nullable().optional(),
 })
 
 export default function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
@@ -78,6 +79,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       end_date: null,
       status: PROJECT_STATUS.IN_PROGRESS,
       client_id: null,
+      fte: null,
     },
   })
 
@@ -115,6 +117,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
             end_date: projectData.end_date ? new Date(projectData.end_date) : null,
             status: projectData.status,
             client_id: projectData.client_id,
+            fte: projectData.fte,
           })
         } else {
           setError('Proyecto no encontrado')
@@ -345,6 +348,28 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="fte"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>FTE Total</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        placeholder="Ej: 2.5"
+                        {...field}
+                        value={field.value || ''}
+                        onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" type="button" onClick={() => router.push('/projects')}>

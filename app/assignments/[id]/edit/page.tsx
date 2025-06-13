@@ -37,7 +37,7 @@ import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 
 import { assignmentsService } from '@/lib/services/assignments.service'
-import { toDbAllocation, fromDbAllocation, percentageToFte, fteToPercentage, toISODateString, normalizeDate } from '@/lib/assignments'
+import { toDbAllocation, fromDbAllocation, percentageToFte, fteToPercentage, toISODateString, normalizeDate, parseDateFromString } from '@/lib/assignments'
 import { ASSIGNMENT_ALLOCATION_VALUES } from '@/constants/assignments'
 import { OverallocationModal } from '@/components/overallocation-modal'
 
@@ -51,6 +51,7 @@ const formSchema = z
       message: 'La asignación debe ser 25%, 50%, 75% o 100%',
     }),
     assigned_role: z.string().optional(),
+    is_billable: z.boolean(),
   })
   .refine(data => data.end_date >= data.start_date, {
     message: 'La fecha de fin debe ser posterior a la fecha de inicio',
@@ -100,10 +101,11 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
         form.reset({
           person_id: foundAssignment.person_id,
           project_id: foundAssignment.project_id,
-          start_date: new Date(foundAssignment.start_date),
-          end_date: new Date(foundAssignment.end_date),
+          start_date: parseDateFromString(foundAssignment.start_date),
+          end_date: parseDateFromString(foundAssignment.end_date),
           allocation: fromDbAllocation(foundAssignment.allocation),
           assigned_role: foundAssignment.assigned_role || '',
+          is_billable: foundAssignment.is_billable ?? true,
         })
       } catch (err) {
         console.error('Error loading assignment:', err)
@@ -138,12 +140,11 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
     const validationResult = await validateAssignment(
       id,
       values.person_id,
-      values.start_date,
-      values.end_date,
-      percentageToFte(values.allocation) // convert to FTE
+      toISODateString(values.start_date),
+      toISODateString(values.end_date),
+      toDbAllocation(values.allocation)
     )
 
-    // Si hay sobreasignación, mostrar confirmación
     if (validationResult.isOverallocated) {
       const selectedPerson = people.find(p => p.id === values.person_id)
       const selectedProject = projects.find(p => p.id === values.project_id)
@@ -151,12 +152,12 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
       setOverallocationData({
         personName: `${selectedPerson?.first_name} ${selectedPerson?.last_name}`,
         projectName: selectedProject?.name || '',
-        allocation: values.allocation,
-        overallocatedDates: validationResult.overallocatedDates
+        allocation: fromDbAllocation(toDbAllocation(values.allocation)),
+        overallocatedDates: validationResult.overallocatedDays || []
       })
       setPendingFormData(values)
       setShowOverallocationModal(true)
-      return // No establecer isLoading aquí
+      return
     }
 
     // Si no hay sobreasignación, actualizar directamente
@@ -171,6 +172,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
         end_date: toISODateString(values.end_date),
         allocation: toDbAllocation(values.allocation),
         assigned_role: values.assigned_role || null,
+        is_billable: values.is_billable,
         updated_at: new Date().toISOString(),
       }
 
@@ -201,6 +203,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
         end_date: toISODateString(pendingFormData.end_date),
         allocation: toDbAllocation(pendingFormData.allocation),
         assigned_role: pendingFormData.assigned_role || null,
+        is_billable: pendingFormData.is_billable,
       }
 
       await updateAssignment(id, updatedAssignment)
@@ -217,6 +220,20 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
       })
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleStartDateSelect = (date: Date | undefined) => {
+    if (date) {
+      const normalizedDate = normalizeDate(date)
+      form.setValue('start_date', normalizedDate)
+    }
+  }
+
+  const handleEndDateSelect = (date: Date | undefined) => {
+    if (date) {
+      const normalizedDate = normalizeDate(date)
+      form.setValue('end_date', normalizedDate)
     }
   }
 
@@ -354,13 +371,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                       <Calendar
                         mode="single"
                         selected={form.watch('start_date')}
-                        onSelect={date => {
-                          if (date) {
-                            const normalizedDate = normalizeDate(date)
-                            console.log('📅 Start date selected (edit):', { original: date, normalized: normalizedDate })
-                            form.setValue('start_date', normalizedDate)
-                          }
-                        }}
+                        onSelect={handleStartDateSelect}
                         initialFocus
                       />
                     </PopoverContent>
@@ -395,13 +406,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                       <Calendar
                         mode="single"
                         selected={form.watch('end_date')}
-                        onSelect={date => {
-                          if (date) {
-                            const normalizedDate = normalizeDate(date)
-                            console.log('📅 End date selected (edit):', { original: date, normalized: normalizedDate })
-                            form.setValue('end_date', normalizedDate)
-                          }
-                        }}
+                        onSelect={handleEndDateSelect}
                         initialFocus
                       />
                     </PopoverContent>
@@ -447,6 +452,21 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                     {form.formState.errors.assigned_role.message}
                   </p>
                 )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="is_billable"
+                    {...form.register('is_billable')}
+                    className="rounded border-gray-300"
+                  />
+                  <Label htmlFor="is_billable">Facturable</Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Marca esta opción si la asignación es facturable al cliente
+                </p>
               </div>
 
               <div className="flex gap-4 pt-6">

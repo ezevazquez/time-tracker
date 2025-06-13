@@ -7,7 +7,7 @@ import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
 import type { Client } from '@/types/client'
 import { ACTIVE_PERSON_STATUSES } from '@/constants/people'
-import { isOverallocated, fteToPercentage } from '@/lib/assignments'
+import { isOverallocated, fteToPercentage, parseDateFromString } from '@/lib/assignments'
 
 interface StatsOverviewProps {
   people: Person[]
@@ -26,8 +26,8 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
   // Calculate utilization using FTE
   const currentDate = new Date()
   const currentAssignments = assignments.filter(a => {
-    const start = new Date(a.start_date)
-    const end = new Date(a.end_date)
+    const start = parseDateFromString(a.start_date)
+    const end = parseDateFromString(a.end_date)
     return start <= currentDate && end >= currentDate
   })
 

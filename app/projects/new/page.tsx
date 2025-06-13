@@ -46,6 +46,7 @@ export default function NewProjectPage() {
     start_date: undefined as Date | undefined,
     end_date: undefined as Date | undefined,
     client_id: '' as string | null,
+    fte: null as number | null,
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -84,6 +85,7 @@ export default function NewProjectPage() {
         start_date: formData.start_date?.toISOString().split('T')[0] || null,
         end_date: formData.end_date?.toISOString().split('T')[0] || null,
         client_id: formData.client_id || null,
+        fte: formData.fte,
       })
 
       toast.success('El proyecto se ha creado exitosamente.')
@@ -262,6 +264,22 @@ export default function NewProjectPage() {
                     </PopoverContent>
                   </Popover>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="fte">FTE Total</Label>
+                  <Input
+                    id="fte"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={formData.fte || ''}
+                    onChange={e => setFormData({ ...formData, fte: e.target.value ? parseFloat(e.target.value) : null })}
+                    placeholder="Ej: 2.5"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Número total de FTE requeridos para el proyecto (opcional)
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -298,6 +316,11 @@ export default function NewProjectPage() {
                         <div>
                           <strong>Período:</strong> {format(formData.start_date, 'dd/MM/yyyy')} -{' '}
                           {format(formData.end_date, 'dd/MM/yyyy')}
+                        </div>
+                      )}
+                      {formData.fte && (
+                        <div>
+                          <strong>FTE Total:</strong> {formData.fte}
                         </div>
                       )}
                     </div>

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
+import { parseDateFromString } from '@/lib/assignments'
 
 interface FTEReportData {
   person_id: string
@@ -14,46 +15,27 @@ interface FTEReportData {
   end_date: string
   assigned_role?: string
   is_bench: boolean
+  is_billable: boolean
 }
 
-export async function fetchOcupationReport(initial: string, final: string) {
+export async function fetchOcupationReport(startDate: string, endDate: string): Promise<FTEReportData[]> {
   try {
-    // Obtener todas las personas activas
+    // Fetch all people
     const { data: people, error: peopleError } = await supabase
       .from('people')
       .select('id, first_name, last_name, profile, status')
       .eq('status', 'Active')
 
-    if (peopleError) {
-      console.error('Error fetching people:', peopleError)
-      return []
-    }
+    if (peopleError) throw peopleError
 
-    // Obtener todas las asignaciones en el rango de fechas
+    // Fetch all assignments in the date range
     const { data: assignments, error: assignmentsError } = await supabase
       .from('assignments')
-      .select(`
-        id,
-        person_id,
-        start_date,
-        end_date,
-        allocation,
-        assigned_role,
-        projects (
-          name,
-          status
-        )
-      `)
-      .gte('start_date', initial)
-      .lte('end_date', final)
+      .select('*')
+      .gte('start_date', startDate)
+      .lte('end_date', endDate)
 
-    if (assignmentsError) {
-      console.error('Error fetching assignments:', assignmentsError)
-      return []
-    }
-
-    console.log('People:', people)
-    console.log('Assignments:', assignments)
+    if (assignmentsError) throw assignmentsError
 
     const fteReportData: FTEReportData[] = []
 
@@ -73,27 +55,28 @@ export async function fetchOcupationReport(initial: string, final: string) {
           project_status: 'Bench',
           allocation: 1.0,
           allocation_percentage: 100,
-          start_date: initial,
-          end_date: final,
+          start_date: startDate,
+          end_date: endDate,
           assigned_role: 'Sin asignación',
-          is_bench: true
+          is_bench: true,
+          is_billable: false
         })
       } else {
         // Calcular asignaciones por día para el rango completo
-        const startDate = new Date(initial)
-        const endDate = new Date(final)
-        const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+        const startDateObj = parseDateFromString(startDate)
+        const endDateObj = parseDateFromString(endDate)
+        const totalDays = Math.ceil((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1
         
         // Para cada día, calcular la asignación total
         const dailyAllocations: { [date: string]: number } = {}
         
-        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        for (let d = new Date(startDateObj); d <= endDateObj; d.setDate(d.getDate() + 1)) {
           const dateStr = d.toISOString().split('T')[0]
           let totalAllocation = 0
           
           for (const assignment of personAssignments) {
-            const assignmentStart = new Date(assignment.start_date)
-            const assignmentEnd = new Date(assignment.end_date)
+            const assignmentStart = parseDateFromString(assignment.start_date)
+            const assignmentEnd = parseDateFromString(assignment.end_date)
             
             if (d >= assignmentStart && d <= assignmentEnd) {
               totalAllocation += assignment.allocation
@@ -120,7 +103,8 @@ export async function fetchOcupationReport(initial: string, final: string) {
             start_date: assignment.start_date,
             end_date: assignment.end_date,
             assigned_role: assignment.assigned_role || '',
-            is_bench: false
+            is_bench: false,
+            is_billable: assignment.is_billable
           })
         }
 
@@ -139,16 +123,16 @@ export async function fetchOcupationReport(initial: string, final: string) {
             project_status: 'Bench',
             allocation: benchAllocation,
             allocation_percentage: Math.round(benchAllocation * 100),
-            start_date: initial,
-            end_date: final,
+            start_date: startDate,
+            end_date: endDate,
             assigned_role: 'Sin asignación',
-            is_bench: true
+            is_bench: true,
+            is_billable: false
           })
         }
       }
     }
 
-    console.log('FTE Report Data:', fteReportData)
     return fteReportData
 
   } catch (error) {

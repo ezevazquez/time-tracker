@@ -77,6 +77,7 @@ export function ResourceTable({
               <TableHead>Proyecto</TableHead>
               <TableHead>Rol</TableHead>
               <TableHead className="text-center">Asignación</TableHead>
+              <TableHead className="text-center">Facturable</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
@@ -84,7 +85,7 @@ export function ResourceTable({
           <TableBody>
             {assignments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   No se encontraron asignaciones
                 </TableCell>
               </TableRow>
@@ -129,6 +130,11 @@ export function ResourceTable({
                         </Badge>
                         {isOverallocated && <AlertTriangle className="h-4 w-4 text-destructive" />}
                       </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant={a.is_billable ? 'default' : 'secondary'} className="text-xs">
+                        {a.is_billable ? 'Sí' : 'No'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">

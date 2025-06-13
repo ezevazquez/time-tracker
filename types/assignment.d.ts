@@ -12,6 +12,7 @@ export interface Assignment {
   created_at: string
   updated_at: string
   assigned_role: string | null
+  is_billable: boolean
 }
 
 export interface AssignmentWithRelations extends Assignment {
