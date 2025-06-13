@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Save, AlertTriangle, CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -27,6 +30,7 @@ import {
 } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { OverallocationModal } from '@/components/overallocation-modal'
 
 import { cn } from '@/utils/classnames'
 import { useToast } from '@/hooks/use-toast'
@@ -63,69 +67,92 @@ export default function NewAssignmentPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [warnings, setWarnings] = useState<string[]>([])
+  const [showOverallocationModal, setShowOverallocationModal] = useState(false)
+  const [overallocationData, setOverallocationData] = useState<any>(null)
+  const [pendingFormData, setPendingFormData] = useState<any>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!formData.person_id || !formData.project_id || !formData.start_date || !formData.end_date) {
-      setWarnings(['Todos los campos marcados con * son obligatorios'])
-      return
-    }
+    setIsSubmitting(true)
 
     try {
-      setIsSubmitting(true)
-      console.log('Submitting assignment with data:', formData)
+      // Usar el estado formData en lugar de FormData
+      const assignmentData = {
+        person_id: formData.person_id,
+        project_id: formData.project_id,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        allocation: formData.allocation,
+        assigned_role: formData.assigned_role,
+        is_billable: true
+      }
+
+      // Validar que todos los campos requeridos estén completos
+      if (!assignmentData.person_id || !assignmentData.project_id || !assignmentData.start_date || !assignmentData.end_date) {
+        alert('Todos los campos marcados con * son obligatorios')
+        setIsSubmitting(false)
+        return
+      }
 
       // Validar sobreasignación antes de crear
       const validationResult = await validateAssignment(
         null, // new assignment
-        formData.person_id,
-        formData.start_date,
-        formData.end_date,
-        formData.allocation / 100 // convert to decimal
+        assignmentData.person_id,
+        assignmentData.start_date,
+        assignmentData.end_date,
+        assignmentData.allocation / 100 // convert to decimal
       )
 
-      // Si hay sobreasignación, mostrar confirmación
+      // Si hay sobreasignación, mostrar modal
       if (validationResult.isOverallocated) {
-        const confirmed = window.confirm(
-          `⚠️ Sobreasignación detectada!\n\n` +
-          `La persona estará asignada más del 100% en algunos días:\n` +
-          validationResult.overallocatedDates.map(d => 
-            `${d.date}: ${(d.totalAllocation * 100).toFixed(0)}%`
-          ).join('\n') +
-          `\n\n¿Deseas continuar de todas formas?`
-        )
+        const selectedPerson = people.find(p => p.id === assignmentData.person_id)
+        const selectedProject = projects.find(p => p.id === assignmentData.project_id)
         
-        if (!confirmed) {
-          return
-        }
+        setOverallocationData({
+          personName: `${selectedPerson?.first_name} ${selectedPerson?.last_name}`,
+          projectName: selectedProject?.name || '',
+          allocation: assignmentData.allocation,
+          overallocatedDates: validationResult.overallocatedDates
+        })
+        setPendingFormData(assignmentData)
+        setShowOverallocationModal(true)
+        setIsSubmitting(false)
+        return
       }
 
-      const assignmentData = {
-        person_id: formData.person_id,
-        project_id: formData.project_id,
-        start_date: format(formData.start_date, 'yyyy-MM-dd'),
-        end_date: format(formData.end_date, 'yyyy-MM-dd'),
-        allocation: toDbAllocation(formData.allocation),
-        assigned_role: formData.assigned_role || null,
-      }
-
-      console.log('Creating assignment with data:', assignmentData)
-
-      await createAssignment(assignmentData)
-
-      toast({
-        id: `assignment-created-${Date.now()}`,
-        title: 'Asignación creada',
-        description: 'La asignación se ha creado exitosamente.',
+      // Si no hay sobreasignación, crear directamente
+      await createAssignment({
+        ...assignmentData,
+        start_date: format(assignmentData.start_date, 'yyyy-MM-dd'),
+        end_date: format(assignmentData.end_date, 'yyyy-MM-dd'),
+        allocation: toDbAllocation(assignmentData.allocation)
       })
-
       router.push('/assignments')
     } catch (error) {
-      console.error('Error creating assignment:', error)
-      setWarnings([error instanceof Error ? error.message : 'Error al crear la asignación'])
+      console.error('Error al crear la asignación:', error)
+      alert('Error al crear la asignación')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleConfirmOverallocation = async () => {
+    if (!pendingFormData) return
+    
+    try {
+      await createAssignment({
+        ...pendingFormData,
+        start_date: format(pendingFormData.start_date, 'yyyy-MM-dd'),
+        end_date: format(pendingFormData.end_date, 'yyyy-MM-dd'),
+        allocation: toDbAllocation(pendingFormData.allocation)
+      })
+      setShowOverallocationModal(false)
+      setOverallocationData(null)
+      setPendingFormData(null)
+      router.push('/assignments')
+    } catch (error) {
+      console.error('Error al crear la asignación:', error)
+      alert('Error al crear la asignación')
     }
   }
 
@@ -390,6 +417,23 @@ export default function NewAssignmentPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de sobreasignación */}
+      {overallocationData && (
+        <OverallocationModal
+          isOpen={showOverallocationModal}
+          onClose={() => {
+            setShowOverallocationModal(false)
+            setOverallocationData(null)
+            setPendingFormData(null)
+          }}
+          onConfirm={handleConfirmOverallocation}
+          personName={overallocationData.personName}
+          projectName={overallocationData.projectName}
+          allocation={overallocationData.allocation}
+          overallocatedDates={overallocationData.overallocatedDates}
+        />
+      )}
     </main>
   )
 }

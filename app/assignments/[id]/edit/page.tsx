@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
 import { CalendarIcon, ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,6 +39,7 @@ import type { Project } from '@/types/project'
 import { assignmentsService } from '@/lib/services/assignments.service'
 import { toDbAllocation, toUiAllocation } from '@/lib/assignments'
 import { ASSIGNMENT_ALLOCATION_VALUES } from '@/constants/assignments'
+import { OverallocationModal } from '@/components/overallocation-modal'
 
 const formSchema = z
   .object({
@@ -58,9 +60,13 @@ const formSchema = z
 export default function EditAssignmentPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [showOverallocationModal, setShowOverallocationModal] = useState(false)
+  const [overallocationData, setOverallocationData] = useState<any>(null)
+  const [pendingFormData, setPendingFormData] = useState<any>(null)
   const [assignment, setAssignment] = useState<Assignment | null>(null)
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showResetButton, setShowResetButton] = useState(false)
   const { id } = use(params)
 
   const { people } = usePeople()
@@ -112,39 +118,52 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
     }
   }, [id, assignments, form])
 
+  // Timer para mostrar botón de reset si isLoading se cuelga
+  useEffect(() => {
+    let timer: NodeJS.Timeout
+    if (isLoading) {
+      timer = setTimeout(() => {
+        setShowResetButton(true)
+      }, 5000) // 5 segundos
+    } else {
+      setShowResetButton(false)
+    }
+    return () => clearTimeout(timer)
+  }, [isLoading])
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!assignment) return
 
+    // Validar sobreasignación antes de actualizar
+    const validationResult = await validateAssignment(
+      id,
+      values.person_id,
+      values.start_date,
+      values.end_date,
+      values.allocation / 100 // convert to decimal
+    )
+
+    // Si hay sobreasignación, mostrar confirmación
+    if (validationResult.isOverallocated) {
+      const selectedPerson = people.find(p => p.id === values.person_id)
+      const selectedProject = projects.find(p => p.id === values.project_id)
+      
+      setOverallocationData({
+        personName: `${selectedPerson?.first_name} ${selectedPerson?.last_name}`,
+        projectName: selectedProject?.name || '',
+        allocation: values.allocation,
+        overallocatedDates: validationResult.overallocatedDates
+      })
+      setPendingFormData(values)
+      setShowOverallocationModal(true)
+      return // No establecer isLoading aquí
+    }
+
+    // Si no hay sobreasignación, actualizar directamente
+    setIsLoading(true)
+    setError(null)
+
     try {
-      setIsLoading(true)
-      setError(null)
-
-      // Validar sobreasignación antes de actualizar
-      const validationResult = await validateAssignment(
-        id,
-        values.person_id,
-        values.start_date,
-        values.end_date,
-        values.allocation / 100 // convert to decimal
-      )
-
-      // Si hay sobreasignación, mostrar confirmación
-      if (validationResult.isOverallocated) {
-        const confirmed = window.confirm(
-          `⚠️ Sobreasignación detectada!\n\n` +
-          `La persona estará asignada más del 100% en algunos días:\n` +
-          validationResult.overallocatedDates.map(d => 
-            `${d.date}: ${(d.totalAllocation * 100).toFixed(0)}%`
-          ).join('\n') +
-          `\n\n¿Deseas continuar de todas formas?`
-        )
-        
-        if (!confirmed) {
-          return
-        }
-      }
-
-      // Only include the actual database columns
       const updatedAssignment = {
         person_id: values.person_id,
         project_id: values.project_id,
@@ -159,7 +178,43 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
       router.push('/assignments')
     } catch (err) {
       console.error('Error updating assignment:', err)
-      setError(err instanceof Error ? err.message : 'Error al actualizar la asignación')
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar la asignación',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleConfirmOverallocation = async () => {
+    if (!pendingFormData) return
+    
+    setIsLoading(true)
+    
+    try {
+      const updatedAssignment = {
+        person_id: pendingFormData.person_id,
+        project_id: pendingFormData.project_id,
+        start_date: format(pendingFormData.start_date, 'yyyy-MM-dd'),
+        end_date: format(pendingFormData.end_date, 'yyyy-MM-dd'),
+        allocation: toDbAllocation(pendingFormData.allocation),
+        assigned_role: pendingFormData.assigned_role || null,
+      }
+
+      await updateAssignment(id, updatedAssignment)
+      setShowOverallocationModal(false)
+      setOverallocationData(null)
+      setPendingFormData(null)
+      router.push('/assignments')
+    } catch (err) {
+      console.error('Error updating assignment:', err)
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar la asignación',
+        variant: 'destructive',
+      })
     } finally {
       setIsLoading(false)
     }
@@ -382,23 +437,56 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                 )}
               </div>
 
-              <div className="flex justify-end space-x-4 pt-6">
+              <div className="flex gap-4 pt-6">
                 <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.push('/assignments')}
+                  type="submit"
+                  className="flex-1"
                   disabled={isLoading}
                 >
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isLoading}>
                   {isLoading ? 'Actualizando...' : 'Actualizar Asignación'}
                 </Button>
+                <Button type="button" variant="outline" asChild>
+                  <Link href="/assignments">Cancelar</Link>
+                </Button>
               </div>
+              
+              {showResetButton && (
+                <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                  <p className="text-sm text-orange-800 mb-2">
+                    ⚠️ El botón parece estar colgado. Si no responde:
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      setIsLoading(false)
+                      setShowResetButton(false)
+                    }}
+                    className="text-orange-700 border-orange-300 hover:bg-orange-100"
+                  >
+                    Resetear estado
+                  </Button>
+                </div>
+              )}
             </form>
           </CardContent>
         </Card>
       </div>
+      {overallocationData && (
+        <OverallocationModal
+          isOpen={showOverallocationModal}
+          onClose={() => {
+            setShowOverallocationModal(false)
+            setOverallocationData(null)
+            setPendingFormData(null)
+          }}
+          onConfirm={handleConfirmOverallocation}
+          personName={overallocationData.personName}
+          projectName={overallocationData.projectName}
+          allocation={overallocationData.allocation}
+          overallocatedDates={overallocationData.overallocatedDates}
+        />
+      )}
     </div>
   )
 }
