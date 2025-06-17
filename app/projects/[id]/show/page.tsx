@@ -68,6 +68,8 @@ export default function ProjectShowPage() {
         }
 
         if (data) {
+          console.log('Project data fetched:', activityLogs)
+
           data.activity_logs = activityLogs || []
         }
         setProject(data)
