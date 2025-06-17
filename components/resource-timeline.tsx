@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback, useImperativeHandle, forwardRef } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -23,7 +23,7 @@ import { FiltersPopover } from './filters-popover'
 import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
-import { toUiAllocation } from '@/lib/assignments'
+import { fteToPercentage, parseDateFromString, isOverallocated } from '@/lib/assignments'
 import { getDisplayName, getInitials } from '@/lib/people'
 
 interface ResourceTimelineProps {
@@ -38,6 +38,7 @@ interface ResourceTimelineProps {
   }
   onFiltersChange: (filters: any) => void
   onClearFilters: () => void
+  onScrollToTodayRef?: (ref: (() => void) | null) => void
 }
 
 // Generate a color based on a string (project name)
@@ -64,14 +65,15 @@ function stringToColor(str: string) {
   return colors[Math.abs(hash) % colors.length]
 }
 
-export function ResourceTimeline({
+export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, ResourceTimelineProps>(({
   people,
   projects,
   assignments,
   filters,
   onFiltersChange,
   onClearFilters,
-}: ResourceTimelineProps) {
+  onScrollToTodayRef,
+}, ref) => {
   // State for visible date range (for infinite scroll)
   const [visibleDateRange, setVisibleDateRange] = useState({
     start: subMonths(new Date(), 1),
@@ -118,8 +120,8 @@ export function ResourceTimeline({
   // Get assignments for a person within the visible date range
   const getPersonAssignments = (personId: string) => {
     return assignments.filter(assignment => {
-      const startDate = new Date(assignment.start_date)
-      const endDate = new Date(assignment.end_date)
+      const startDate = parseDateFromString(assignment.start_date)
+      const endDate = parseDateFromString(assignment.end_date)
       return (
         assignment.person_id === personId &&
         startDate <= endOfMonth(visibleDateRange.end) &&
@@ -129,19 +131,38 @@ export function ResourceTimeline({
   }
 
   // Get active people and projects
-  const activePeople = people.filter(p => {
-    // For debugging, let's show all people first
-    console.log('Person:', getDisplayName(p), 'Status:', p.status, 'Profile:', p.profile)
-    
-    // Show all people, regardless of status
-    // Apply filters if they exist
-    if (filters?.personProfile && p.profile !== filters.personProfile) return false
-    
-    return true
-  })
+  const activePeople = useMemo(() => {
+    let filteredPeople = people.filter(p => p.status === 'Active' || p.status === 'Paused')
 
-  console.log('Active people count:', activePeople.length)
-  console.log('Total people:', people.length)
+    // Apply overallocated filter if enabled
+    if (filters.overallocatedOnly) {
+      const currentDate = new Date()
+      filteredPeople = filteredPeople.filter(person => {
+        // Get current assignments for this person
+        const personCurrentAssignments = assignments.filter(a => {
+          const start = parseDateFromString(a.start_date)
+          const end = parseDateFromString(a.end_date)
+          return a.person_id === person.id && start <= currentDate && end >= currentDate
+        })
+
+        // Calculate total FTE for this person
+        const totalFte = personCurrentAssignments.reduce((sum, a) => sum + a.allocation, 0)
+
+        // Only include people who are overallocated
+        return isOverallocated(totalFte)
+      })
+    }
+
+    return filteredPeople
+  }, [people, assignments, filters.overallocatedOnly])
+
+  const timelineData = activePeople.map(person => {
+    const personAssignments = assignments.filter(a => a.person_id === person.id)
+    return {
+      person,
+      assignments: personAssignments
+    }
+  })
 
   // Handle scroll to dynamically load more months
   useEffect(() => {
@@ -192,7 +213,7 @@ export function ResourceTimeline({
   }
 
   // Function to scroll to today
-  const scrollToToday = () => {
+  const scrollToToday = useCallback(() => {
     const scrollContainer = scrollContainerRef.current
     if (!scrollContainer) return
 
@@ -207,12 +228,12 @@ export function ResourceTimeline({
       left: Math.max(0, scrollPosition),
       behavior: 'smooth',
     })
-  }
+  }, [visibleDateRange.start, DAY_WIDTH])
 
   // Calculate bar position and width for Resource Guru style
   const calculateBarDimensions = (assignment: AssignmentWithRelations) => {
-    const startDate = new Date(assignment.start_date)
-    const endDate = new Date(assignment.end_date)
+    const startDate = parseDateFromString(assignment.start_date)
+    const endDate = parseDateFromString(assignment.end_date)
     const visibleStart = startOfMonth(visibleDateRange.start)
 
     // Clamp dates to visible range boundaries
@@ -252,7 +273,7 @@ export function ResourceTimeline({
     })
 
     if (currentMonth && currentDays.length) {
-      groups.push({ month: currentMonth, days: currentDays })
+      groups.push({ month: currentMonth, days: [...currentDays] })
     }
 
     return groups
@@ -267,37 +288,30 @@ export function ResourceTimeline({
     if (!scrollContainer) return
 
     const visibleStart = startOfMonth(visibleDateRange.start)
+    const today = new Date()
     const todayIndex = differenceInDays(today, visibleStart)
-    const scrollPosition = todayIndex * DAY_WIDTH - scrollContainer.clientWidth / 2
+
+    // Position today at 25% of the visible width (left-aligned) instead of centered
+    const scrollPosition = todayIndex * DAY_WIDTH - scrollContainer.clientWidth * 0.2
 
     scrollContainer.scrollLeft = Math.max(0, scrollPosition)
-  }, [])
+  }, [visibleDateRange.start, DAY_WIDTH])
+
+  // Expose scrollToToday function to parent
+  useImperativeHandle(ref, () => ({
+    scrollToToday
+  }), [scrollToToday])
+
+  // Notify parent of scrollToToday function
+  useEffect(() => {
+    if (onScrollToTodayRef) {
+      onScrollToTodayRef(scrollToToday)
+    }
+  }, [onScrollToTodayRef, scrollToToday])
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-white">
-      {/* Fixed Top Bar */}
-      <div
-        className="flex-shrink-0 bg-white border-b border-gray-200 px-6 flex items-center justify-between"
-        style={{ height: `${TOP_BAR_HEIGHT}px` }}
-      >
-        {/* Left: Today Button */}
-        <Button onClick={scrollToToday} variant="outline" size="sm" className="h-8">
-          <CalendarDays className="h-4 w-4 mr-2" />
-          Hoy
-        </Button>
-
-        {/* Right: Filters Button */}
-        <FiltersPopover
-          people={people}
-          projects={projects}
-          filters={filters}
-          onFiltersChange={onFiltersChange}
-          onClearFilters={onClearFilters}
-          showDateRange={false}
-        />
-      </div>
-
-      {/* Timeline container - takes remaining height */}
+    <div className="h-full flex flex-col bg-white">
+      {/* Timeline container - takes full height with its own scroll */}
       <div className="flex-1 min-h-0 relative">
         {/* Main scrollable container */}
         <div
@@ -317,12 +331,13 @@ export function ResourceTimeline({
             >
               {/* Header left corner - Team Member label */}
               <div
-                className="sticky left-0 z-30 bg-gray-50 border-r border-gray-200 flex items-center px-4"
+                className="sticky left-0 z-30 bg-gray-50 border-r border-gray-200 flex items-center px-4 justify-end"
                 style={{ width: `${SIDEBAR_WIDTH}px` }}
               >
-                <div className="font-medium text-gray-700 text-sm uppercase tracking-wide">
-                  Miembro del equipo
-                </div>
+                <Button onClick={scrollToToday} variant="default" size="sm" className="h-8 px-4 text-sm bg-blue-600 hover:bg-blue-700 text-white">
+                  <CalendarDays className="h-4 w-4 mr-2" />
+                  Hoy
+                </Button>
               </div>
 
               {/* Header timeline section */}
@@ -380,7 +395,7 @@ export function ResourceTimeline({
                   <div className="px-3 py-2 text-white font-medium truncate h-full flex items-center text-sm">
                     <span className="truncate">{project.name}</span>
                     <span className="ml-2 bg-black/30 text-white text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                      {toUiAllocation(assignment.allocation)}%
+                      {fteToPercentage(assignment.allocation)}%
                     </span>
                   </div>
                 )
@@ -396,7 +411,7 @@ export function ResourceTimeline({
                   >
                     {/* Sidebar */}
                     <div
-                      className="sticky left-0 z-10 bg-white border-r border-gray-200 flex items-center"
+                      className="sticky left-0 z-20 bg-white border-r border-gray-200 flex items-center"
                       style={{ width: `${SIDEBAR_WIDTH}px` }}
                     >
                       <div className="p-4 flex items-center space-x-3 w-full">
@@ -446,11 +461,22 @@ export function ResourceTimeline({
                           (totalAssignments + 1)
                         const top = verticalGap + idx * (assignmentHeight + verticalGap)
 
-                        // Calculate sticky behavior
-                        const barStart = dimensions.left
-                        const barEnd = dimensions.left + dimensions.width
+                        // Calculate sticky behavior using real dates, not clamped ones
+                        const startDate = parseDateFromString(assignment.start_date)
+                        const endDate = parseDateFromString(assignment.end_date)
+                        const visibleStart = startOfMonth(visibleDateRange.start)
+                        
+                        // Calculate real positions without clamping
+                        const realStartIndex = differenceInDays(startDate, visibleStart)
+                        const realDuration = differenceInDays(endDate, startDate) + 1
+                        
+                        const barStart = realStartIndex * DAY_WIDTH
+                        const barEnd = barStart + (realDuration * DAY_WIDTH)
                         const labelMaxWidth = barEnd - scrollLeft
                         const isSticky = scrollLeft > barStart && scrollLeft < barEnd
+                        
+                        // Calculate dynamic left position for sticky label
+                        const stickyLeft = isSticky ? SIDEBAR_WIDTH : 0
 
                         return (
                           <Tooltip key={assignment.id}>
@@ -470,7 +496,7 @@ export function ResourceTimeline({
                                   <div
                                     className={`${isSticky ? 'sticky' : ''}`}
                                     style={{
-                                      left: `${SIDEBAR_WIDTH}px`,
+                                      left: `${stickyLeft}px`,
                                       maxWidth: `${labelMaxWidth}px`,
                                       background: isSticky ? 'inherit' : 'none',
                                     }}
@@ -497,11 +523,14 @@ export function ResourceTimeline({
                                   {format(dimensions.endDate, 'dd MMM yyyy')}
                                 </p>
                                 <p className="text-sm">
-                                  {Math.round(assignment.allocation * 100)}% asignación
+                                  {fteToPercentage(assignment.allocation)}% asignación
                                 </p>
                                 {assignment.assigned_role && (
                                   <p className="text-sm">Rol: {assignment.assigned_role}</p>
                                 )}
+                                <p className="text-sm">
+                                  Facturable: {assignment.is_billable ? 'Sí' : 'No'}
+                                </p>
                                 {project.description && (
                                   <p className="text-xs opacity-75">{project.description}</p>
                                 )}
@@ -514,7 +543,7 @@ export function ResourceTimeline({
                       {/* Today marker */}
                       {days.some(day => isSameDay(day, today)) && (
                         <div
-                          className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-10 pointer-events-none opacity-70"
+                          className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-5 pointer-events-none opacity-70"
                           style={{
                             left: `${differenceInDays(today, startOfMonth(visibleDateRange.start)) * DAY_WIDTH + DAY_WIDTH / 2}px`,
                           }}
@@ -539,4 +568,4 @@ export function ResourceTimeline({
       </div>
     </div>
   )
-}
+})

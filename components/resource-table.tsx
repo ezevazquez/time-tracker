@@ -14,11 +14,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { FiltersPopover } from './filters-popover'
 import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
-import { toUiAllocation } from '@/lib/assignments'
+import { fteToPercentage, parseDateFromString, isOverallocated } from '@/lib/assignments'
+import { getDisplayName } from '@/lib/people'
 
 interface ResourceTableProps {
   people: Person[]
@@ -44,28 +44,8 @@ export function ResourceTable({
   onClearFilters,
   onDelete,
 }: ResourceTableProps) {
-  const hasActiveFilters =
-    filters.personProfile || filters.projectStatus || filters.overallocatedOnly
-
   return (
     <div className="space-y-4">
-      {/* Table Header with Filters */}
-      <div className="flex justify-end gap-2">
-        {hasActiveFilters && (
-          <Button variant="outline" onClick={onClearFilters} size="sm">
-            Limpiar filtros
-          </Button>
-        )}
-        <FiltersPopover
-          people={people}
-          projects={projects}
-          filters={filters}
-          onFiltersChange={onFiltersChange}
-          onClearFilters={onClearFilters}
-          showDateRange={true}
-        />
-      </div>
-
       {/* Table */}
       <div className="overflow-x-auto border rounded-lg">
         <Table>
@@ -76,6 +56,7 @@ export function ResourceTable({
               <TableHead>Proyecto</TableHead>
               <TableHead>Rol</TableHead>
               <TableHead className="text-center">Asignación</TableHead>
+              <TableHead className="text-center">Facturable</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
@@ -83,7 +64,7 @@ export function ResourceTable({
           <TableBody>
             {assignments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   No se encontraron asignaciones
                 </TableCell>
               </TableRow>
@@ -91,23 +72,33 @@ export function ResourceTable({
               assignments.map(a => {
                 const person = people.find(p => p.id === a.person_id)
                 const project = projects.find(p => p.id === a.project_id)
-                const isOverallocated = a.allocation > 100
+                
+                // Calculate if person is overallocated using FTE logic
+                const currentDate = new Date()
+                const personCurrentAssignments = assignments.filter(assignment => {
+                  const start = parseDateFromString(assignment.start_date)
+                  const end = parseDateFromString(assignment.end_date)
+                  return assignment.person_id === a.person_id && start <= currentDate && end >= currentDate
+                })
+                
+                const totalFte = personCurrentAssignments.reduce((sum, assignment) => sum + assignment.allocation, 0)
+                const isPersonOverallocated = isOverallocated(totalFte)
 
                 return (
                   <TableRow key={a.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="text-sm">
                         <div className="font-medium">
-                          {format(new Date(a.start_date), 'dd MMM yyyy', { locale: es })}
+                          {format(parseDateFromString(a.start_date), 'dd MMM yyyy', { locale: es })}
                         </div>
                         <div className="text-muted-foreground">
-                          {format(new Date(a.end_date), 'dd MMM yyyy', { locale: es })}
+                          {format(parseDateFromString(a.end_date), 'dd MMM yyyy', { locale: es })}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{person?.name || 'N/A'}</div>
+                        <div className="font-medium">{person ? getDisplayName(person) : 'N/A'}</div>
                         <div className="text-sm text-muted-foreground">{person?.profile || ''}</div>
                       </div>
                     </TableCell>
@@ -121,17 +112,22 @@ export function ResourceTable({
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
                         <Badge
-                          variant={isOverallocated ? 'destructive' : 'secondary'}
+                          variant={isPersonOverallocated ? 'destructive' : 'secondary'}
                           className="text-xs"
                         >
-                          {toUiAllocation(a.allocation)}%
+                          {fteToPercentage(a.allocation)}%
                         </Badge>
-                        {isOverallocated && <AlertTriangle className="h-4 w-4 text-destructive" />}
+                        {isPersonOverallocated && <AlertTriangle className="h-4 w-4 text-destructive" />}
                       </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant={a.is_billable ? 'default' : 'secondary'} className="text-xs">
+                        {a.is_billable ? 'Sí' : 'No'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
-                        {isOverallocated && (
+                        {isPersonOverallocated && (
                           <Badge variant="destructive" className="text-xs w-fit">
                             Sobreasignado
                           </Badge>

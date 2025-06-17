@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState, use } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { useProjects } from '@/hooks/use-projects'
+import { useAssignments } from '@/hooks/use-assignments'
 import { projectsService } from '@/lib/services/projects.service'
 import type { ProjectWithClient } from '@/types/project'
 import { PROJECT_STATUS_OPTIONS } from '@/constants/projects'
@@ -25,6 +26,7 @@ import { ResourceNotFound } from '@/components/resource-not-found'
 import { TableResource } from '@/components/ui/table-resource'
 import { activityLogsColumns } from '@/constants/resource-columns/activityLogsColumns'
 import { supabase } from '@/lib/supabase/client'
+import { calculateFTEUtilization, isProjectOverallocated } from '@/lib/utils/fte-calculations'
 
 const getProjectStatusLabel = (status: string) =>
   PROJECT_STATUS_OPTIONS.find(opt => opt.value === status)?.label || status
@@ -39,28 +41,31 @@ const getProjectStatusBadgeClass = (status: string) => {
   return variants[status] || 'bg-gray-100 text-gray-800 border-gray-200'
 }
 
-export default function ProjectShowPage() {
+export default function ProjectShowPage({ params }: { params: Promise<{ id: string }> }) {
+  const unwrappedParams = use(params)
   const { deleteProject } = useProjects()
+  const { assignments } = useAssignments()
   const [project, setProject] = useState<ProjectWithClient | null>(null)
+  const [assignedFTE, setAssignedFTE] = useState<number>(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const { id } = useParams()
   const router = useRouter()
 
-  if (typeof id !== 'string') {
-    throw new Error('ID de proyecto inválido.')
-  }
+  // Filtrar asignaciones del proyecto
+  const projectAssignments = assignments.filter(
+    assignment => assignment.project_id === unwrappedParams.id
+  )
 
   useEffect(() => {
     const fetchProject = async () => {
       try {
         setLoading(true)
         setError(null)
-        const data = await projectsService.getById(id)
+        const data = await projectsService.getById(unwrappedParams.id)
 
         let { data: activityLogs, error } = await supabase.rpc('get_project_activity_logs', {
-          p_project_id: id,
+          p_project_id: unwrappedParams.id,
         })
 
         if (error) {
@@ -68,11 +73,13 @@ export default function ProjectShowPage() {
         }
 
         if (data) {
-          console.log('Project data fetched:', activityLogs)
-
           data.activity_logs = activityLogs || []
         }
         setProject(data)
+
+        // Calcular FTE asignado
+        const fte = await projectsService.getAssignedFTE(unwrappedParams.id)
+        setAssignedFTE(fte)
       } catch (err) {
         setError('Error al cargar el proyecto')
         console.error('Error fetching project:', err)
@@ -81,7 +88,7 @@ export default function ProjectShowPage() {
       }
     }
     fetchProject()
-  }, [id])
+  }, [unwrappedParams.id])
 
   const handleDelete = async () => {
     if (!project) return
@@ -239,14 +246,58 @@ export default function ProjectShowPage() {
                   <User className="h-5 w-5" />
                   Equipo Asignado
                 </CardTitle>
-                <CardDescription>Miembros del equipo trabajando en este proyecto</CardDescription>
+                <CardDescription>
+                  Miembros del equipo trabajando en este proyecto ({projectAssignments.length})
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No hay miembros asignados aún</p>
-                  <p className="text-xs mt-1">Esta funcionalidad estará disponible próximamente</p>
-                </div>
+                {projectAssignments.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No hay miembros asignados aún</p>
+                    <p className="text-xs mt-1">
+                      Crea asignaciones para agregar personas al proyecto
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {projectAssignments.map(assignment => {
+                      const person = assignment.people
+                      if (!person) return null
+
+                      return (
+                        <div
+                          key={assignment.id}
+                          className="flex items-center justify-between p-3 border rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                              <User className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-sm">{person.name}</h4>
+                              <p className="text-xs text-muted-foreground">
+                                Estado: {person.status}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-medium">
+                              {(assignment.allocation * 100).toFixed(0)}%
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {format(new Date(assignment.start_date), 'dd/MM/yyyy', {
+                                locale: es,
+                              })}{' '}
+                              -{' '}
+                              {format(new Date(assignment.end_date), 'dd/MM/yyyy', { locale: es })}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -308,6 +359,44 @@ export default function ProjectShowPage() {
                   <Badge className={getProjectStatusBadgeClass(project.status)} variant="outline">
                     {getProjectStatusLabel(project.status)}
                   </Badge>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">FTE Asignado</span>
+                    <span className="text-sm font-medium">
+                      {assignedFTE.toFixed(1)}/{project.fte ? project.fte.toFixed(1) : '0.0'}
+                    </span>
+                  </div>
+
+                  {project.fte && project.fte > 0 && (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Utilización</span>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={
+                              isProjectOverallocated(assignedFTE, project.fte)
+                                ? 'destructive'
+                                : 'default'
+                            }
+                            className="text-xs"
+                          >
+                            {calculateFTEUtilization(assignedFTE, project.fte)}%
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {isProjectOverallocated(assignedFTE, project.fte) && (
+                        <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                          ⚠️ Proyecto sobre-asignado en un{' '}
+                          {Math.round(((assignedFTE - project.fte) / project.fte) * 100)}%
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>

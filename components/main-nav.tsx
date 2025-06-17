@@ -3,32 +3,19 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { ChevronDown, Home, Calendar, Users, Building2, Briefcase, Menu, X } from 'lucide-react'
+import { Home, Calendar, Users, Building2, Briefcase, Menu, X } from 'lucide-react'
 import { cn } from '@/utils/classnames'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-
-const resourceItems = [
-  { href: '/projects', label: 'Proyectos', icon: Briefcase },
-  { href: '/clients', label: 'Clientes', icon: Building2 },
-  { href: '/people', label: 'Personas', icon: Users },
-]
 
 export function MainNav() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const isResourceActive = resourceItems.some(
-    item => pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
-  )
-
   const isHomeActive = pathname === '/'
   const isAssignmentsActive = pathname === '/assignments' || pathname?.startsWith('/assignments')
+  const isProjectsActive = pathname === '/projects' || pathname?.startsWith('/projects')
+  const isClientsActive = pathname === '/clients' || pathname?.startsWith('/clients')
+  const isPeopleActive = pathname === '/people' || pathname?.startsWith('/people')
 
   return (
     <>
@@ -62,46 +49,47 @@ export function MainNav() {
           Asignaciones
         </Link>
 
-        {/* Resources Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className={cn(
-                'flex items-center gap-2 px-3 py-2 h-auto font-medium text-sm transition-all duration-200',
-                isResourceActive
-                  ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
-                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
-              )}
-            >
-              <Users className="h-4 w-4" />
-              Recursos
-              <ChevronDown className="h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48 mt-1">
-            {resourceItems.map(item => {
-              const Icon = item.icon
-              const isActive =
-                pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
+        {/* Proyectos */}
+        <Link
+          href="/projects"
+          className={cn(
+            'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:bg-gray-100',
+            isProjectsActive
+              ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+              : 'text-gray-700 hover:text-gray-900'
+          )}
+        >
+          <Briefcase className="h-4 w-4" />
+          Proyectos
+        </Link>
 
-              return (
-                <DropdownMenuItem key={item.href} asChild>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      'flex items-center gap-3 px-3 py-2 text-sm cursor-pointer transition-colors',
-                      isActive ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:text-gray-900'
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                </DropdownMenuItem>
-              )
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Clientes */}
+        <Link
+          href="/clients"
+          className={cn(
+            'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:bg-gray-100',
+            isClientsActive
+              ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+              : 'text-gray-700 hover:text-gray-900'
+          )}
+        >
+          <Building2 className="h-4 w-4" />
+          Clientes
+        </Link>
+
+        {/* Personas */}
+        <Link
+          href="/people"
+          className={cn(
+            'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:bg-gray-100',
+            isPeopleActive
+              ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+              : 'text-gray-700 hover:text-gray-900'
+          )}
+        >
+          <Users className="h-4 w-4" />
+          Equipo
+        </Link>
       </nav>
 
       {/* Mobile Navigation */}
@@ -149,34 +137,50 @@ export function MainNav() {
                 Asignaciones
               </Link>
 
-              {/* Resources Section */}
-              <div className="pt-2">
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Resources
-                </div>
-                {resourceItems.map(item => {
-                  const Icon = item.icon
-                  const isActive =
-                    pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href))
+              {/* Proyectos */}
+              <Link
+                href="/projects"
+                onClick={() => setMobileMenuOpen(false)}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium transition-colors',
+                  isProjectsActive
+                    ? 'text-blue-600 bg-blue-50'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                )}
+              >
+                <Briefcase className="h-4 w-4" />
+                Proyectos
+              </Link>
 
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={cn(
-                        'flex items-center gap-3 px-6 py-3 rounded-md text-sm font-medium transition-colors',
-                        isActive
-                          ? 'text-blue-600 bg-blue-50'
-                          : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {item.label}
-                    </Link>
-                  )
-                })}
-              </div>
+              {/* Clientes */}
+              <Link
+                href="/clients"
+                onClick={() => setMobileMenuOpen(false)}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium transition-colors',
+                  isClientsActive
+                    ? 'text-blue-600 bg-blue-50'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                )}
+              >
+                <Building2 className="h-4 w-4" />
+                Clientes
+              </Link>
+
+              {/* Personas */}
+              <Link
+                href="/people"
+                onClick={() => setMobileMenuOpen(false)}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium transition-colors',
+                  isPeopleActive
+                    ? 'text-blue-600 bg-blue-50'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                )}
+              >
+                <Users className="h-4 w-4" />
+                Equipo
+              </Link>
             </div>
           </div>
         )}

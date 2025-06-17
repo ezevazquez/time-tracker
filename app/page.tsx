@@ -18,7 +18,7 @@ import { TeamWorkloadChart } from '@/components/team-workload-chart'
 import { RecentActivity } from '@/components/recent-activity'
 import { UpcomingDeadlines } from '@/components/upcoming-deadlines'
 import { ResourceUtilization } from '@/components/resource-utilization'
-import { TopClients } from '@/components/top-clients'
+import { OverallocatedProjectsChart } from '@/components/overallocated-projects-chart'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -111,24 +111,26 @@ export default function Dashboard() {
         />
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - 2/3 width */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ProjectStatusChart projects={projects} />
-              <TeamWorkloadChart people={people} assignments={assignments} />
-            </div>
-
-            {/* Resource Utilization */}
-            <ResourceUtilization people={people} assignments={assignments} />
+        <div className="space-y-6">
+          {/* Charts Row - 3 columns */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <ProjectStatusChart projects={projects} />
+            <TeamWorkloadChart people={people} assignments={assignments} />
+            <OverallocatedProjectsChart projects={projects} assignments={assignments} />
           </div>
 
-          {/* Right Column - 1/3 width */}
-          <div className="space-y-6">
-            <RecentActivity assignments={assignments} people={people} projects={projects} />
-            <UpcomingDeadlines projects={projects} assignments={assignments} />
-            <TopClients clients={clients} projects={projects} />
+          {/* Bottom Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - 2/3 width */}
+            <div className="lg:col-span-2">
+              <ResourceUtilization people={people} assignments={assignments} />
+            </div>
+
+            {/* Right Column - 1/3 width */}
+            <div className="space-y-6">
+              <RecentActivity assignments={assignments} people={people} projects={projects} />
+              <UpcomingDeadlines projects={projects} assignments={assignments} />
+            </div>
           </div>
         </div>
       </div>

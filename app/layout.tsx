@@ -10,7 +10,8 @@ import { supabase } from '@/lib/supabase/client'
 import Script from 'next/script'
 import { MainNav } from '@/components/main-nav'
 import { AccountDropdown } from '@/components/account-dropdown'
-import { Analytics } from "@vercel/analytics/next"
+import { ReportModal } from '@/components/report-modal'
+// import { Analytics } from "@vercel/analytics/next"
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -51,12 +52,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center space-x-4">
                       <h1 className="text-xl font-semibold text-primary tracking-tight">
-                        <Link href="/">Revolt</Link>
+                        <Link href="/">MAES</Link>
                       </h1>
                       <div className="h-6 w-px bg-border mx-4 hidden sm:block" />
                       <MainNav />
                     </div>
                     <div className="flex items-center space-x-4 ml-auto">
+                      <ReportModal />
                       <AccountDropdown />
                     </div>
                   </div>
@@ -66,7 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
             <main className="flex-1 min-h-0">
               {children}
-              <Analytics />
+              {/* <Analytics /> */}
             </main>
           </div>
           <Toaster />
