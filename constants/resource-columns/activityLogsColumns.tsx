@@ -2,7 +2,7 @@ import { ActivityLog } from '@/types/ActivityLog'
 
 export const activityLogsColumns = [
   {
-    title: 'display_name',
+    title: 'Usuario',
     render: (log: ActivityLog) => log?.display_name,
   },
   {
