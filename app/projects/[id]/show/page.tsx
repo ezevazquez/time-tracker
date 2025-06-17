@@ -23,10 +23,10 @@ import { ResourceError } from '@/components/ui/resource-error'
 import { RESOURCES } from '@/constants/resources'
 import { Resource } from '@/types'
 import { ResourceNotFound } from '@/components/resource-not-found'
-import { 
-  calculateFTEUtilization, 
-  isProjectOverallocated 
-} from '@/lib/utils/fte-calculations'
+import { TableResource } from '@/components/ui/table-resource'
+import { activityLogsColumns } from '@/constants/resource-columns/activityLogsColumns'
+import { supabase } from '@/lib/supabase/client'
+import { calculateFTEUtilization, isProjectOverallocated } from '@/lib/utils/fte-calculations'
 
 const getProjectStatusLabel = (status: string) =>
   PROJECT_STATUS_OPTIONS.find(opt => opt.value === status)?.label || status
@@ -63,8 +63,20 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
         setLoading(true)
         setError(null)
         const data = await projectsService.getById(unwrappedParams.id)
+
+        let { data: activityLogs, error } = await supabase.rpc('get_project_activity_logs', {
+          p_project_id: unwrappedParams.id,
+        })
+
+        if (error) {
+          console.error(error)
+        }
+
+        if (data) {
+          data.activity_logs = activityLogs || []
+        }
         setProject(data)
-        
+
         // Calcular FTE asignado
         const fte = await projectsService.getAssignedFTE(unwrappedParams.id)
         setAssignedFTE(fte)
@@ -243,24 +255,27 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                   <div className="text-center py-8 text-muted-foreground">
                     <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">No hay miembros asignados aún</p>
-                    <p className="text-xs mt-1">Crea asignaciones para agregar personas al proyecto</p>
+                    <p className="text-xs mt-1">
+                      Crea asignaciones para agregar personas al proyecto
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {projectAssignments.map((assignment) => {
+                    {projectAssignments.map(assignment => {
                       const person = assignment.people
                       if (!person) return null
-                      
+
                       return (
-                        <div key={assignment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div
+                          key={assignment.id}
+                          className="flex items-center justify-between p-3 border rounded-lg"
+                        >
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                               <User className="h-5 w-5 text-blue-600" />
                             </div>
                             <div>
-                              <h4 className="font-medium text-sm">
-                                {person.name}
-                              </h4>
+                              <h4 className="font-medium text-sm">{person.name}</h4>
                               <p className="text-xs text-muted-foreground">
                                 Estado: {person.status}
                               </p>
@@ -271,7 +286,11 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                               {(assignment.allocation * 100).toFixed(0)}%
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {format(new Date(assignment.start_date), 'dd/MM/yyyy', { locale: es })} - {format(new Date(assignment.end_date), 'dd/MM/yyyy', { locale: es })}
+                              {format(new Date(assignment.start_date), 'dd/MM/yyyy', {
+                                locale: es,
+                              })}{' '}
+                              -{' '}
+                              {format(new Date(assignment.end_date), 'dd/MM/yyyy', { locale: es })}
                             </div>
                           </div>
                         </div>
@@ -351,24 +370,29 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                       {assignedFTE.toFixed(1)}/{project.fte ? project.fte.toFixed(1) : '0.0'}
                     </span>
                   </div>
-                  
+
                   {project.fte && project.fte > 0 && (
                     <>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Utilización</span>
                         <div className="flex items-center gap-2">
-                          <Badge 
-                            variant={isProjectOverallocated(assignedFTE, project.fte) ? 'destructive' : 'default'}
+                          <Badge
+                            variant={
+                              isProjectOverallocated(assignedFTE, project.fte)
+                                ? 'destructive'
+                                : 'default'
+                            }
                             className="text-xs"
                           >
                             {calculateFTEUtilization(assignedFTE, project.fte)}%
                           </Badge>
                         </div>
                       </div>
-                      
+
                       {isProjectOverallocated(assignedFTE, project.fte) && (
                         <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
-                          ⚠️ Proyecto sobre-asignado en un {Math.round(((assignedFTE - project.fte) / project.fte) * 100)}%
+                          ⚠️ Proyecto sobre-asignado en un{' '}
+                          {Math.round(((assignedFTE - project.fte) / project.fte) * 100)}%
                         </div>
                       )}
                     </>
@@ -402,6 +426,19 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
               </CardContent>
             </Card>
           </div>
+        </div>
+        <div className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Historial de acciones</CardTitle>
+              <CardDescription>
+                Aquí puedes ver un registro de todas las acciones realizadas en este proyecto.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              <TableResource items={project.activity_logs || []} columns={activityLogsColumns} />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </main>
