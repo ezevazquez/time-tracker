@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { projectsService } from '@/lib/services/projects.service'
+import { assignmentsService } from '@/lib/services/assignments.service'
 import type { Project } from '@/types/project'
 
 interface ProjectWithFTE extends Project {
@@ -67,6 +68,12 @@ export function useProjects() {
 
   const deleteProject = async (id: string) => {
     try {
+      // Validar que el proyecto no tenga asignaciones asociadas
+      const assignments = await assignmentsService.getAll()
+      const hasAssignments = assignments.some(a => a.project_id === id)
+      if (hasAssignments) {
+        throw new Error('No se puede borrar el proyecto porque tiene asignaciones asociadas.')
+      }
       await projectsService.delete(id)
       setProjects(prev => prev.filter(p => p.id !== id))
     } catch (err) {

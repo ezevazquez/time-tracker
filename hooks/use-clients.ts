@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { clientsService } from '@/lib/services/clients.service'
+import { projectsService } from '@/lib/services/projects.service'
 import type { Client } from '@/types/client'
 
 export function useClients() {
@@ -29,6 +30,12 @@ export function useClients() {
   }
 
   const deleteClient = async (id: string) => {
+    // Validar que el cliente no tenga proyectos asociados
+    const projects = await projectsService.getAll()
+    const hasProjects = projects.some(p => p.client_id === id)
+    if (hasProjects) {
+      throw new Error('No se puede borrar el cliente porque tiene proyectos asociados.')
+    }
     await clientsService.delete(id)
     setClients(prev => prev.filter(c => c.id !== id))
   }
