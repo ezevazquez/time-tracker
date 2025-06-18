@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
+import { useToast } from '@/hooks/use-toast'
 import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -40,6 +40,8 @@ export default function ProjectsPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const { projects, loading, error, deleteProject } = useProjects()
   const router = useRouter()
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null)
+  const { toast } = useToast()
 
   if (loading) {
     return (
@@ -71,16 +73,22 @@ export default function ProjectsPage() {
   })
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este proyecto?')) {
-      try {
-        await deleteProject(id)
-        toast.success('Proyecto eliminado correctamente')
-      } catch (error) {
-        toast.error('Error al eliminar el proyecto')
-        console.error('Error deleting project:', error)
-      }
+    setProjectToDelete(id)
+  }
+
+  const confirmDelete = async () => {
+    if (!projectToDelete) return
+    try {
+      await deleteProject(projectToDelete)
+      toast({ title: 'Proyecto eliminado', description: 'El proyecto fue eliminado correctamente.' })
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Error al eliminar el proyecto'
+      toast({ title: 'Error al eliminar', description: errorMsg, variant: 'destructive' })
+      console.error('Error deleting project:', error)
+    } finally {
+      setProjectToDelete(null)
     }
-  }  
+  }
 
   const actions: ResourceAction[] = [
     {
@@ -161,6 +169,20 @@ export default function ProjectsPage() {
           />
         </CardContent>
       </Card>
+
+      {/* Modal de confirmación */}
+      {projectToDelete && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded shadow-lg">
+            <h2 className="text-lg font-bold mb-4">Confirmar eliminación</h2>
+            <p>¿Estás seguro de que deseas eliminar este proyecto?</p>
+            <div className="flex justify-end gap-2 mt-6">
+              <button className="px-4 py-2 bg-gray-200 rounded" onClick={() => setProjectToDelete(null)}>Cancelar</button>
+              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete}>Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

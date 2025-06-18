@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { toast } from 'sonner'
+import { useToast } from '@/hooks/use-toast'
 
 import { ArrowLeft, Calendar, User, Building2, Clock, Edit, Trash2 } from 'lucide-react'
 
@@ -50,7 +50,9 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const router = useRouter()
+  const { toast } = useToast()
 
   // Filtrar asignaciones del proyecto
   const projectAssignments = assignments.filter(
@@ -78,25 +80,24 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
     fetchProject()
   }, [unwrappedParams.id])
 
-  const handleDelete = async () => {
-    if (!project) return
+  const handleDelete = () => {
+    setShowDeleteModal(true)
+  }
 
-    if (
-      window.confirm(
-        '¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer.'
-      )
-    ) {
-      try {
-        setIsDeleting(true)
-        await deleteProject(project.id)
-        toast.success('Proyecto eliminado correctamente')
-        router.push('/projects')
-      } catch (error) {
-        toast.error('Error al eliminar el proyecto')
-        console.error('Error deleting project:', error)
-      } finally {
-        setIsDeleting(false)
-      }
+  const confirmDelete = async () => {
+    if (!project) return
+    try {
+      setIsDeleting(true)
+      await deleteProject(project.id)
+      toast({ title: 'Proyecto eliminado', description: 'El proyecto fue eliminado correctamente.' })
+      router.push('/projects')
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Error al eliminar el proyecto'
+      toast({ title: 'Error al eliminar', description: errorMsg, variant: 'destructive' })
+      // console.error('Error deleting project:', error)
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteModal(false)
     }
   }
 
@@ -404,6 +405,20 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
       </div>
+
+      {/* Modal de confirmación */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded shadow-lg">
+            <h2 className="text-lg font-bold mb-4">Confirmar eliminación</h2>
+            <p>¿Estás seguro de que deseas eliminar este proyecto?</p>
+            <div className="flex justify-end gap-2 mt-6">
+              <button className="px-4 py-2 bg-gray-200 rounded" onClick={() => setShowDeleteModal(false)}>Cancelar</button>
+              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete} disabled={isDeleting}>Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
