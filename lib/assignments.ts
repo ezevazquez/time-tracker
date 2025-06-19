@@ -151,7 +151,8 @@ export function calculateStickyPosition(
   isSticky: boolean
 } {
   const barRight = barLeft + barWidth
-  const viewportLeft = scrollLeft + sidebarWidth
+  const STICKY_MARGIN = 240; // px, margen de anticipación para sticky
+  const viewportLeft = scrollLeft + sidebarWidth - STICKY_MARGIN
   const STICKY_LEFT_POSITION = 1 // Small offset from sidebar edge for visual separation
 
   // Default position - label starts at the left edge of the bar (position 0)
