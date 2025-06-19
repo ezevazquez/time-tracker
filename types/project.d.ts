@@ -1,5 +1,3 @@
-import { ActivityLog } from './ActivityLog'
-
 export interface Project {
   id: string
   name: string
@@ -10,7 +8,7 @@ export interface Project {
   created_at: string
   updated_at: string
   client_id: string | null
-  activity_logs?: ActivityLog[]
+  activity_logs?: any[]
   fte: number | null // Total FTE requerido para el proyecto
   project_code?: string | null // Código automático de 2 letras + 2 números
 }

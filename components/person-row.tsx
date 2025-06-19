@@ -103,7 +103,7 @@ export function PersonRow({
         flex border-b border-gray-100 hover:bg-gray-50/30 transition-colors
         ${isEvenRow ? "bg-white" : "bg-gray-50/20"}
       `}
-      style={{ height: `${layout.rowHeight + 10}px` }}
+      style={{ height: `${layout.rowHeight}px` }}
     >
       {/* Sidebar */}
       <div

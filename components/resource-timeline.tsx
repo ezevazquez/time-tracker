@@ -219,9 +219,6 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
       }
     }, [onScrollToTodayRef, scrollToToday])
 
-    // Debug: log people and filteredPeople
-    console.log('people:', people)
-
     return (
       <div className="h-full flex flex-col bg-white">
 

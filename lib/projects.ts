@@ -1,9 +1,5 @@
-import { Project } from '@/types/project'
-import {
-  PROJECT_STATUS,
-  ACTIVE_PROJECT_STATUSES,
-  INACTIVE_PROJECT_STATUSES,
-} from '@/constants/projects'
+import type { Project } from '@/types/project'
+import { PROJECT_STATUS, ACTIVE_PROJECT_STATUSES, INACTIVE_PROJECT_STATUSES } from '@/constants/projects'
 
 export function getActiveProjects(projects: Project[]) {
   return projects.filter(p =>

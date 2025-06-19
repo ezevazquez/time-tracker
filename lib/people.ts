@@ -1,4 +1,4 @@
-import { Person } from '@/types/people'
+import type { Person } from '@/types/people'
 import {
   ACTIVE_PERSON_STATUSES,
   INACTIVE_PERSON_STATUSES,

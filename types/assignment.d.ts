@@ -1,7 +1,3 @@
-import { ASSIGNMENT_STATUS_VALUES } from '@/constants/assignments'
-
-export type AssignmentStatus = (typeof ASSIGNMENT_STATUS_VALUES)[number]
-
 export interface Assignment {
   id: string
   project_id: string
