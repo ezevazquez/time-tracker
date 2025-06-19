@@ -202,7 +202,7 @@ export function calculateStickyPosition(
  */
 export function calculateRowLayout(assignmentCount: number, baseRowHeight: number) {
   const CONSISTENT_BAR_HEIGHT = 32 // Fixed height for all bars
-  const MIN_ROW_HEIGHT = 80
+  const MIN_ROW_HEIGHT = 100
   const VERTICAL_PADDING = 8
   const BAR_SPACING = 4
 
