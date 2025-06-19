@@ -3,12 +3,6 @@ import type { Project } from '@/types/project'
 import { calculateFTEUtilization, isProjectOverallocated, calculateOverallocationPercentage } from '@/lib/utils/fte-calculations'
 import { getStatusBadge, getStatusLabel } from '@/lib/projects'
 
-import {
-  calculateFTEUtilization,
-  isProjectOverallocated,
-  calculateOverallocationPercentage,
-} from '@/lib/utils/fte-calculations'
-
 interface ProjectWithFTE extends Project {
   assignedFTE?: number
 }
