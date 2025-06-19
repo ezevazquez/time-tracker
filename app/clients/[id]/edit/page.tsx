@@ -28,7 +28,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 
-import { toast } from 'sonner'
+import { useToast } from '@/hooks/use-toast'
 
 import { useClients } from '@/hooks/use-clients'
 import { clientsService } from '@/lib/services/clients.service'
@@ -46,7 +46,9 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   const [client, setClient] = useState<Client | null>(null)
   const [isLoadingClient, setIsLoadingClient] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { updateClient } = useClients()
+  const { updateClient, deleteClient } = useClients()
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const { toast } = useToast()
 
   // Unwrap the params Promise
   const { id } = use(params)
@@ -93,13 +95,33 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         description: values.description?.trim() || null,
       })
 
-      toast.success('Cliente actualizado correctamente')
+      toast({ title: 'Cliente actualizado', description: 'El cliente fue actualizado correctamente.' })
       router.push('/clients')
     } catch (error) {
-      toast.error('Error al actualizar el cliente')
+      toast({ title: 'Error al actualizar', description: 'Error al actualizar el cliente', variant: 'destructive' })
       console.error('Error updating client:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // Función para borrar el cliente
+  const handleDelete = () => {
+    setShowDeleteModal(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!client) return
+    try {
+      await deleteClient(client.id)
+      toast({ title: 'Cliente eliminado', description: 'El cliente fue eliminado correctamente.' })
+      router.push('/clients')
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Error al eliminar el cliente'
+      toast({ title: 'Error al eliminar', description: errorMsg, variant: 'destructive' })
+      // console.error('Error deleting client:', error)
+    } finally {
+      setShowDeleteModal(false)
     }
   }
 
@@ -165,19 +187,28 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                 )}
               />
 
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" type="button" onClick={() => router.push('/clients')}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Guardar Cambios
-                </Button>
-              </div>
+              <CardFooter className="flex justify-end gap-2">
+                <Button type="submit" disabled={isLoading}>Guardar Cambios</Button>
+                <Button type="button" variant="destructive" onClick={handleDelete} disabled={isLoading}>Eliminar</Button>
+              </CardFooter>
             </form>
           </Form>
         </CardContent>
       </Card>
+
+      {/* Modal de confirmación */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded shadow-lg">
+            <h2 className="text-lg font-bold mb-4">Confirmar eliminación</h2>
+            <p>¿Estás seguro de que deseas eliminar este cliente?</p>
+            <div className="flex justify-end gap-2 mt-6">
+              <button className="px-4 py-2 bg-gray-200 rounded" onClick={() => setShowDeleteModal(false)}>Cancelar</button>
+              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete}>Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

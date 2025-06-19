@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { toast } from 'sonner'
+import { useToast } from '@/hooks/use-toast'
 
 import { ArrowLeft, Calendar, User, Building2, Clock, Edit, Trash2 } from 'lucide-react'
 
@@ -21,6 +21,7 @@ import { useProjects } from '@/hooks/use-projects'
 import { useAssignments } from '@/hooks/use-assignments'
 import { projectsService } from '@/lib/services/projects.service'
 import { PROJECT_STATUS_OPTIONS } from '@/constants/projects'
+
 import { 
   calculateProjectAssignedFTE, 
   calculateFTEUtilization, 
@@ -29,6 +30,7 @@ import {
 import { getStatusBadge, getStatusLabel } from '@/lib/projects'
 import type { Project } from '@/types/project'
 import type { Client } from '@/types/client'
+
 
 interface ProjectWithClient extends Project {
   client?: Client
@@ -43,7 +45,9 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const router = useRouter()
+  const { toast } = useToast()
 
   // Filtrar asignaciones del proyecto
   const projectAssignments = assignments.filter(
@@ -56,8 +60,20 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
         setLoading(true)
         setError(null)
         const data = await projectsService.getById(unwrappedParams.id)
+
+        let { data: activityLogs, error } = await supabase.rpc('get_project_activity_logs', {
+          p_project_id: unwrappedParams.id,
+        })
+
+        if (error) {
+          console.error(error)
+        }
+
+        if (data) {
+          data.activity_logs = activityLogs || []
+        }
         setProject(data)
-        
+
         // Calcular FTE asignado
         const fte = await projectsService.getAssignedFTE(unwrappedParams.id)
         setAssignedFTE(fte)
@@ -71,25 +87,24 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
     fetchProject()
   }, [unwrappedParams.id])
 
-  const handleDelete = async () => {
-    if (!project) return
+  const handleDelete = () => {
+    setShowDeleteModal(true)
+  }
 
-    if (
-      window.confirm(
-        '¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer.'
-      )
-    ) {
-      try {
-        setIsDeleting(true)
-        await deleteProject(project.id)
-        toast.success('Proyecto eliminado correctamente')
-        router.push('/projects')
-      } catch (error) {
-        toast.error('Error al eliminar el proyecto')
-        console.error('Error deleting project:', error)
-      } finally {
-        setIsDeleting(false)
-      }
+  const confirmDelete = async () => {
+    if (!project) return
+    try {
+      setIsDeleting(true)
+      await deleteProject(project.id)
+      toast({ title: 'Proyecto eliminado', description: 'El proyecto fue eliminado correctamente.' })
+      router.push('/projects')
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Error al eliminar el proyecto'
+      toast({ title: 'Error al eliminar', description: errorMsg, variant: 'destructive' })
+      // console.error('Error deleting project:', error)
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteModal(false)
     }
   }
 
@@ -236,24 +251,27 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                   <div className="text-center py-8 text-muted-foreground">
                     <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">No hay miembros asignados aún</p>
-                    <p className="text-xs mt-1">Crea asignaciones para agregar personas al proyecto</p>
+                    <p className="text-xs mt-1">
+                      Crea asignaciones para agregar personas al proyecto
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {projectAssignments.map((assignment) => {
+                    {projectAssignments.map(assignment => {
                       const person = assignment.people
                       if (!person) return null
-                      
+
                       return (
-                        <div key={assignment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div
+                          key={assignment.id}
+                          className="flex items-center justify-between p-3 border rounded-lg"
+                        >
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                               <User className="h-5 w-5 text-blue-600" />
                             </div>
                             <div>
-                              <h4 className="font-medium text-sm">
-                                {person.name}
-                              </h4>
+                              <h4 className="font-medium text-sm">{person.name}</h4>
                               <p className="text-xs text-muted-foreground">
                                 Estado: {person.status}
                               </p>
@@ -264,7 +282,11 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                               {(assignment.allocation * 100).toFixed(0)}%
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {format(new Date(assignment.start_date), 'dd/MM/yyyy', { locale: es })} - {format(new Date(assignment.end_date), 'dd/MM/yyyy', { locale: es })}
+                              {format(new Date(assignment.start_date), 'dd/MM/yyyy', {
+                                locale: es,
+                              })}{' '}
+                              -{' '}
+                              {format(new Date(assignment.end_date), 'dd/MM/yyyy', { locale: es })}
                             </div>
                           </div>
                         </div>
@@ -344,24 +366,29 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                       {assignedFTE.toFixed(1)}/{project.fte ? project.fte.toFixed(1) : '0.0'}
                     </span>
                   </div>
-                  
+
                   {project.fte && project.fte > 0 && (
                     <>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-muted-foreground">Utilización</span>
                         <div className="flex items-center gap-2">
-                          <Badge 
-                            variant={isProjectOverallocated(assignedFTE, project.fte) ? 'destructive' : 'default'}
+                          <Badge
+                            variant={
+                              isProjectOverallocated(assignedFTE, project.fte)
+                                ? 'destructive'
+                                : 'default'
+                            }
                             className="text-xs"
                           >
                             {calculateFTEUtilization(assignedFTE, project.fte)}%
                           </Badge>
                         </div>
                       </div>
-                      
+
                       {isProjectOverallocated(assignedFTE, project.fte) && (
                         <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
-                          ⚠️ Proyecto sobre-asignado en un {Math.round(((assignedFTE - project.fte) / project.fte) * 100)}%
+                          ⚠️ Proyecto sobre-asignado en un{' '}
+                          {Math.round(((assignedFTE - project.fte) / project.fte) * 100)}%
                         </div>
                       )}
                     </>
@@ -396,7 +423,34 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
             </Card>
           </div>
         </div>
+        <div className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Historial de acciones</CardTitle>
+              <CardDescription>
+                Aquí puedes ver un registro de todas las acciones realizadas en este proyecto.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              <TableResource items={project.activity_logs || []} columns={activityLogsColumns} />
+            </CardContent>
+          </Card>
+        </div>
       </div>
+
+      {/* Modal de confirmación */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded shadow-lg">
+            <h2 className="text-lg font-bold mb-4">Confirmar eliminación</h2>
+            <p>¿Estás seguro de que deseas eliminar este proyecto?</p>
+            <div className="flex justify-end gap-2 mt-6">
+              <button className="px-4 py-2 bg-gray-200 rounded" onClick={() => setShowDeleteModal(false)}>Cancelar</button>
+              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete} disabled={isDeleting}>Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
