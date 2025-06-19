@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { format } from 'date-fns'
 import { CalendarIcon, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
+import { useToast } from '@/hooks/use-toast'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -46,6 +46,7 @@ import type { Client } from '@/types/client'
 import { PROJECT_STATUS_OPTIONS, PROJECT_STATUS } from '@/constants/projects'
 import { ResourceError } from '@/components/ui/resource-error'
 
+
 const formSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
   description: z.string().nullable().optional(),
@@ -66,6 +67,9 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const router = useRouter()
+  const { deleteProject } = useProjects()
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const { toast } = useToast()
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -143,13 +147,33 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       }
       
       await projectsService.update(unwrappedParams.id, updateData)
-      toast.success('Proyecto actualizado correctamente')
+      toast({ title: 'Proyecto actualizado', description: 'El proyecto fue actualizado correctamente.' })
       router.push('/projects')
     } catch (error) {
       console.error('Error updating project:', error)
-      toast.error('Error al actualizar el proyecto')
+      toast({ title: 'Error al actualizar', description: 'Error al actualizar el proyecto.', variant: 'destructive' })
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Función para borrar el proyecto
+  const handleDelete = () => {
+    setShowDeleteModal(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!project) return
+    try {
+      await deleteProject(project.id)
+      toast({ title: 'Proyecto eliminado', description: 'El proyecto fue eliminado correctamente.' })
+      router.push('/projects')
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Error al eliminar el proyecto'
+      toast({ title: 'Error al eliminar', description: errorMsg, variant: 'destructive' })
+      console.error('Error deleting project:', error)
+    } finally {
+      setShowDeleteModal(false)
     }
   }
 
@@ -391,19 +415,28 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                 )}
               />
 
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" type="button" onClick={() => router.push('/projects')}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={saving}>
-                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Guardar Cambios
-                </Button>
-              </div>
+              <CardFooter className="flex justify-end gap-2">
+                <Button type="submit" disabled={saving}>Guardar Cambios</Button>
+                <Button type="button" variant="destructive" onClick={handleDelete} disabled={saving}>Eliminar</Button>
+              </CardFooter>
             </form>
           </Form>
         </CardContent>
       </Card>
+
+      {/* Modal de confirmación */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded shadow-lg">
+            <h2 className="text-lg font-bold mb-4">Confirmar eliminación</h2>
+            <p>¿Estás seguro de que deseas eliminar este proyecto?</p>
+            <div className="flex justify-end gap-2 mt-6">
+              <button className="px-4 py-2 bg-gray-200 rounded" onClick={() => setShowDeleteModal(false)}>Cancelar</button>
+              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete}>Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
