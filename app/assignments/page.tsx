@@ -17,7 +17,8 @@ import { useProjects } from '@/hooks/use-projects'
 import { useAssignments } from '@/hooks/use-assignments'
 
 import { supabase } from '@/lib/supabase/client'
-import { parseDateFromString, isOverallocated } from '@/lib/assignments'
+import { parseDateFromString } from '@/lib/assignments'
+import { fteToPercentage, isOverallocated } from '@/lib/utils/fte-calculations'
 
 export default function AssignmentsPage() {
   const router = useRouter()
@@ -126,18 +127,34 @@ export default function AssignmentsPage() {
       return true
     })
     if (filters.overallocatedOnly) {
-      const currentDate = new Date()
-      result = result.filter(person => {
-        // Obtener todas las asignaciones actuales de la persona
-        const personAssignments = assignments.filter(a => {
-          const start = parseDateFromString(a.start_date)
-          const end = parseDateFromString(a.end_date)
-          return a.person_id === person.id && start <= currentDate && end >= currentDate
+      // Usar el rango de fechas seleccionado
+      const from = filters.dateRange?.from
+      const to = filters.dateRange?.to
+      if (from && to) {
+        result = result.filter(person => {
+          // Obtener todas las asignaciones de la persona en el rango
+          const personAssignments = assignments.filter(a => {
+            const start = parseDateFromString(a.start_date)
+            const end = parseDateFromString(a.end_date)
+            return a.person_id === person.id && end >= from && start <= to
+          })
+          // Revisar cada día del rango si supera 100%
+          let isOver = false
+          for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
+            const fte = personAssignments.reduce((sum, a) => {
+              const aStart = parseDateFromString(a.start_date)
+              const aEnd = parseDateFromString(a.end_date)
+              if (aStart <= d && aEnd >= d) return sum + a.allocation
+              return sum
+            }, 0)
+            if (isOverallocated(fte)) {
+              isOver = true
+              break
+            }
+          }
+          return isOver
         })
-        // Calcular FTE total
-        const totalFte = personAssignments.reduce((sum, a) => sum + a.allocation, 0)
-        return totalFte > 1.0
-      })
+      }
     }
     return result
   }, [people, filters, viewMode, assignments])
@@ -176,7 +193,7 @@ export default function AssignmentsPage() {
               if (aStart <= d && aEnd >= d) return sum + a.allocation
               return sum
             }, 0)
-            if (fte > 1.0) {
+            if (isOverallocated(fte)) {
               isOver = true
               break
             }

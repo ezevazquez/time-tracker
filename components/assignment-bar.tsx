@@ -5,7 +5,8 @@ import { format } from "date-fns"
 import Link from "next/link"
 import type { Assignment } from "@/types/assignment"
 import type { Project } from "@/types/project"
-import { calculateStickyPosition, fteToPercentage, stringToColor } from "@/lib/assignments"
+import { calculateStickyPosition, stringToColor } from "@/lib/assignments"
+import { fteToPercentage } from "@/lib/utils/fte-calculations"
 
 interface AssignmentBarProps {
   assignment: Assignment

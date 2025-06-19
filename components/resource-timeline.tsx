@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback, useImperativeHandle, forwardRef } from "react"
 import { PersonRow } from "./person-row"
 import { TimelineHeader } from "./timeline-header"
-import { FiltersPopover } from "./filters-popover"
 import {
   eachDayOfInterval,
   addMonths,
@@ -16,7 +15,7 @@ import {
 import type { Person } from "@/types/people"
 import type { Project } from "@/types/project"
 import type { Assignment } from "@/types/assignment"
-import { parseDateFromString, isOverallocated } from "@/lib/assignments"
+import { parseDateFromString } from "@/lib/assignments"
 
 interface ResourceTimelineProps {
   people: Person[]

@@ -17,7 +17,8 @@ import {
 import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
-import { fteToPercentage, parseDateFromString, isOverallocated } from '@/lib/assignments'
+import { parseDateFromString } from '@/lib/assignments'
+import { fteToPercentage, isOverallocated } from '@/lib/utils/fte-calculations'
 import { getDisplayName } from '@/lib/people'
 
 interface ResourceTableProps {
@@ -44,6 +45,30 @@ export function ResourceTable({
   onClearFilters,
   onDelete,
 }: ResourceTableProps) {
+  // Calcular personas sobreasignadas en el rango
+  const overallocatedPersonIds = (() => {
+    const from = filters.dateRange?.from
+    const to = filters.dateRange?.to
+    if (!from || !to) return []
+    return people.filter(person => {
+      const personAssignments = assignments.filter(a => a.person_id === person.id && parseDateFromString(a.end_date) >= from && parseDateFromString(a.start_date) <= to)
+      let isOver = false
+      for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
+        const fte = personAssignments.reduce((sum, a) => {
+          const aStart = parseDateFromString(a.start_date)
+          const aEnd = parseDateFromString(a.end_date)
+          if (aStart <= d && aEnd >= d) return sum + a.allocation
+          return sum
+        }, 0)
+        if (isOverallocated(fte)) {
+          isOver = true
+          break
+        }
+      }
+      return isOver
+    }).map(p => p.id)
+  })()
+
   return (
     <div className="space-y-4">
       {/* Table */}
@@ -57,14 +82,14 @@ export function ResourceTable({
               <TableHead>Rol</TableHead>
               <TableHead className="text-center">Asignación</TableHead>
               <TableHead className="text-center">Facturable</TableHead>
-              <TableHead>Estado</TableHead>
+              {/* <TableHead>Estado</TableHead> */}
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {assignments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   No se encontraron asignaciones
                 </TableCell>
               </TableRow>
@@ -72,18 +97,7 @@ export function ResourceTable({
               assignments.map(a => {
                 const person = people.find(p => p.id === a.person_id)
                 const project = projects.find(p => p.id === a.project_id)
-                
-                // Calculate if person is overallocated using FTE logic
-                const currentDate = new Date()
-                const personCurrentAssignments = assignments.filter(assignment => {
-                  const start = parseDateFromString(assignment.start_date)
-                  const end = parseDateFromString(assignment.end_date)
-                  return assignment.person_id === a.person_id && start <= currentDate && end >= currentDate
-                })
-                
-                const totalFte = personCurrentAssignments.reduce((sum, assignment) => sum + assignment.allocation, 0)
-                const isPersonOverallocated = isOverallocated(totalFte)
-
+                const isPersonOverallocated = overallocatedPersonIds.includes(a.person_id)
                 return (
                   <TableRow key={a.id} className="hover:bg-muted/50">
                     <TableCell>
@@ -125,18 +139,7 @@ export function ResourceTable({
                         {a.is_billable ? 'Sí' : 'No'}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        {isPersonOverallocated && (
-                          <Badge variant="destructive" className="text-xs w-fit">
-                            Sobreasignado
-                          </Badge>
-                        )}
-                        <Badge variant="outline" className="text-xs w-fit">
-                          {project?.status || 'N/A'}
-                        </Badge>
-                      </div>
-                    </TableCell>
+                    {/* Estado eliminado */}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0">
