@@ -48,8 +48,6 @@ import {
   PERSON_TYPE,
 } from '@/constants/people'
 import { ResourceError } from '@/components/ui/resource-error'
-import { Resource } from '@/types'
-import { RESOURCES } from '@/constants/resources'
 
 const formSchema = z.object({
   first_name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),
@@ -148,7 +146,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
   }
 
   if (error) {
-    return <ResourceError error={error} resource={RESOURCES.people as Resource} />
+    return <ResourceError error={error} resourceName="Persona" resourcePath="/people" />
   }
 
   return (

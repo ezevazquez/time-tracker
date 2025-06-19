@@ -206,3 +206,114 @@ export function parseDateFromString(dateString: string): Date {
   // Crear fecha en zona horaria local para evitar conversiones UTC
   return new Date(year, month - 1, day)
 }
+
+/**
+ * Proper sticky positioning - only sticky when bar is partially scrolled
+ */
+export function calculateStickyPosition(
+  barLeft: number,
+  barWidth: number,
+  scrollLeft: number,
+  sidebarWidth: number,
+): {
+  labelLeft: number
+  labelMaxWidth: number
+  isSticky: boolean
+} {
+  const barRight = barLeft + barWidth
+  const viewportLeft = scrollLeft + sidebarWidth
+  const STICKY_LEFT_POSITION = 1 // Small offset from sidebar edge for visual separation
+
+  // Default position - label starts at the left edge of the bar (position 0)
+  let labelLeft = 0
+  let labelMaxWidth = barWidth
+  let isSticky = false
+
+  // Only apply sticky positioning when the bar is PARTIALLY scrolled out of view
+  if (barLeft < viewportLeft && barRight > viewportLeft) {
+    // The bar's left edge has scrolled past the viewport left edge
+    // BUT the bar is still partially visible
+    isSticky = true
+
+    // Position the label at a fixed distance from the sidebar edge
+    labelLeft = viewportLeft - barLeft + STICKY_LEFT_POSITION
+
+    // Calculate available width for the label (from sticky position to end of bar)
+    const availableWidth = barRight - (viewportLeft + STICKY_LEFT_POSITION)
+    labelMaxWidth = Math.max(availableWidth, 120) // Minimum width for readability
+
+    // Ensure we don't exceed the bar's total width
+    if (labelLeft + labelMaxWidth > barWidth) {
+      labelMaxWidth = barWidth - labelLeft
+    }
+
+    // Ensure labelLeft doesn't go negative
+    labelLeft = Math.max(0, labelLeft)
+  } else {
+    // Bar is fully visible or completely out of view - no sticky needed
+    isSticky = false
+    labelLeft = 0
+    labelMaxWidth = barWidth
+  }
+
+  // Ensure minimum width for readability
+  labelMaxWidth = Math.max(labelMaxWidth, 100)
+
+  return {
+    labelLeft,
+    labelMaxWidth,
+    isSticky,
+  }
+}
+
+/**
+ * Calculate row layout for consistent bar heights
+ */
+export function calculateRowLayout(assignmentCount: number, baseRowHeight: number) {
+  const CONSISTENT_BAR_HEIGHT = 32 // Fixed height for all bars
+  const MIN_ROW_HEIGHT = 80
+  const VERTICAL_PADDING = 8
+  const BAR_SPACING = 4
+
+  // Calculate required row height based on number of assignments
+  const maxVisibleAssignments = Math.min(assignmentCount, 4)
+  const requiredHeight =
+    CONSISTENT_BAR_HEIGHT * maxVisibleAssignments + BAR_SPACING * (maxVisibleAssignments - 1) + VERTICAL_PADDING * 2
+
+  const rowHeight = Math.max(MIN_ROW_HEIGHT, requiredHeight)
+  const startY = VERTICAL_PADDING
+
+  return {
+    rowHeight,
+    barHeight: CONSISTENT_BAR_HEIGHT,
+    barSpacing: BAR_SPACING,
+    startY,
+    maxVisibleAssignments,
+  }
+}
+
+/**
+ * Generate a consistent color based on a string (project name)
+ */
+export function stringToColor(str: string): string {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  }
+
+  // Resource Guru inspired color palette
+  const colors = [
+    "#4F46E5", // indigo
+    "#059669", // emerald
+    "#DC2626", // red
+    "#7C3AED", // violet
+    "#DB2777", // pink
+    "#0891B2", // cyan
+    "#CA8A04", // yellow
+    "#EA580C", // orange
+    "#16A34A", // green
+    "#9333EA", // purple
+  ]
+
+  return colors[Math.abs(hash) % colors.length]
+}

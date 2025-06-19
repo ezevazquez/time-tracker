@@ -39,7 +39,7 @@ import {
 } from '@/components/ui/select'
 
 import { usePeople } from '@/hooks/use-people'
-import { getDisplayName } from '@/lib/people'
+import { getDisplayName, getPersonStatusBadge, getPersonTypeBadge } from '@/lib/people'
 import { PERSON_STATUS_OPTIONS, PERSON_TYPE_OPTIONS, PERSON_STATUS, PERSON_TYPE, PERSON_PROFILE_OPTIONS } from '@/constants/people'
 
 export default function PeoplePage() {
@@ -88,23 +88,6 @@ export default function PeoplePage() {
 
     return matchesSearch && matchesStatus && matchesType && matchesProfile
   })
-
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      Active: 'bg-green-100 text-green-800',
-      Paused: 'bg-yellow-100 text-yellow-800',
-      Terminated: 'bg-red-100 text-red-800',
-    }
-    return variants[status as keyof typeof variants] || 'bg-gray-100 text-gray-800'
-  }
-
-  const getTypeBadge = (type: string) => {
-    const variants = {
-      Internal: 'bg-blue-100 text-blue-800',
-      External: 'bg-purple-100 text-purple-800',
-    }
-    return variants[type as keyof typeof variants] || 'bg-gray-100 text-gray-800'
-  }
 
   const handleDelete = async (id: string, fullName: string) => {
     if (confirm(`¿Estás seguro de que quieres eliminar a ${fullName}?`)) {
@@ -230,13 +213,12 @@ export default function PeoplePage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={getStatusBadge(person.status)}>
+                    <Badge className={getPersonStatusBadge(person.status)}>
                       {getLabel(PERSON_STATUS_OPTIONS, person.status)}
                     </Badge>
-
                   </TableCell>
                   <TableCell>
-                    <Badge className={getTypeBadge(person.type)}>
+                    <Badge className={getPersonTypeBadge(person.type)}>
                       {getLabel(PERSON_TYPE_OPTIONS, person.type)}
                     </Badge>
                   </TableCell>

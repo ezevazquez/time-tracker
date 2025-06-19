@@ -27,19 +27,35 @@ export default function AssignmentsPage() {
   const scrollToTodayRef = useRef<(() => void) | null>(null)
 
   const defaultDateRange = {
-    from: new Date(),
+    from: (() => {
+      const d = new Date()
+      d.setDate(d.getDate() - 7)
+      return d
+    })(),
     to: (() => {
       const d = new Date()
-      d.setFullYear(d.getFullYear() + 1)
+      d.setDate(d.getDate() + 30)
       return d
     })(),
   }
 
-  const [filters, setFilters] = useState({
-    personProfile: '',
+  const [filters, setFilters] = useState<{
+    personProfile: string
+    projectStatus: string
+    dateRange: { from: Date; to: Date | undefined }
+    overallocatedOnly: boolean
+    personType: string
+    search: string
+  }>({
+    personProfile: 'all',
     projectStatus: '',
-    dateRange: defaultDateRange,
+    dateRange: {
+      from: defaultDateRange.from,
+      to: defaultDateRange.to,
+    },
     overallocatedOnly: false,
+    personType: 'all',
+    search: '',
   })
 
   const { people, loading: loadingPeople } = usePeople()
@@ -73,10 +89,15 @@ export default function AssignmentsPage() {
 
   const clearFilters = () => {
     setFilters({
-      personProfile: '',
+      personProfile: 'all',
       projectStatus: '',
-      dateRange: defaultDateRange,
+      dateRange: {
+        from: defaultDateRange.from,
+        to: defaultDateRange.to,
+      },
       overallocatedOnly: false,
+      personType: 'all',
+      search: '',
     })
   }
 
@@ -97,45 +118,75 @@ export default function AssignmentsPage() {
 
   const hasActiveFilters = filters.personProfile || filters.projectStatus || filters.overallocatedOnly
 
-  const filteredAssignments = useMemo(() => {
-    return assignments.filter(assignment => {
-      // Find the person and project for this assignment
-      const person = people.find(p => p.id === assignment.person_id)
-      const project = projects.find(p => p.id === assignment.project_id)
-
-      // Filter by person profile
-      if (filters.personProfile && person?.profile !== filters.personProfile) return false
-
-      // Filter by project status
-      if (filters.projectStatus && project?.status !== filters.projectStatus) return false
-
-      // Date range filter (only for list view)
-      if (viewMode === 'list') {
-        const start = parseDateFromString(assignment.start_date)
-        const end = parseDateFromString(assignment.end_date)
-        if (end < filters.dateRange.from || start > filters.dateRange.to) return false
-      }
-
-      // Overallocated filter - use FTE logic
-      if (filters.overallocatedOnly) {
-        // Get all current assignments for this person
-        const currentDate = new Date()
-        const personCurrentAssignments = assignments.filter(a => {
-          const start = parseDateFromString(a.start_date)
-          const end = parseDateFromString(a.end_date)
-          return a.person_id === assignment.person_id && start <= currentDate && end >= currentDate
-        })
-        
-        // Calculate total FTE for this person
-        const totalFte = personCurrentAssignments.reduce((sum, a) => sum + a.allocation, 0)
-        
-        // Only show assignments for people who are overallocated
-        if (!isOverallocated(totalFte)) return false
-      }
-
+  const filteredPeople = useMemo(() => {
+    if (viewMode !== 'timeline') return people
+    let result = people.filter(person => {
+      if (filters.personProfile && filters.personProfile !== 'all' && person.profile !== filters.personProfile) return false
+      if (filters.personType && filters.personType !== 'all' && person.type !== filters.personType) return false
       return true
     })
-  }, [assignments, filters, viewMode, people, projects])
+    if (filters.overallocatedOnly) {
+      const currentDate = new Date()
+      result = result.filter(person => {
+        // Obtener todas las asignaciones actuales de la persona
+        const personAssignments = assignments.filter(a => {
+          const start = parseDateFromString(a.start_date)
+          const end = parseDateFromString(a.end_date)
+          return a.person_id === person.id && start <= currentDate && end >= currentDate
+        })
+        // Calcular FTE total
+        const totalFte = personAssignments.reduce((sum, a) => sum + a.allocation, 0)
+        return totalFte > 1.0
+      })
+    }
+    return result
+  }, [people, filters, viewMode, assignments])
+
+  const filteredAssignments = useMemo(() => {
+    if (viewMode === 'timeline') {
+      const peopleIds = new Set(filteredPeople.map(p => p.id))
+      return assignments.filter(assignment => peopleIds.has(assignment.person_id))
+    }
+    // Modo tabla: aplicar los filtros de perfil, tipo, fechas y sobreasignados
+    return assignments.filter(assignment => {
+      const person = people.find(p => p.id === assignment.person_id)
+      // Filtro por perfil
+      if (filters.personProfile && filters.personProfile !== 'all' && person?.profile !== filters.personProfile) return false
+      // Filtro por tipo
+      if (filters.personType && filters.personType !== 'all' && person?.type !== filters.personType) return false
+      // Filtro por fechas
+      const start = parseDateFromString(assignment.start_date)
+      const end = parseDateFromString(assignment.end_date)
+      if (!filters.dateRange.to || end < filters.dateRange.from || start > filters.dateRange.to) return false
+      // Filtro de sobreasignados
+      if (filters.overallocatedOnly) {
+        // Obtener todas las asignaciones de la persona en el rango
+        const personAssignments = assignments.filter(a => {
+          const aStart = parseDateFromString(a.start_date)
+          const aEnd = parseDateFromString(a.end_date)
+          return a.person_id === assignment.person_id && aEnd >= filters.dateRange.from && (filters.dateRange.to ? aStart <= filters.dateRange.to : true)
+        })
+        // Calcular FTE máximo en cualquier día del rango
+        let isOver = false
+        if (filters.dateRange.to) {
+          for (let d = new Date(filters.dateRange.from); d <= filters.dateRange.to; d.setDate(d.getDate() + 1)) {
+            const fte = personAssignments.reduce((sum, a) => {
+              const aStart = parseDateFromString(a.start_date)
+              const aEnd = parseDateFromString(a.end_date)
+              if (aStart <= d && aEnd >= d) return sum + a.allocation
+              return sum
+            }, 0)
+            if (fte > 1.0) {
+              isOver = true
+              break
+            }
+          }
+        }
+        if (!isOver) return false
+      }
+      return true
+    })
+  }, [assignments, filters, viewMode, people, projects, filteredPeople])
 
   const handleDeleteAssignment = async (id: string) => {
     if (confirm('¿Estás seguro de que querés eliminar esta asignación?')) {
@@ -198,6 +249,7 @@ export default function AssignmentsPage() {
               onFiltersChange={setFilters}
               onClearFilters={clearFilters}
               showDateRange={viewMode === 'list'}
+              mode={viewMode}
             />
             <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {
               if (value) setViewMode(value as 'timeline' | 'list')
@@ -225,10 +277,10 @@ export default function AssignmentsPage() {
       <div className="flex-1 min-h-0 overflow-hidden">
         {viewMode === 'timeline' ? (
           <ResourceTimeline
-            people={people}
+            people={filteredPeople}
             projects={projects}
             assignments={filteredAssignments}
-            filters={filters}
+            filters={filters as any}
             onFiltersChange={setFilters}
             onClearFilters={clearFilters}
             onScrollToTodayRef={setScrollToTodayFunction}
@@ -240,7 +292,7 @@ export default function AssignmentsPage() {
                 people={people}
                 projects={projects}
                 assignments={filteredAssignments}
-                filters={filters}
+                filters={filters as any}
                 onFiltersChange={setFilters}
                 onClearFilters={clearFilters}
                 onDelete={handleDeleteAssignment}

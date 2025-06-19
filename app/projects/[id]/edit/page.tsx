@@ -45,8 +45,6 @@ import type { Project } from '@/types/project'
 import type { Client } from '@/types/client'
 import { PROJECT_STATUS_OPTIONS, PROJECT_STATUS } from '@/constants/projects'
 import { ResourceError } from '@/components/ui/resource-error'
-import { Resource } from '@/types'
-import { RESOURCES } from '@/constants/resources'
 
 const formSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
