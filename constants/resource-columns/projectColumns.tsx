@@ -1,9 +1,8 @@
 import { Badge } from '@/components/ui/badge'
-import { Project } from '@/types/project'
-import { getDuration } from '@/utils/getDuration'
-import { getStatusBadge } from '@/utils/getStatusBadge'
-import { getStatusLabel } from '@/utils/getStatusLabel'
 import type { Project } from '@/types/project'
+import { calculateFTEUtilization, isProjectOverallocated, calculateOverallocationPercentage } from '@/lib/utils/fte-calculations'
+import { getStatusBadge, getStatusLabel } from '@/lib/projects'
+
 import {
   calculateFTEUtilization,
   isProjectOverallocated,
