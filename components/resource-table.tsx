@@ -79,7 +79,7 @@ export function ResourceTable({
               <TableHead>Período</TableHead>
               <TableHead>Persona</TableHead>
               <TableHead>Proyecto</TableHead>
-              <TableHead>Rol</TableHead>
+              <TableHead>Perfil</TableHead>
               <TableHead className="text-center">Asignación</TableHead>
               <TableHead className="text-center">Facturable</TableHead>
               {/* <TableHead>Estado</TableHead> */}
@@ -122,7 +122,7 @@ export function ResourceTable({
                         <div className="text-sm text-muted-foreground">{project?.status || ''}</div>
                       </div>
                     </TableCell>
-                    <TableCell>{a.assigned_role || 'Sin especificar'}</TableCell>
+                    <TableCell>{person?.profile || 'Sin especificar'}</TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
                         <Badge

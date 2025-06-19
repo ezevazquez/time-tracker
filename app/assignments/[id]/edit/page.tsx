@@ -51,7 +51,6 @@ const formSchema = z
     allocation: z.number().refine(val => [25, 50, 75, 100].includes(val), {
       message: 'La asignación debe ser 25%, 50%, 75% o 100%',
     }),
-    assigned_role: z.string().optional(),
     is_billable: z.boolean(),
   })
   .refine(data => data.end_date >= data.start_date, {
@@ -104,7 +103,6 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
           start_date: parseDateFromString(foundAssignment.start_date),
           end_date: parseDateFromString(foundAssignment.end_date),
           allocation: fromDbAllocation(foundAssignment.allocation),
-          assigned_role: foundAssignment.assigned_role || '',
           is_billable: foundAssignment.is_billable ?? true,
         })
       } catch (err) {
@@ -171,7 +169,6 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
         start_date: toISODateString(values.start_date),
         end_date: toISODateString(values.end_date),
         allocation: toDbAllocation(values.allocation),
-        assigned_role: values.assigned_role || null,
         is_billable: values.is_billable,
         updated_at: new Date().toISOString(),
       }
@@ -198,7 +195,6 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
         start_date: toISODateString(pendingFormData.start_date),
         end_date: toISODateString(pendingFormData.end_date),
         allocation: toDbAllocation(pendingFormData.allocation),
-        assigned_role: pendingFormData.assigned_role || null,
         is_billable: pendingFormData.is_billable,
       }
 
@@ -433,20 +429,6 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
 
                 {form.formState.errors.allocation && (
                   <p className="text-sm text-red-500">{form.formState.errors.allocation.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="assigned_role">Rol Asignado</Label>
-                <Input
-                  id="assigned_role"
-                  placeholder="ej. Desarrollador Frontend, Project Manager"
-                  {...form.register('assigned_role')}
-                />
-                {form.formState.errors.assigned_role && (
-                  <p className="text-sm text-red-500">
-                    {form.formState.errors.assigned_role.message}
-                  </p>
                 )}
               </div>
 

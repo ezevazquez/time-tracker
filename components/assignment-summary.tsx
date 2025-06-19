@@ -16,7 +16,6 @@ interface AssignmentSummaryProps {
   startDate: Date
   endDate: Date
   allocation: number // Percentage (0-100)
-  assignedRole?: string
   isOverallocated?: boolean
   maxAllocation?: number // FTE (0.0-1.0)
 }
@@ -27,7 +26,6 @@ export function AssignmentSummary({
   startDate,
   endDate,
   allocation,
-  assignedRole,
   isOverallocated = false,
   maxAllocation,
 }: AssignmentSummaryProps) {
@@ -123,16 +121,6 @@ export function AssignmentSummary({
             </span>
           </div>
         </div>
-
-        {assignedRole && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">Rol Asignado</span>
-            </div>
-            <p className="text-sm text-muted-foreground">{assignedRole}</p>
-          </div>
-        )}
 
         {isOverallocated && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-md">
