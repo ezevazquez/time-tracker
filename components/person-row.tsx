@@ -69,8 +69,33 @@ export function PersonRow({
     return dateA.getTime() - dateB.getTime()
   })
 
-  // Calculate row layout with consistent bar heights
-  const layout = calculateRowLayout(sortedAssignments.length, baseRowHeight)
+  // Calcular el rango de días actualmente visible en el viewport horizontal
+  const VISIBILITY_MARGIN = 150; // píxeles
+  let firstVisibleDayIdx = 0
+  let lastVisibleDayIdx = days.length - 1
+  if (typeof window !== 'undefined') {
+    // El ancho visible del timeline (sin la sidebar)
+    const timelineViewportWidth = document.querySelector('.resource-timeline-viewport')?.clientWidth || 800
+    const viewportLeft = scrollLeft
+    const viewportRight = scrollLeft + timelineViewportWidth
+    // Calcular el índice del primer y último día visible
+    firstVisibleDayIdx = Math.max(0, Math.floor((viewportLeft - sidebarWidth - VISIBILITY_MARGIN) / dayWidth))
+    lastVisibleDayIdx = Math.min(days.length - 1, Math.ceil((viewportRight - sidebarWidth + VISIBILITY_MARGIN) / dayWidth))
+  }
+  const visibleDays = days.slice(firstVisibleDayIdx, lastVisibleDayIdx + 1)
+
+  // Calcular el máximo de asignaciones activas en cualquier día visible
+  const maxAssignmentsInADay = visibleDays.reduce((max, day) => {
+    const activeCount = sortedAssignments.filter(a => {
+      const start = parseDateFromString(a.start_date)
+      const end = parseDateFromString(a.end_date)
+      return start <= day && end >= day
+    }).length
+    return Math.max(max, activeCount)
+  }, 0)
+
+  // Calculate row layout with consistent bar heights, usando el máximo de asignaciones activas en un día visible
+  const layout = calculateRowLayout(maxAssignmentsInADay, baseRowHeight)
 
   return (
     <div
