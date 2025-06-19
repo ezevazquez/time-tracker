@@ -9,7 +9,8 @@ import { es } from 'date-fns/locale'
 import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
-import { fteToPercentage, parseDateFromString } from '@/lib/assignments'
+import { parseDateFromString } from '@/lib/assignments'
+import { fteToPercentage } from '@/lib/utils/fte-calculations'
 import { getDisplayName, getInitials } from '@/lib/people'
 
 interface RecentActivityProps {
