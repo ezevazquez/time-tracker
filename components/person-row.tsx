@@ -107,7 +107,7 @@ export function PersonRow({
     >
       {/* Sidebar */}
       <div
-        className="sticky left-0 z-30 bg-white border-r border-gray-200 flex items-center"
+        className="sticky left-0 z-20 bg-white border-r border-gray-200 flex items-center"
         style={{ width: `${sidebarWidth}px` }}
       >
         <div className="p-4 flex items-center space-x-3 w-full">
@@ -180,7 +180,7 @@ export function PersonRow({
         {/* Today marker */}
         {days.some((day) => isSameDay(day, today)) && (
           <div
-            className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-30 pointer-events-none opacity-70"
+            className="absolute top-0 bottom-0 w-0.5 bg-blue-500 z-10 pointer-events-none opacity-70"
             style={{
               left: `${differenceInDays(today, startOfMonth(visibleDateRange.start)) * dayWidth + dayWidth / 2}px`,
             }}
