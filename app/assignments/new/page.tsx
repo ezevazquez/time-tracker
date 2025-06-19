@@ -37,9 +37,11 @@ import { useAssignments } from '@/hooks/use-assignments'
 import { useAssignmentValidation } from '@/hooks/use-assignment-validation'
 
 import { assignmentsService } from '@/lib/services/assignments.service'
-import { toDbAllocation, percentageToFte, toISODateString, debugDate, normalizeDate } from '@/lib/assignments'
+import { toISODateString, debugDate, normalizeDate } from '@/lib/assignments'
+import { toDbAllocation } from '@/lib/utils/fte-calculations'
 import { ASSIGNMENT_ALLOCATION_VALUES as ALLOCATION_VALUES } from '@/constants/assignments'
 import { AssignmentSummary } from '@/components/assignment-summary'
+import { percentageToFte, fteToPercentage } from '@/lib/utils/fte-calculations'
 
 import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'

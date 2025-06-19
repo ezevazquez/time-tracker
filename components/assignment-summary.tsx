@@ -7,7 +7,8 @@ import { es } from 'date-fns/locale'
 import { Calendar, User, Briefcase, Percent, Clock } from 'lucide-react'
 import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
-import { fteToPercentage, getUtilizationStatus } from '@/lib/assignments'
+import { fteToPercentage } from '@/lib/utils/fte-calculations'
+import { getUtilizationStatus } from '@/lib/utils/fte-calculations'
 
 interface AssignmentSummaryProps {
   person: Person

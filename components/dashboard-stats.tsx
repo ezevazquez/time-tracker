@@ -14,7 +14,7 @@ interface DashboardStatsProps {
 
 export function DashboardStats({ people, projects, assignments }: DashboardStatsProps) {
   // Calculate active counts
-  const activePeople = people.filter(p => p.status === 'Activo').length
+  const activePeople = people.filter(p => p.status === 'Active').length
   const activeProjects = projects.filter(p => p.status === 'In Progress').length
   const activeAssignments = assignments.filter(a => {
     const endDate = new Date(a.end_date)

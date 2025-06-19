@@ -9,7 +9,8 @@ import type { Person } from '@/types/people'
 import type { AssignmentWithRelations } from '@/types/assignment'
 import { PERSON_STATUS } from '@/constants/people'
 import { getDisplayName, getInitials } from '@/lib/people'
-import { isOverallocated, fteToPercentage, getUtilizationStatus, parseDateFromString } from '@/lib/assignments'
+import { parseDateFromString } from '@/lib/assignments'
+import { isOverallocated, fteToPercentage, getUtilizationStatus } from '@/lib/utils/fte-calculations'
 
 interface ResourceUtilizationProps {
   people: Person[]

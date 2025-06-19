@@ -28,9 +28,9 @@ export function getFullName(person: Person): string {
  * Gets the initials from first_name and last_name
  */
 export function getInitials(person: Person): string {
-  const firstInitial = person.first_name.charAt(0).toUpperCase()
-  const lastInitial = person.last_name.charAt(0).toUpperCase()
-  return `${firstInitial}${lastInitial}`.slice(0, 2)
+  const firstName = person.first_name?.charAt(0) || ""
+  const lastName = person.last_name?.charAt(0) || ""
+  return (firstName + lastName).toUpperCase()
 }
 
 /**
@@ -38,7 +38,7 @@ export function getInitials(person: Person): string {
  * This is the main function to use when displaying a person's name
  */
 export function getDisplayName(person: Person): string {
-  return getFullName(person)
+  return `${person.first_name ?? ''} ${person.last_name ?? ''}`.trim()
 }
 
 export function getPersonStatusLabel(status: string): string {
@@ -54,17 +54,25 @@ export function getPersonStatusLabel(status: string): string {
   }
 }
 
-export function getPersonStatusBadge(
-  status: string
-): 'success' | 'warning' | 'destructive' | 'default' {
-  switch (status) {
-    case PERSON_STATUS.ACTIVE:
-      return 'success'
-    case PERSON_STATUS.PAUSED:
-      return 'warning'
-    case PERSON_STATUS.TERMINATED:
-      return 'destructive'
-    default:
-      return 'default'
+/**
+ * Get CSS classes for person status badge
+ */
+export function getPersonStatusBadge(status: string) {
+  const variants = {
+    Active: 'bg-green-100 text-green-800',
+    Paused: 'bg-yellow-100 text-yellow-800',
+    Terminated: 'bg-red-100 text-red-800',
   }
+  return variants[status as keyof typeof variants] || 'bg-gray-100 text-gray-800'
+}
+
+/**
+ * Get CSS classes for person type badge
+ */
+export function getPersonTypeBadge(type: string) {
+  const variants = {
+    Internal: 'bg-blue-100 text-blue-800',
+    External: 'bg-purple-100 text-purple-800',
+  }
+  return variants[type as keyof typeof variants] || 'bg-gray-100 text-gray-800'
 }

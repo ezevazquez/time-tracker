@@ -7,7 +7,8 @@ import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
 import type { Client } from '@/types/client'
 import { ACTIVE_PERSON_STATUSES } from '@/constants/people'
-import { isOverallocated, fteToPercentage, parseDateFromString } from '@/lib/assignments'
+import { parseDateFromString } from '@/lib/assignments'
+import { isOverallocated, fteToPercentage } from '@/lib/utils/fte-calculations'
 
 interface StatsOverviewProps {
   people: Person[]

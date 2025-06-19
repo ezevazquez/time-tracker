@@ -34,8 +34,6 @@ import { useClients } from '@/hooks/use-clients'
 import { clientsService } from '@/lib/services/clients.service'
 import type { Client } from '@/types/client'
 import { ResourceError } from '@/components/ui/resource-error'
-import { RESOURCES } from '@/constants/resources'
-import { Resource } from '@/types'
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),
@@ -139,7 +137,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   }
 
   if (error) {
-    return <ResourceError error={error} resource={RESOURCES.clients as Resource} />
+    return <ResourceError error={error} resourceName="Cliente" resourcePath="/clients" />
   }
 
   return (

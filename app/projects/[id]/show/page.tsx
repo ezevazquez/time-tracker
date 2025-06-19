@@ -13,32 +13,27 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { ResourceLoading } from '@/components/ui/resource-loading'
+import { ResourceError } from '@/components/ui/resource-error'
+import { ResourceNotFound } from '@/components/resource-not-found'
+import { AssignmentSummary } from '@/components/assignment-summary'
 import { useProjects } from '@/hooks/use-projects'
 import { useAssignments } from '@/hooks/use-assignments'
 import { projectsService } from '@/lib/services/projects.service'
-import type { ProjectWithClient } from '@/types/project'
 import { PROJECT_STATUS_OPTIONS } from '@/constants/projects'
-import { ResourceLoading } from '@/components/ui/resource-loading'
-import { ResourceError } from '@/components/ui/resource-error'
-import { RESOURCES } from '@/constants/resources'
-import { Resource } from '@/types'
-import { ResourceNotFound } from '@/components/resource-not-found'
-import { TableResource } from '@/components/ui/table-resource'
-import { activityLogsColumns } from '@/constants/resource-columns/activityLogsColumns'
-import { supabase } from '@/lib/supabase/client'
-import { calculateFTEUtilization, isProjectOverallocated } from '@/lib/utils/fte-calculations'
 
-const getProjectStatusLabel = (status: string) =>
-  PROJECT_STATUS_OPTIONS.find(opt => opt.value === status)?.label || status
+import { 
+  calculateProjectAssignedFTE, 
+  calculateFTEUtilization, 
+  isProjectOverallocated 
+} from '@/lib/utils/fte-calculations'
+import { getStatusBadge, getStatusLabel } from '@/lib/projects'
+import type { Project } from '@/types/project'
+import type { Client } from '@/types/client'
 
-const getProjectStatusBadgeClass = (status: string) => {
-  const variants: Record<string, string> = {
-    'In Progress': 'bg-blue-100 text-blue-800 border-blue-200',
-    Finished: 'bg-green-100 text-green-800 border-green-200',
-    'On Hold': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    'Not Started': 'bg-gray-100 text-gray-800 border-gray-200',
-  }
-  return variants[status] || 'bg-gray-100 text-gray-800 border-gray-200'
+
+interface ProjectWithClient extends Project {
+  client?: Client
 }
 
 export default function ProjectShowPage({ params }: { params: Promise<{ id: string }> }) {
@@ -118,11 +113,11 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
   }
 
   if (error) {
-    return <ResourceError error={error} resource={RESOURCES.projects as Resource} />
+    return <ResourceError error={error} resourceName="Proyecto" resourcePath="/projects" />
   }
 
   if (!project) {
-    return <ResourceNotFound resource={RESOURCES.projects as Resource} />
+    return <ResourceNotFound resourceName="Proyecto" resourcePath="/projects" />
   }
 
   return (
@@ -184,8 +179,8 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
 
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium text-sm text-muted-foreground">Estado:</h3>
-                  <Badge className={getProjectStatusBadgeClass(project.status)}>
-                    {getProjectStatusLabel(project.status)}
+                  <Badge className={getStatusBadge(project.status)}>
+                    {getStatusLabel(project.status)}
                   </Badge>
                 </div>
               </CardContent>
@@ -314,11 +309,11 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {project.clients ? (
+                {project.client ? (
                   <div className="space-y-3">
                     <div>
                       <h3 className="font-medium text-sm text-muted-foreground mb-1">Nombre</h3>
-                      <p className="font-semibold">{project.clients.name}</p>
+                      <p className="font-semibold">{project.client.name}</p>
                     </div>
                   </div>
                 ) : (
@@ -357,8 +352,8 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
 
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Estado actual</span>
-                  <Badge className={getProjectStatusBadgeClass(project.status)} variant="outline">
-                    {getProjectStatusLabel(project.status)}
+                  <Badge className={getStatusBadge(project.status)} variant="outline">
+                    {getStatusLabel(project.status)}
                   </Badge>
                 </div>
 
