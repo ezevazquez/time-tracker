@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Edit, Trash2, AlertTriangle } from 'lucide-react'
+import { Edit, Trash2, AlertTriangle, ArrowDown, ArrowUp } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -20,6 +20,7 @@ import type { AssignmentWithRelations } from '@/types/assignment'
 import { parseDateFromString } from '@/lib/assignments'
 import { fteToPercentage, isOverallocated } from '@/lib/utils/fte-calculations'
 import { getDisplayName } from '@/lib/people'
+import React, { useState } from 'react'
 
 interface ResourceTableProps {
   people: Person[]
@@ -45,6 +46,10 @@ export function ResourceTable({
   onClearFilters,
   onDelete,
 }: ResourceTableProps) {
+  // Sorting state
+  const [sortField, setSortField] = useState<'person' | 'profile' | 'project' | 'start' | 'end'>('start')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+
   // Calcular personas sobreasignadas en el rango
   const overallocatedPersonIds = (() => {
     const from = filters.dateRange?.from
@@ -69,6 +74,51 @@ export function ResourceTable({
     }).map(p => p.id)
   })()
 
+  // Ordenar assignments por campo seleccionado
+  const sortedAssignments = [...assignments].sort((a, b) => {
+    let valA, valB
+    if (sortField === 'person') {
+      const personA = people.find(p => p.id === a.person_id)
+      const personB = people.find(p => p.id === b.person_id)
+      valA = personA ? `${personA.first_name} ${personA.last_name}`.toLowerCase() : ''
+      valB = personB ? `${personB.first_name} ${personB.last_name}`.toLowerCase() : ''
+    } else if (sortField === 'profile') {
+      const personA = people.find(p => p.id === a.person_id)
+      const personB = people.find(p => p.id === b.person_id)
+      valA = personA?.profile?.toLowerCase() || ''
+      valB = personB?.profile?.toLowerCase() || ''
+    } else if (sortField === 'project') {
+      const projectA = projects.find(p => p.id === a.project_id)
+      const projectB = projects.find(p => p.id === b.project_id)
+      valA = projectA?.name?.toLowerCase() || ''
+      valB = projectB?.name?.toLowerCase() || ''
+    } else if (sortField === 'start') {
+      valA = parseDateFromString(a.start_date).getTime()
+      valB = parseDateFromString(b.start_date).getTime()
+    } else if (sortField === 'end') {
+      valA = parseDateFromString(a.end_date).getTime()
+      valB = parseDateFromString(b.end_date).getTime()
+    }
+    if (typeof valA === 'string' && typeof valB === 'string') {
+      return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+    } else {
+      // fallback a 0 si es undefined
+      const numA = typeof valA === 'number' ? valA : 0
+      const numB = typeof valB === 'number' ? valB : 0
+      return sortOrder === 'asc' ? numA - numB : numB - numA
+    }
+  })
+
+  // Handler para cambiar sorting
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortOrder(order => order === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder('asc')
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Table */}
@@ -76,10 +126,51 @@ export function ResourceTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Período</TableHead>
-              <TableHead>Persona</TableHead>
-              <TableHead>Proyecto</TableHead>
-              <TableHead>Perfil</TableHead>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() => handleSort('person')}
+              >
+                Persona
+                <span className="inline-block align-middle ml-1">
+                  {sortField === 'person' && (sortOrder === 'asc' ? <ArrowDown className="inline h-3 w-3" /> : <ArrowUp className="inline h-3 w-3" />)}
+                </span>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() => handleSort('profile')}
+              >
+                Perfil
+                <span className="inline-block align-middle ml-1">
+                  {sortField === 'profile' && (sortOrder === 'asc' ? <ArrowDown className="inline h-3 w-3" /> : <ArrowUp className="inline h-3 w-3" />)}
+                </span>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() => handleSort('project')}
+              >
+                Proyecto
+                <span className="inline-block align-middle ml-1">
+                  {sortField === 'project' && (sortOrder === 'asc' ? <ArrowDown className="inline h-3 w-3" /> : <ArrowUp className="inline h-3 w-3" />)}
+                </span>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() => handleSort('start')}
+              >
+                Inicio
+                <span className="inline-block align-middle ml-1">
+                  {sortField === 'start' && (sortOrder === 'asc' ? <ArrowDown className="inline h-3 w-3" /> : <ArrowUp className="inline h-3 w-3" />)}
+                </span>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() => handleSort('end')}
+              >
+                Fin
+                <span className="inline-block align-middle ml-1">
+                  {sortField === 'end' && (sortOrder === 'asc' ? <ArrowDown className="inline h-3 w-3" /> : <ArrowUp className="inline h-3 w-3" />)}
+                </span>
+              </TableHead>
               <TableHead className="text-center">Asignación</TableHead>
               <TableHead className="text-center">Facturable</TableHead>
               {/* <TableHead>Estado</TableHead> */}
@@ -87,42 +178,35 @@ export function ResourceTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {assignments.length === 0 ? (
+            {sortedAssignments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   No se encontraron asignaciones
                 </TableCell>
               </TableRow>
             ) : (
-              assignments.map(a => {
+              sortedAssignments.map(a => {
                 const person = people.find(p => p.id === a.person_id)
                 const project = projects.find(p => p.id === a.project_id)
                 const isPersonOverallocated = overallocatedPersonIds.includes(a.person_id)
                 return (
                   <TableRow key={a.id} className="hover:bg-muted/50">
                     <TableCell>
-                      <div className="text-sm">
-                        <div className="font-medium">
-                          {format(parseDateFromString(a.start_date), 'dd MMM yyyy', { locale: es })}
-                        </div>
-                        <div className="text-muted-foreground">
-                          {format(parseDateFromString(a.end_date), 'dd MMM yyyy', { locale: es })}
-                        </div>
-                      </div>
+                      <div className="font-medium">{person ? getDisplayName(person) : 'N/A'}</div>
                     </TableCell>
                     <TableCell>
-                      <div>
-                        <div className="font-medium">{person ? getDisplayName(person) : 'N/A'}</div>
-                        <div className="text-sm text-muted-foreground">{person?.profile || ''}</div>
-                      </div>
+                      <div className="text-sm text-muted-foreground">{person?.profile || 'Sin especificar'}</div>
                     </TableCell>
                     <TableCell>
-                      <div>
-                        <div className="font-medium">{project?.name || 'N/A'}</div>
-                        <div className="text-sm text-muted-foreground">{project?.status || ''}</div>
-                      </div>
+                      <div className="font-medium">{project?.name || 'N/A'}</div>
+                      <div className="text-sm text-muted-foreground">{project?.status || ''}</div>
                     </TableCell>
-                    <TableCell>{person?.profile || 'Sin especificar'}</TableCell>
+                    <TableCell>
+                      <div className="text-sm font-medium">{format(parseDateFromString(a.start_date), 'dd MMM yyyy', { locale: es })}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm text-muted-foreground">{format(parseDateFromString(a.end_date), 'dd MMM yyyy', { locale: es })}</div>
+                    </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">
                         <Badge
