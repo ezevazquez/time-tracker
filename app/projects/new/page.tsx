@@ -70,12 +70,15 @@ export default function NewProjectPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!formData.name.trim()) {
-      setWarnings(['El nombre del proyecto es obligatorio'])
-      return
-    }
-
+    const newWarnings: string[] = []
+    if (!formData.name.trim()) newWarnings.push('El nombre del proyecto es obligatorio')
+    if (!formData.fte || formData.fte <= 0) newWarnings.push('El FTE total es obligatorio y debe ser mayor a 0')
+    if (!formData.start_date) newWarnings.push('La fecha de inicio es obligatoria')
+    if (!formData.end_date) newWarnings.push('La fecha de fin es obligatoria')
+    if (formData.start_date && formData.end_date && formData.start_date > formData.end_date) newWarnings.push('La fecha de inicio debe ser anterior o igual a la fecha de fin')
+    if (!formData.client_id || formData.client_id === 'no-client') newWarnings.push('El cliente es obligatorio')
+    setWarnings(newWarnings)
+    if (newWarnings.length > 0) return
     try {
       setIsSubmitting(true)
       await createProject({
@@ -87,9 +90,7 @@ export default function NewProjectPage() {
         client_id: formData.client_id || null,
         fte: formData.fte,
       })
-
       toast.success('El proyecto se ha creado exitosamente.')
-
       router.push('/projects')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al crear el proyecto')
@@ -100,15 +101,12 @@ export default function NewProjectPage() {
 
   const checkForWarnings = () => {
     const newWarnings: string[] = []
-
-    if (!formData.name.trim()) {
-      newWarnings.push('El nombre del proyecto es obligatorio')
-    }
-
-    if (formData.start_date && formData.end_date && formData.start_date > formData.end_date) {
-      newWarnings.push('La fecha de inicio debe ser anterior a la fecha de fin')
-    }
-
+    if (!formData.name.trim()) newWarnings.push('El nombre del proyecto es obligatorio')
+    if (!formData.fte || formData.fte <= 0) newWarnings.push('El FTE total es obligatorio y debe ser mayor a 0')
+    if (!formData.start_date) newWarnings.push('La fecha de inicio es obligatoria')
+    if (!formData.end_date) newWarnings.push('La fecha de fin es obligatoria')
+    if (formData.start_date && formData.end_date && formData.start_date > formData.end_date) newWarnings.push('La fecha de inicio debe ser anterior o igual a la fecha de fin')
+    if (!formData.client_id || formData.client_id === 'no-client') newWarnings.push('El cliente es obligatorio')
     setWarnings(newWarnings)
   }
 
@@ -178,7 +176,7 @@ export default function NewProjectPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="client">Cliente</Label>
+                  <Label htmlFor="client">Cliente *</Label>
                   <Select
                     value={formData.client_id || ''}
                     onValueChange={value => setFormData({ ...formData, client_id: value || null })}
@@ -187,7 +185,6 @@ export default function NewProjectPage() {
                       <SelectValue placeholder="Seleccionar cliente" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="no-client">Sin cliente</SelectItem>
                       {clients.map(client => (
                         <SelectItem key={client.id} value={client.id}>
                           {client.name}
@@ -219,7 +216,7 @@ export default function NewProjectPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Fecha de Inicio</Label>
+                  <Label>Fecha de Inicio *</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -249,7 +246,7 @@ export default function NewProjectPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Fecha de Fin</Label>
+                  <Label>Fecha de Fin *</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -279,7 +276,7 @@ export default function NewProjectPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="fte">FTE Total</Label>
+                  <Label htmlFor="fte">FTE Total *</Label>
                   <Input
                     id="fte"
                     type="number"
@@ -290,7 +287,7 @@ export default function NewProjectPage() {
                     placeholder="Ej: 2.5"
                   />
                   <p className="text-sm text-muted-foreground">
-                    Número total de FTE requeridos para el proyecto (opcional)
+                    Número total de FTE requeridos para el proyecto
                   </p>
                 </div>
               </div>
@@ -345,7 +342,7 @@ export default function NewProjectPage() {
                 <Button
                   type="submit"
                   className="flex-1"
-                  disabled={!formData.name.trim() || warnings.length > 0 || isSubmitting}
+                  disabled={!formData.name.trim() || !formData.fte || formData.fte <= 0 || !formData.start_date || !formData.end_date || !formData.client_id || formData.client_id === 'no-client' || warnings.length > 0 || isSubmitting}
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {isSubmitting ? 'Creando...' : 'Crear Proyecto'}

@@ -59,7 +59,6 @@ export default function NewAssignmentPage() {
     start_date: undefined as Date | undefined,
     end_date: undefined as Date | undefined,
     allocation: 100, // Default to 100%
-    assigned_role: '',
     is_billable: true, // Default to true
   })
 
@@ -105,7 +104,6 @@ export default function NewAssignmentPage() {
         start_date: toISODateString(formData.start_date!),
         end_date: toISODateString(formData.end_date!),
         allocation: percentageToFte(formData.allocation),
-        assigned_role: formData.assigned_role,
         is_billable: formData.is_billable
       }
 
@@ -129,7 +127,6 @@ export default function NewAssignmentPage() {
         start_date: toISODateString(pendingFormData.start_date),
         end_date: toISODateString(pendingFormData.end_date),
         allocation: percentageToFte(pendingFormData.allocation),
-        assigned_role: pendingFormData.assigned_role,
         is_billable: pendingFormData.is_billable
       }
 
@@ -377,16 +374,6 @@ export default function NewAssignmentPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="assigned_role">Rol Asignado</Label>
-                <Input
-                  id="assigned_role"
-                  value={formData.assigned_role}
-                  onChange={e => setFormData({ ...formData, assigned_role: e.target.value })}
-                  placeholder="Ej: Frontend Developer"
-                />
-              </div>
-
-              <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
@@ -410,7 +397,6 @@ export default function NewAssignmentPage() {
                   startDate={formData.start_date}
                   endDate={formData.end_date}
                   allocation={formData.allocation}
-                  assignedRole={formData.assigned_role}
                 />
               )}
 

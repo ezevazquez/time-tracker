@@ -88,7 +88,6 @@ export function AssignmentBar({
               {format(dimensions.startDate, "dd MMM")} - {format(dimensions.endDate, "dd MMM yyyy")}
             </p>
             <p className="text-sm">{fteToPercentage(assignment.allocation)}% asignación</p>
-            {assignment.assigned_role && <p className="text-sm">Rol: {assignment.assigned_role}</p>}
             <p className="text-sm">Facturable: {assignment.is_billable ? "Sí" : "No"}</p>
             {project.description && <p className="text-xs opacity-75">{project.description}</p>}
           </div>

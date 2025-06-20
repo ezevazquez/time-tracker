@@ -276,9 +276,6 @@ export function ReportModal() {
                           <div className={`font-medium ${r.is_bench ? 'text-gray-600 italic' : 'text-blue-600'}`}>
                             {r.is_bench ? 'Bench' : r.project_name}
                           </div>
-                          {!r.is_bench && r.assigned_role && (
-                            <div className="text-xs text-gray-500">{r.assigned_role}</div>
-                          )}
                         </TableCell>
                         <TableCell className="text-sm">
                           <div className="text-sm text-gray-600">

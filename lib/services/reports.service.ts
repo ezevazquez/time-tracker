@@ -13,7 +13,6 @@ interface FTEReportData {
   allocation_percentage: number
   start_date: string
   end_date: string
-  assigned_role?: string
   is_bench: boolean
   is_billable: boolean
 }
@@ -57,7 +56,6 @@ export async function fetchOcupationReport(startDate: string, endDate: string): 
           allocation_percentage: 100,
           start_date: startDate,
           end_date: endDate,
-          assigned_role: 'Sin asignación',
           is_bench: true,
           is_billable: false
         })
@@ -78,7 +76,6 @@ export async function fetchOcupationReport(startDate: string, endDate: string): 
             allocation_percentage: Math.round(assignment.allocation * 100),
             start_date: assignment.start_date,
             end_date: assignment.end_date,
-            assigned_role: assignment.assigned_role || '',
             is_bench: false,
             is_billable: assignment.is_billable !== false
           })
@@ -101,7 +98,6 @@ export async function fetchOcupationReport(startDate: string, endDate: string): 
             allocation_percentage: Math.round(benchAllocation * 100),
             start_date: startDate,
             end_date: endDate,
-            assigned_role: 'Sin asignación',
             is_bench: true,
             is_billable: false
           })

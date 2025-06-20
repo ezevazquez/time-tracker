@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/lib/supabase/client'
 
 import { ArrowLeft, Calendar, User, Building2, Clock, Edit, Trash2 } from 'lucide-react'
 
@@ -30,6 +31,8 @@ import {
 import { getStatusBadge, getStatusLabel } from '@/lib/projects'
 import type { Project } from '@/types/project'
 import type { Client } from '@/types/client'
+import { TableResource } from '@/components/ui/table-resource'
+import { activityLogsColumns } from '@/constants/resource-columns/activityLogsColumns'
 
 
 interface ProjectWithClient extends Project {

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Plus, List, CalendarDays } from 'lucide-react'
+import { Plus, List, CalendarDays, Search } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
@@ -11,6 +11,7 @@ import { ResourceTimeline } from '@/components/resource-timeline'
 import { ResourceTable } from '@/components/resource-table'
 
 import { FiltersPopover } from '@/components/filters-popover'
+import { Input } from '@/components/ui/input'
 
 import { usePeople } from '@/hooks/use-people'
 import { useProjects } from '@/hooks/use-projects'
@@ -119,26 +120,36 @@ export default function AssignmentsPage() {
 
   const hasActiveFilters = filters.personProfile || filters.projectStatus || filters.overallocatedOnly
 
+  // Filtrado por búsqueda
+  const searchLower = filters.search?.toLowerCase() || ''
   const filteredPeople = useMemo(() => {
-    if (viewMode !== 'timeline') return people
-    let result = people.filter(person => {
-      if (filters.personProfile && filters.personProfile !== 'all' && person.profile !== filters.personProfile) return false
-      if (filters.personType && filters.personType !== 'all' && person.type !== filters.personType) return false
-      return true
-    })
+    let result = [...people]
+    if (searchLower) {
+      result = result.filter(person => {
+        const fullName = `${person.first_name} ${person.last_name}`.toLowerCase()
+        const profile = person.profile?.toLowerCase() || ''
+        return (
+          fullName.includes(searchLower) ||
+          profile.includes(searchLower)
+        )
+      })
+    }
+    if (filters.personProfile && filters.personProfile !== 'all') {
+      result = result.filter(person => person.profile === filters.personProfile)
+    }
+    if (filters.personType && filters.personType !== 'all') {
+      result = result.filter(person => person.type === filters.personType)
+    }
     if (filters.overallocatedOnly) {
-      // Usar el rango de fechas seleccionado
       const from = filters.dateRange?.from
       const to = filters.dateRange?.to
       if (from && to) {
         result = result.filter(person => {
-          // Obtener todas las asignaciones de la persona en el rango
           const personAssignments = assignments.filter(a => {
             const start = parseDateFromString(a.start_date)
             const end = parseDateFromString(a.end_date)
             return a.person_id === person.id && end >= from && start <= to
           })
-          // Revisar cada día del rango si supera 100%
           let isOver = false
           for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
             const fte = personAssignments.reduce((sum, a) => {
@@ -157,15 +168,30 @@ export default function AssignmentsPage() {
       }
     }
     return result
-  }, [people, filters, viewMode, assignments])
+  }, [people, filters, viewMode, assignments, searchLower])
 
   const filteredAssignments = useMemo(() => {
+    let result = assignments
+    if (searchLower) {
+      result = result.filter(a => {
+        const person = people.find(p => p.id === a.person_id)
+        const project = projects.find(p => p.id === a.project_id)
+        const personName = person ? `${person.first_name} ${person.last_name}`.toLowerCase() : ''
+        const projectName = project?.name?.toLowerCase() || ''
+        const profile = person?.profile?.toLowerCase() || ''
+        return (
+          personName.includes(searchLower) ||
+          projectName.includes(searchLower) ||
+          profile.includes(searchLower)
+        )
+      })
+    }
     if (viewMode === 'timeline') {
       const peopleIds = new Set(filteredPeople.map(p => p.id))
-      return assignments.filter(assignment => peopleIds.has(assignment.person_id))
+      result = result.filter(assignment => peopleIds.has(assignment.person_id))
     }
     // Modo tabla: aplicar los filtros de perfil, tipo, fechas y sobreasignados
-    return assignments.filter(assignment => {
+    result = result.filter(assignment => {
       const person = people.find(p => p.id === assignment.person_id)
       // Filtro por perfil
       if (filters.personProfile && filters.personProfile !== 'all' && person?.profile !== filters.personProfile) return false
@@ -203,7 +229,8 @@ export default function AssignmentsPage() {
       }
       return true
     })
-  }, [assignments, filters, viewMode, people, projects, filteredPeople])
+    return result
+  }, [assignments, filters, viewMode, people, projects, filteredPeople, searchLower])
 
   const handleDeleteAssignment = async (id: string) => {
     if (confirm('¿Estás seguro de que querés eliminar esta asignación?')) {
@@ -259,6 +286,21 @@ export default function AssignmentsPage() {
       <div className="flex-shrink-0 border-b bg-gray-50 py-2">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-end gap-2">
+            {/* Buscador a la izquierda */}
+            <div className="flex-1 flex justify-start">
+              <div className="w-full max-w-xs relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                  <Search className="h-4 w-4" />
+                </span>
+                <Input
+                  type="text"
+                  placeholder="Buscar personas, proyectos, perfiles..."
+                  value={filters.search}
+                  onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
+                  className="bg-white pl-10"
+                />
+              </div>
+            </div>
             <FiltersPopover
               people={people}
               projects={projects}
