@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input'
 import { ASSIGNMENT_ALLOCATION_VALUES } from '@/constants/assignments'
 import { toast } from '@/hooks/use-toast'
 import { useAssignments } from '@/hooks/use-assignments'
+import { DatePickerWithRange } from '@/components/date-range-picker'
 
 interface PersonRowProps {
   person: Person
@@ -72,6 +73,7 @@ export function PersonRow({
     is_billable: boolean
   }>({ project_id: '', allocation: 1, is_billable: true })
   const [hoveredDayIdx, setHoveredDayIdx] = useState<number | null>(null)
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | null>(null)
 
   const handleRequestDelete = (assignment: Assignment) => {
     setAssignmentToDelete(assignment)
@@ -100,6 +102,7 @@ export function PersonRow({
   const handleMouseUp = () => {
     setIsSelecting(false)
     if (selectedRange) {
+      setDateRange({ from: days[selectedRange[0]], to: days[selectedRange[1]] })
       setCreateModalOpen(true)
     }
   }
@@ -172,14 +175,12 @@ export function PersonRow({
   const layout = calculateRowLayout(maxAssignmentsInADay, baseRowHeight)
 
   const handleCreateAssignment = async () => {
-    if (!newAssignment.project_id || !selectedRange || !onCreateAssignment) return
-    const startDate = days[selectedRange[0]]
-    const endDate = days[selectedRange[1]]
+    if (!newAssignment.project_id || !dateRange || !onCreateAssignment) return
     await onCreateAssignment({
       person_id: person.id,
       project_id: newAssignment.project_id,
-      start_date: startDate.toISOString().slice(0, 10),
-      end_date: endDate.toISOString().slice(0, 10),
+      start_date: dateRange.from.toISOString().slice(0, 10),
+      end_date: dateRange.to.toISOString().slice(0, 10),
       allocation: newAssignment.allocation,
       is_billable: newAssignment.is_billable,
     })
@@ -187,6 +188,7 @@ export function PersonRow({
     setCreateModalOpen(false)
     setSelectionStartIdx(null)
     setSelectionEndIdx(null)
+    setDateRange(null)
   }
 
   return (
@@ -199,10 +201,10 @@ export function PersonRow({
     >
       {/* Sidebar */}
       <div
-        className="sticky left-0 z-20 bg-white border-r border-gray-200 flex items-center"
+        className="sticky left-0 z-20 bg-white border-r border-gray-200 flex flex-col items-start justify-start"
         style={{ width: `${sidebarWidth}px` }}
       >
-        <div className="p-4 flex items-center space-x-3 w-full">
+        <div className="p-4 flex items-start space-x-3 w-full">
           <Avatar className="h-10 w-10">
             <AvatarFallback className="text-sm bg-gray-100 text-gray-600">{getInitials(person)}</AvatarFallback>
           </Avatar>
@@ -328,15 +330,14 @@ export function PersonRow({
               <div className="text-sm text-gray-600">Persona</div>
               <div className="font-medium">{getDisplayName(person)}</div>
             </div>
-            <div className="flex gap-4">
-              <div>
-                <div className="text-sm text-gray-600">Fecha inicio</div>
-                <div className="font-medium">{selectedRange ? days[selectedRange[0]].toLocaleDateString() : ''}</div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">Fecha fin</div>
-                <div className="font-medium">{selectedRange ? days[selectedRange[1]].toLocaleDateString() : ''}</div>
-              </div>
+            <div>
+              <div className="text-sm text-gray-600 mb-1">Fechas</div>
+              {dateRange && (
+                <DatePickerWithRange
+                  date={dateRange}
+                  setDate={setDateRange}
+                />
+              )}
             </div>
             <div>
               <div className="text-sm text-gray-600 mb-1">Proyecto</div>
@@ -385,7 +386,7 @@ export function PersonRow({
             <DialogClose asChild>
               <Button variant="outline">Cancelar</Button>
             </DialogClose>
-            <Button onClick={handleCreateAssignment} disabled={!newAssignment.project_id}>Crear asignación</Button>
+            <Button onClick={handleCreateAssignment} disabled={!newAssignment.project_id || !dateRange}>Crear asignación</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
