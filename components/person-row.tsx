@@ -286,6 +286,7 @@ export function PersonRow({
                 isContextMenuOpen={isContextMenuOpen}
                 setContextMenuOpen={setContextMenuOpen}
                 isDraggingAssignment={isDraggingAssignment}
+                disableAllTooltips={isContextMenuOpen}
               />
             )
           })}

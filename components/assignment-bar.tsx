@@ -29,6 +29,7 @@ interface AssignmentBarProps {
   isContextMenuOpen?: boolean
   setContextMenuOpen?: (open: boolean) => void
   isDraggingAssignment?: boolean
+  disableAllTooltips?: boolean
 }
 
 export function AssignmentBar({
@@ -45,7 +46,8 @@ export function AssignmentBar({
   isContextMenuOpen,
   setContextMenuOpen,
   isDraggingAssignment = false,
-}: AssignmentBarProps & { onRequestEdit?: () => void, isContextMenuOpen?: boolean, setContextMenuOpen?: (open: boolean) => void, isDraggingAssignment?: boolean }) {
+  disableAllTooltips = false,
+}: AssignmentBarProps & { onRequestEdit?: () => void, isContextMenuOpen?: boolean, setContextMenuOpen?: (open: boolean) => void, isDraggingAssignment?: boolean, disableAllTooltips?: boolean }) {
   const bgColor = stringToColor(project.name)
   const [open, setOpen] = useState(false)
 
@@ -60,7 +62,7 @@ export function AssignmentBar({
   // Mostrar tooltip con delay y centrado arriba de la barra
   const handleBarMouseEnter = () => {
     if (hideTimeout.current) clearTimeout(hideTimeout.current)
-    if (!isDraggingAssignment) {
+    if (!isDraggingAssignment && !contextMenu && !disableAllTooltips) {
       showTimeout.current = setTimeout(() => setTooltip({ visible: true }), 500)
     }
   }
@@ -195,7 +197,7 @@ export function AssignmentBar({
           </div>
         </div>
       </div>
-      {tooltip.visible && !isDraggingAssignment && (
+      {tooltip.visible && !isDraggingAssignment && !contextMenu && !disableAllTooltips && (
         <div
           ref={tooltipRef}
           style={{
