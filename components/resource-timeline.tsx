@@ -241,9 +241,46 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
       }
     }, [onScrollToTodayRef, scrollToToday])
 
+    // Estado para resize robusto: índices de día de ambos bordes y los últimos índices usados en el preview
+    const [resizeState, setResizeState] = useState<{
+      type: 'left' | 'right' | null,
+      initialLeftIdx: number,
+      initialRightIdx: number,
+      days: Date[],
+      previewLeftIdx: number,
+      previewRightIdx: number
+    }>({ type: null, initialLeftIdx: 0, initialRightIdx: 0, days: [], previewLeftIdx: 0, previewRightIdx: 0 });
+
     const handleDragStart = (event: DragStartEvent) => {
       const found = assignments.find(a => a.id === event.active.id)
       if (found) setDraggedAssignment(found)
+      // Si es resize, guardar índices de día de ambos bordes y array de días
+      const isResizeLeft = event.active.id.toString().startsWith('resize-left-')
+      const isResizeRight = event.active.id.toString().startsWith('resize-right-')
+      if (isResizeLeft || isResizeRight) {
+        const barId = isResizeLeft
+          ? event.active.id.toString().replace('resize-left-', '')
+          : event.active.id.toString().replace('resize-right-', '')
+        const visibleStart = startOfMonth(visibleDateRange.start);
+        const days = eachDayOfInterval({
+          start: visibleStart,
+          end: endOfMonth(visibleDateRange.end),
+        });
+        const assignment = assignments.find(a => a.id === barId);
+        if (!assignment) return;
+        const initialLeftIdx = days.findIndex(d => d.toISOString().slice(0, 10) === assignment.start_date);
+        const initialRightIdx = days.findIndex(d => d.toISOString().slice(0, 10) === assignment.end_date);
+        setResizeState({
+          type: isResizeLeft ? 'left' : 'right',
+          initialLeftIdx,
+          initialRightIdx,
+          days,
+          previewLeftIdx: initialLeftIdx,
+          previewRightIdx: initialRightIdx
+        });
+      } else {
+        setResizeState({ type: null, initialLeftIdx: 0, initialRightIdx: 0, days: [], previewLeftIdx: 0, previewRightIdx: 0 });
+      }
     }
 
     // Custom collision detection: solo permite drop en la misma row/persona
@@ -260,8 +297,8 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
 
     // Estado para el dialog de confirmación de fechas
     const [confirmDialog, setConfirmDialog] = useState<{ open: boolean, newStart: Date, newEnd: Date, assignment: Assignment | null, snappedLeft?: number } | null>(null)
-    // Estado temporal para override de posición de la barra
-    const [overrideBar, setOverrideBar] = useState<{ assignmentId: string, left: number } | null>(null)
+    // Estado temporal para override de posición y tamaño de la barra (preview de resize)
+    const [overrideBar, setOverrideBar] = useState<{ assignmentId: string, left: number, width?: number } | null>(null)
 
     const handleDragEnd = (event: DragEndEvent) => {
       setDraggedAssignment(null)
@@ -487,7 +524,52 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
     return (
       <DndContext
         onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
+        onDragMove={event => {
+          const active = event.active
+          const isResizeLeft = active.id.toString().startsWith('resize-left-')
+          const isResizeRight = active.id.toString().startsWith('resize-right-')
+          let assignmentId = active.id.toString()
+          if (isResizeLeft) assignmentId = assignmentId.replace('resize-left-', '')
+          if (isResizeRight) assignmentId = assignmentId.replace('resize-right-', '')
+          const assignment = assignments.find(a => a.id === assignmentId)
+          if (!assignment) return
+          if (isResizeLeft || isResizeRight) {
+            const DAY_WIDTH = 40;
+            const { type, initialLeftIdx, initialRightIdx, days } = resizeState;
+            const deltaDays = Math.round(event.delta.x / DAY_WIDTH);
+            let newLeftIdx = initialLeftIdx;
+            let newRightIdx = initialRightIdx;
+            if (type === 'left') {
+              newLeftIdx = Math.max(0, Math.min(initialRightIdx - 1, initialLeftIdx + deltaDays));
+            } else if (type === 'right') {
+              newRightIdx = Math.max(initialLeftIdx + 1, Math.min(days.length - 1, initialRightIdx + deltaDays));
+            }
+            const left = newLeftIdx * DAY_WIDTH;
+            const width = (newRightIdx - newLeftIdx + 1) * DAY_WIDTH;
+            setOverrideBar({ assignmentId, left, width });
+            // Guardo los índices usados en el preview
+            setResizeState(prev => ({ ...prev, previewLeftIdx: newLeftIdx, previewRightIdx: newRightIdx }));
+          } else {
+            setOverrideBar(null)
+          }
+        }}
+        onDragEnd={event => {
+          // Uso los índices del preview para calcular las fechas
+          if ((resizeState.type === 'left' || resizeState.type === 'right') && resizeState.days.length > 0) {
+            const { previewLeftIdx, previewRightIdx, days } = resizeState;
+            const newStartDate = days[previewLeftIdx];
+            const newEndDate = days[previewRightIdx];
+            setConfirmDialog({
+              open: true,
+              newStart: newStartDate,
+              newEnd: newEndDate,
+              assignment: assignments.find(a => a.id === (overrideBar?.assignmentId ?? "") ) ?? null,
+            });
+          }
+          setOverrideBar(null)
+          setResizeState({ type: null, initialLeftIdx: 0, initialRightIdx: 0, days: [], previewLeftIdx: 0, previewRightIdx: 0 })
+          handleDragEnd(event)
+        }}
         collisionDetection={collisionDetection}
         modifiers={[restrictToHorizontalAxis, snapToDayWidthModifier]}
       >

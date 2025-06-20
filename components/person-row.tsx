@@ -267,15 +267,24 @@ export function PersonRow({
             const dimensions = calculateBarDimensions(assignment)
             const top = layout.startY + idx * (layout.barHeight + layout.barSpacing)
 
+            // Solo usar overrideBar si tiene left y width (resize), si no, usar solo dimensions originales
+            const isResizeOverride =
+              overrideBar &&
+              overrideBar.assignmentId === assignment.id &&
+              typeof (overrideBar as any).width === 'number';
+
+            const barDimensions = {
+              ...dimensions,
+              left: isResizeOverride ? overrideBar!.left : dimensions.left,
+              width: isResizeOverride ? (overrideBar as any).width : dimensions.width,
+            };
+
             return (
               <AssignmentBar
                 key={assignment.id}
                 assignment={assignment}
                 project={project}
-                dimensions={{
-                  ...dimensions,
-                  left: overrideBar && overrideBar.assignmentId === assignment.id ? overrideBar.left : dimensions.left,
-                }}
+                dimensions={barDimensions}
                 top={top}
                 height={layout.barHeight}
                 scrollLeft={scrollLeft}
@@ -287,6 +296,7 @@ export function PersonRow({
                 setContextMenuOpen={setContextMenuOpen}
                 isDraggingAssignment={isDraggingAssignment}
                 disableAllTooltips={isContextMenuOpen}
+                overrideBar={isResizeOverride ? (overrideBar as { assignmentId: string; left: number; width: number }) : undefined}
               />
             )
           })}

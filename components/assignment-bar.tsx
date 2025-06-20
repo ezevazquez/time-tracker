@@ -189,6 +189,12 @@ export function AssignmentBar({
     setTooltip({ visible: false })
   }
 
+  useEffect(() => {
+    if (overrideBar) {
+      console.log('ASSIGNMENT BAR OVERRIDE', { assignmentId: assignment.id, overrideBar })
+    }
+  }, [overrideBar, assignment.id])
+
   return (
     <>
       <div
@@ -203,6 +209,7 @@ export function AssignmentBar({
         onMouseEnter={handleBarMouseEnter}
         onMouseLeave={handleBarMouseLeave}
         onContextMenu={handleContextMenu}
+        data-assignment-bar-id={assignment.id}
       >
         {/* Left resize handle */}
         <div
