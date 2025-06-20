@@ -37,16 +37,6 @@ export function DashboardStats({ people, projects, assignments }: DashboardStats
   const utilizationRate =
     totalPeople > 0 ? Math.round((peopleWithAssignments / totalPeople) * 100) : 0
 
-  console.log('Dashboard Stats:', {
-    totalPeople,
-    activePeople,
-    totalProjects: projects.length,
-    activeProjects,
-    totalAssignments: assignments.length,
-    activeAssignments,
-    utilizationRate,
-  })
-
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
       <Card>
