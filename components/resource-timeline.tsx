@@ -17,6 +17,11 @@ import type { Project } from "@/types/project"
 import type { Assignment } from "@/types/assignment"
 import { parseDateFromString } from "@/lib/assignments"
 import { DndContext, DragStartEvent, DragEndEvent } from '@dnd-kit/core'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { DatePickerWithRange } from "@/components/date-range-picker"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ASSIGNMENT_ALLOCATION_VALUES } from "@/constants/assignments"
 
 interface ResourceTimelineProps {
   people: Person[]
@@ -254,6 +259,47 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
       }
     }
 
+    // Handler para edición desde menú contextual
+    const handleRequestEdit = (assignment: Assignment) => {
+      setEditModalData({ assignmentId: assignment.id, assignment });
+      setEditModalOpen(true);
+    };
+
+    // Estado para el formulario de edición
+    const [editForm, setEditForm] = useState<{
+      project_id: string;
+      allocation: number;
+      is_billable: boolean;
+      dateRange: { from: Date; to: Date } | null;
+    }>({
+      project_id: '',
+      allocation: 1,
+      is_billable: true,
+      dateRange: null,
+    });
+
+    // Sincronizar datos al abrir modal
+    useEffect(() => {
+      if (editModalOpen && editModalData?.assignment) {
+        const a = editModalData.assignment;
+        setEditForm({
+          project_id: a.project_id,
+          allocation: a.allocation,
+          is_billable: a.is_billable,
+          dateRange: a.start_date && a.end_date ? {
+            from: new Date(a.start_date),
+            to: new Date(a.end_date),
+          } : null,
+        });
+      }
+    }, [editModalOpen, editModalData]);
+
+    // Guardar cambios (aquí deberías llamar a tu función de update real)
+    const handleEditAssignment = () => {
+      // Aquí deberías implementar la lógica real de guardado
+      setEditModalOpen(false);
+    };
+
     return (
       <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="h-full flex flex-col bg-white">
@@ -301,6 +347,7 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
                     onCreateAssignment={onCreateAssignment}
                     isContextMenuOpen={contextMenuOpen}
                     setContextMenuOpen={setContextMenuOpen}
+                    onRequestEdit={handleRequestEdit}
                   />
                 ))}
 
@@ -315,6 +362,73 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
             </div>
           </div>
         </div>
+        {/* Modal de edición de asignación */}
+        <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar asignación</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <div className="text-sm text-gray-600 mb-1">Fechas</div>
+                {editForm.dateRange && (
+                  <DatePickerWithRange
+                    date={editForm.dateRange}
+                    setDate={dateRange => setEditForm(f => ({ ...f, dateRange }))}
+                  />
+                )}
+              </div>
+              <div>
+                <div className="text-sm text-gray-600 mb-1">Proyecto</div>
+                <Select
+                  value={editForm.project_id}
+                  onValueChange={value => setEditForm(f => ({ ...f, project_id: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar proyecto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map(project => (
+                      <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600 mb-1">% Asignación</div>
+                <Select
+                  value={String(editForm.allocation)}
+                  onValueChange={value => setEditForm(f => ({ ...f, allocation: Number(value) }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar %" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ASSIGNMENT_ALLOCATION_VALUES.map(val => (
+                      <SelectItem key={val} value={String(val)}>{val * 100}%</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="is_billable_edit"
+                  checked={editForm.is_billable}
+                  onChange={e => setEditForm(f => ({ ...f, is_billable: e.target.checked }))}
+                  className="rounded border-gray-300"
+                />
+                <label htmlFor="is_billable_edit" className="text-sm">Facturable</label>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancelar</Button>
+              </DialogClose>
+              <Button onClick={handleEditAssignment} disabled={!editForm.project_id || !editForm.dateRange || !editForm.dateRange.from || !editForm.dateRange.to}>Guardar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </DndContext>
     )
   },

@@ -43,6 +43,7 @@ interface PersonRowProps {
   onCreateAssignment?: (assignment: Omit<Assignment, 'id' | 'created_at' | 'updated_at'>) => Promise<any>
   isContextMenuOpen?: boolean
   setContextMenuOpen?: (open: boolean) => void
+  onRequestEdit?: (assignment: Assignment) => void
 }
 
 export function PersonRow({
@@ -62,6 +63,7 @@ export function PersonRow({
   onCreateAssignment,
   isContextMenuOpen = false,
   setContextMenuOpen,
+  onRequestEdit,
 }: PersonRowProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null)
@@ -285,6 +287,7 @@ export function PersonRow({
                 sidebarWidth={sidebarWidth}
                 zIndex={10 - idx}
                 onRequestDelete={() => handleRequestDelete(assignment)}
+                onRequestEdit={onRequestEdit ? () => onRequestEdit(assignment) : undefined}
                 isContextMenuOpen={isContextMenuOpen}
                 setContextMenuOpen={setContextMenuOpen}
               />
