@@ -30,10 +30,11 @@ interface ResourceTimelineProps {
   onFiltersChange: (filters: any) => void
   onClearFilters: () => void
   onScrollToTodayRef?: (ref: (() => void) | null) => void
+  onDeleteAssignment?: (assignmentId: string) => void
 }
 
 export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, ResourceTimelineProps>(
-  ({ people, projects, assignments, filters, onFiltersChange, onClearFilters, onScrollToTodayRef }, ref) => {
+  ({ people, projects, assignments, filters, onFiltersChange, onClearFilters, onScrollToTodayRef, onDeleteAssignment }, ref) => {
     // State for visible date range (for infinite scroll)
     const [visibleDateRange, setVisibleDateRange] = useState({
       start: subMonths(new Date(), 1),
@@ -246,27 +247,24 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
               />
 
               {/* Person rows with dynamic heights */}
-              {filteredPeople.map((person, personIndex) => {
-                const personAssignments = getPersonAssignments(person.id)
-
-                return (
-                  <PersonRow
-                    key={person.id}
-                    person={person}
-                    assignments={personAssignments}
-                    projects={projects}
-                    days={days}
-                    visibleDateRange={visibleDateRange}
-                    dayWidth={DAY_WIDTH}
-                    sidebarWidth={SIDEBAR_WIDTH}
-                    baseRowHeight={BASE_ROW_HEIGHT}
-                    totalWidth={totalWidth}
-                    scrollLeft={scrollLeft}
-                    today={today}
-                    isEvenRow={personIndex % 2 === 0}
-                  />
-                )
-              })}
+              {filteredPeople.map((person, idx) => (
+                <PersonRow
+                  key={person.id}
+                  person={person}
+                  assignments={getPersonAssignments(person.id)}
+                  projects={projects}
+                  days={days}
+                  visibleDateRange={visibleDateRange}
+                  dayWidth={DAY_WIDTH}
+                  sidebarWidth={SIDEBAR_WIDTH}
+                  baseRowHeight={BASE_ROW_HEIGHT}
+                  totalWidth={totalWidth}
+                  scrollLeft={scrollLeft}
+                  today={today}
+                  isEvenRow={idx % 2 === 0}
+                  onDeleteAssignment={onDeleteAssignment}
+                />
+              ))}
 
               {/* Empty state */}
               {filteredPeople.length === 0 && (

@@ -343,6 +343,7 @@ export default function AssignmentsPage() {
             onFiltersChange={setFilters}
             onClearFilters={clearFilters}
             onScrollToTodayRef={setScrollToTodayFunction}
+            onDeleteAssignment={deleteAssignment}
           />
         ) : (
           <div className="h-full overflow-auto">

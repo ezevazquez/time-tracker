@@ -7,6 +7,17 @@ import type { Assignment } from "@/types/assignment"
 import type { Project } from "@/types/project"
 import { calculateStickyPosition, stringToColor } from "@/lib/assignments"
 import { fteToPercentage } from "@/lib/utils/fte-calculations"
+import { Trash2 } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { useState } from "react"
 
 interface AssignmentBarProps {
   assignment: Assignment
@@ -22,6 +33,7 @@ interface AssignmentBarProps {
   scrollLeft: number
   sidebarWidth: number
   zIndex?: number
+  onRequestDelete?: () => void
 }
 
 export function AssignmentBar({
@@ -33,8 +45,10 @@ export function AssignmentBar({
   scrollLeft,
   sidebarWidth,
   zIndex = 5,
+  onRequestDelete,
 }: AssignmentBarProps) {
   const bgColor = stringToColor(project.name)
+  const [open, setOpen] = useState(false)
 
   // Calculate sticky positioning - only when bar is partially scrolled
   const stickyInfo = calculateStickyPosition(dimensions.left, dimensions.width, scrollLeft, sidebarWidth)
@@ -83,6 +97,18 @@ export function AssignmentBar({
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: bgColor }}></div>
               <p className="font-medium">{project.name}</p>
+              {onRequestDelete && (
+                <button
+                  className="ml-auto text-red-400 hover:text-red-600 transition-colors"
+                  title="Eliminar asignación"
+                  onClick={e => {
+                    e.preventDefault(); e.stopPropagation();
+                    onRequestDelete()
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </div>
             <p className="text-sm">
               {format(dimensions.startDate, "dd MMM")} - {format(dimensions.endDate, "dd MMM yyyy")}

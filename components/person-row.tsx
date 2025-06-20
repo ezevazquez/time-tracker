@@ -9,6 +9,16 @@ import type { Project } from "@/types/project"
 import type { Assignment } from "@/types/assignment"
 import { getDisplayName, getInitials } from "@/lib/people"
 import { calculateRowLayout, parseDateFromString } from "@/lib/assignments"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { useState } from 'react'
 
 interface PersonRowProps {
   person: Person
@@ -23,6 +33,7 @@ interface PersonRowProps {
   scrollLeft: number
   today: Date
   isEvenRow: boolean
+  onDeleteAssignment?: (assignmentId: string) => void
 }
 
 export function PersonRow({
@@ -38,7 +49,24 @@ export function PersonRow({
   scrollLeft,
   today,
   isEvenRow,
+  onDeleteAssignment,
 }: PersonRowProps) {
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null)
+
+  const handleRequestDelete = (assignment: Assignment) => {
+    setAssignmentToDelete(assignment)
+    setDeleteModalOpen(true)
+  }
+
+  const handleConfirmDelete = () => {
+    if (assignmentToDelete && onDeleteAssignment) {
+      onDeleteAssignment(assignmentToDelete.id)
+    }
+    setDeleteModalOpen(false)
+    setAssignmentToDelete(null)
+  }
+
   // Calculate bar position and width
   const calculateBarDimensions = (assignment: Assignment) => {
     const startDate = parseDateFromString(assignment.start_date)
@@ -160,6 +188,7 @@ export function PersonRow({
                 scrollLeft={scrollLeft}
                 sidebarWidth={sidebarWidth}
                 zIndex={10 - idx} // Higher z-index for earlier assignments
+                onRequestDelete={() => handleRequestDelete(assignment)}
               />
             )
           })}
@@ -187,6 +216,22 @@ export function PersonRow({
           />
         )}
       </div>
+
+      {/* Modal de confirmación de borrado */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar asignación</DialogTitle>
+          </DialogHeader>
+          <p className="mb-4">¿Seguro que deseas eliminar esta asignación? Esta acción no se puede deshacer.</p>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DialogClose>
+            <Button variant="destructive" onClick={handleConfirmDelete}>Eliminar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 
