@@ -18,7 +18,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { ASSIGNMENT_ALLOCATION_VALUES } from '@/constants/assignments'
@@ -41,6 +41,8 @@ interface PersonRowProps {
   isEvenRow: boolean
   onDeleteAssignment?: (assignmentId: string) => void
   onCreateAssignment?: (assignment: Omit<Assignment, 'id' | 'created_at' | 'updated_at'>) => Promise<any>
+  isContextMenuOpen?: boolean
+  setContextMenuOpen?: (open: boolean) => void
 }
 
 export function PersonRow({
@@ -58,6 +60,8 @@ export function PersonRow({
   isEvenRow,
   onDeleteAssignment,
   onCreateAssignment,
+  isContextMenuOpen = false,
+  setContextMenuOpen,
 }: PersonRowProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null)
@@ -99,13 +103,6 @@ export function PersonRow({
       setSelectionEndIdx(dayIdx)
     }
   }
-  const handleMouseUp = () => {
-    setIsSelecting(false)
-    if (selectedRange) {
-      setDateRange({ from: days[selectedRange[0]], to: days[selectedRange[1]] })
-      setCreateModalOpen(true)
-    }
-  }
 
   // Calcular el rango seleccionado
   let selectedRange: [number, number] | null = null
@@ -115,6 +112,17 @@ export function PersonRow({
       Math.max(selectionStartIdx, selectionEndIdx)
     ]
   }
+
+  const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    // Solo click izquierdo y si no hay menú contextual abierto
+    if (e.button !== 0) return;
+    if (isContextMenuOpen) return;
+    setIsSelecting(false)
+    if (selectedRange) {
+      setDateRange({ from: days[selectedRange[0]], to: days[selectedRange[1]] })
+      setCreateModalOpen(true)
+    }
+  }, [isContextMenuOpen, selectedRange, days])
 
   // Calculate bar position and width
   const calculateBarDimensions = (assignment: Assignment) => {
@@ -225,13 +233,15 @@ export function PersonRow({
         {days.map((day, i) => (
           <div
             key={i}
-            className={
-              `absolute top-0 bottom-0 border-r
-              ${isWeekend(day) ? "bg-gray-100/70" : "bg-white"}
-              ${isSameDay(day, today) ? "bg-blue-50/30" : ""}
-              ${hoveredDayIdx === i ? "bg-gray-300/60" : ""}
-              border-gray-100 transition-colors duration-75`
-            }
+            className={[
+              "absolute top-0 bottom-0 border-r border-gray-100 transition-colors duration-75",
+              isSameDay(day, today) ? "bg-blue-50/30" : "",
+              hoveredDayIdx === i
+                ? "bg-gray-300/60"
+                : isWeekend(day)
+                  ? "bg-gray-100/70"
+                  : "bg-white"
+            ].join(" ")}
             style={{
               left: `${i * dayWidth}px`,
               width: `${dayWidth}px`,
@@ -273,8 +283,10 @@ export function PersonRow({
                 height={layout.barHeight}
                 scrollLeft={scrollLeft}
                 sidebarWidth={sidebarWidth}
-                zIndex={10 - idx} // Higher z-index for earlier assignments
+                zIndex={10 - idx}
                 onRequestDelete={() => handleRequestDelete(assignment)}
+                isContextMenuOpen={isContextMenuOpen}
+                setContextMenuOpen={setContextMenuOpen}
               />
             )
           })}

@@ -16,6 +16,7 @@ import type { Person } from "@/types/people"
 import type { Project } from "@/types/project"
 import type { Assignment } from "@/types/assignment"
 import { parseDateFromString } from "@/lib/assignments"
+import { DndContext, DragStartEvent, DragEndEvent } from '@dnd-kit/core'
 
 interface ResourceTimelineProps {
   people: Person[]
@@ -54,6 +55,14 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
     const BASE_ROW_HEIGHT = 80 // Base height, will be adjusted per row
     const SIDEBAR_WIDTH = 240
     const HEADER_HEIGHT = 60
+
+    // Handler para drop de asignaciones
+    const [draggedAssignment, setDraggedAssignment] = useState<null | Assignment>(null)
+    const [dropTarget, setDropTarget] = useState<null | { personId: string, dayIdx: number }>(null)
+    const [editModalOpen, setEditModalOpen] = useState(false)
+    const [editModalData, setEditModalData] = useState<any>(null)
+    // Estado global para menú contextual
+    const [contextMenuOpen, setContextMenuOpen] = useState(false)
 
     // Track scroll position with throttling for better performance
     useEffect(() => {
@@ -221,64 +230,92 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
       }
     }, [onScrollToTodayRef, scrollToToday])
 
+    const handleDragStart = (event: DragStartEvent) => {
+      const found = assignments.find(a => a.id === event.active.id)
+      if (found) setDraggedAssignment(found)
+    }
+    const handleDragEnd = (event: DragEndEvent) => {
+      setDraggedAssignment(null)
+      const data = event.over && event.over.data && event.over.data.current
+      if (
+        data &&
+        typeof data === 'object' &&
+        'personId' in data &&
+        'dayIdx' in data
+      ) {
+        setDropTarget(data as { personId: string; dayIdx: number })
+        // Abrir modal de edición rápida con los datos nuevos
+        setEditModalData({
+          assignmentId: event.active.id,
+          newPersonId: data.personId,
+          newDayIdx: data.dayIdx,
+        })
+        setEditModalOpen(true)
+      }
+    }
+
     return (
-      <div className="h-full flex flex-col bg-white">
+      <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <div className="h-full flex flex-col bg-white">
 
-        {/* Timeline container */}
-        <div className="flex-1 min-h-0 relative">
-          <div
-            ref={scrollContainerRef}
-            className="absolute inset-0 overflow-x-auto"
-            style={{
-              overflowX: "auto",
-              overflowY: "visible",
-            }}
-          >
-            <div className="relative" style={{ minWidth: `${SIDEBAR_WIDTH + totalWidth}px` }}>
-              {/* Timeline header */}
-              <TimelineHeader
-                days={days}
-                monthGroups={monthGroups}
-                today={today}
-                dayWidth={DAY_WIDTH}
-                sidebarWidth={SIDEBAR_WIDTH}
-                headerHeight={HEADER_HEIGHT}
-                totalWidth={totalWidth}
-                onScrollToToday={scrollToToday}
-              />
-
-              {/* Person rows with dynamic heights */}
-              {filteredPeople.map((person, idx) => (
-                <PersonRow
-                  key={person.id}
-                  person={person}
-                  assignments={getPersonAssignments(person.id)}
-                  projects={projects}
+          {/* Timeline container */}
+          <div className="flex-1 min-h-0 relative">
+            <div
+              ref={scrollContainerRef}
+              className="absolute inset-0 overflow-x-auto"
+              style={{
+                overflowX: "auto",
+                overflowY: "visible",
+              }}
+            >
+              <div className="relative" style={{ minWidth: `${SIDEBAR_WIDTH + totalWidth}px` }}>
+                {/* Timeline header */}
+                <TimelineHeader
                   days={days}
-                  visibleDateRange={visibleDateRange}
+                  monthGroups={monthGroups}
+                  today={today}
                   dayWidth={DAY_WIDTH}
                   sidebarWidth={SIDEBAR_WIDTH}
-                  baseRowHeight={BASE_ROW_HEIGHT}
+                  headerHeight={HEADER_HEIGHT}
                   totalWidth={totalWidth}
-                  scrollLeft={scrollLeft}
-                  today={today}
-                  isEvenRow={idx % 2 === 0}
-                  onDeleteAssignment={onDeleteAssignment}
-                  onCreateAssignment={onCreateAssignment}
+                  onScrollToToday={scrollToToday}
                 />
-              ))}
 
-              {/* Empty state */}
-              {filteredPeople.length === 0 && (
-                <div className="p-12 text-center text-gray-500">
-                  <div className="text-lg font-medium mb-2">No hay miembros activos del equipo</div>
-                  <div className="text-sm">Agrega personas con estado "Activo" para ver sus asignaciones</div>
-                </div>
-              )}
+                {/* Person rows with dynamic heights */}
+                {filteredPeople.map((person, idx) => (
+                  <PersonRow
+                    key={person.id}
+                    person={person}
+                    assignments={getPersonAssignments(person.id)}
+                    projects={projects}
+                    days={days}
+                    visibleDateRange={visibleDateRange}
+                    dayWidth={DAY_WIDTH}
+                    sidebarWidth={SIDEBAR_WIDTH}
+                    baseRowHeight={BASE_ROW_HEIGHT}
+                    totalWidth={totalWidth}
+                    scrollLeft={scrollLeft}
+                    today={today}
+                    isEvenRow={idx % 2 === 0}
+                    onDeleteAssignment={onDeleteAssignment}
+                    onCreateAssignment={onCreateAssignment}
+                    isContextMenuOpen={contextMenuOpen}
+                    setContextMenuOpen={setContextMenuOpen}
+                  />
+                ))}
+
+                {/* Empty state */}
+                {filteredPeople.length === 0 && (
+                  <div className="p-12 text-center text-gray-500">
+                    <div className="text-lg font-medium mb-2">No hay miembros activos del equipo</div>
+                    <div className="text-sm">Agrega personas con estado "Activo" para ver sus asignaciones</div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </DndContext>
     )
   },
 )
