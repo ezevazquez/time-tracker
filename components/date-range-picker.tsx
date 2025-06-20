@@ -14,8 +14,8 @@ export function DatePickerWithRange({
   setDate,
 }: {
   className?: string
-  date: { from: Date; to: Date }
-  setDate: (date: { from: Date; to: Date }) => void
+  date: { from: Date | undefined; to: Date | undefined }
+  setDate: (date: { from: Date | undefined; to: Date | undefined }) => void
 }) {
   const [startOpen, setStartOpen] = useState(false)
   const [endOpen, setEndOpen] = useState(false)
@@ -46,7 +46,9 @@ export function DatePickerWithRange({
                 setStartOpen(false)
               }
             }}
-            disabled={(selectedDate) => selectedDate > new Date()}
+            disabled={(selectedDate) => {
+              return !!selectedDate && selectedDate > new Date();
+            }}
             initialFocus
           />
         </PopoverContent>
@@ -78,7 +80,9 @@ export function DatePickerWithRange({
                 setEndOpen(false)
               }
             }}
-            disabled={(selectedDate) => selectedDate > new Date() || (date.from && selectedDate < date.from)}
+            disabled={(selectedDate) => {
+              return !!selectedDate && (selectedDate > new Date() || (date.from ? selectedDate < date.from : false));
+            }}
             initialFocus
           />
         </PopoverContent>

@@ -9,6 +9,22 @@ import type { Project } from "@/types/project"
 import type { Assignment } from "@/types/assignment"
 import { getDisplayName, getInitials } from "@/lib/people"
 import { calculateRowLayout, parseDateFromString } from "@/lib/assignments"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { useState, useRef, useCallback } from 'react'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { ASSIGNMENT_ALLOCATION_VALUES } from '@/constants/assignments'
+import { toast } from '@/hooks/use-toast'
+import { useAssignments } from '@/hooks/use-assignments'
+import { DatePickerWithRange } from '@/components/date-range-picker'
 
 interface PersonRowProps {
   person: Person
@@ -23,6 +39,14 @@ interface PersonRowProps {
   scrollLeft: number
   today: Date
   isEvenRow: boolean
+  onDeleteAssignment?: (assignmentId: string) => void
+  onCreateAssignment?: (assignment: Omit<Assignment, 'id' | 'created_at' | 'updated_at'>) => Promise<any>
+  isContextMenuOpen?: boolean
+  setContextMenuOpen?: (open: boolean) => void
+  onRequestEdit?: (assignment: Assignment) => void
+  onRequestCreate?: (assignment: Omit<Assignment, 'id' | 'created_at' | 'updated_at'>) => void
+  isDraggingAssignment?: boolean
+  overrideBar?: { assignmentId: string, left: number } | null
 }
 
 export function PersonRow({
@@ -38,7 +62,79 @@ export function PersonRow({
   scrollLeft,
   today,
   isEvenRow,
+  onDeleteAssignment,
+  onCreateAssignment,
+  isContextMenuOpen = false,
+  setContextMenuOpen,
+  onRequestEdit,
+  onRequestCreate,
+  isDraggingAssignment = false,
+  overrideBar = null,
 }: PersonRowProps) {
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null)
+  const [isSelecting, setIsSelecting] = useState(false)
+  const [selectionStartIdx, setSelectionStartIdx] = useState<number | null>(null)
+  const [selectionEndIdx, setSelectionEndIdx] = useState<number | null>(null)
+  const timelineRef = useRef<HTMLDivElement>(null)
+  const { createAssignment } = useAssignments()
+  const [hoveredDayIdx, setHoveredDayIdx] = useState<number | null>(null)
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | null>(null)
+
+  const handleRequestDelete = (assignment: Assignment) => {
+    setAssignmentToDelete(assignment)
+    setDeleteModalOpen(true)
+  }
+
+  const handleConfirmDelete = () => {
+    if (assignmentToDelete && onDeleteAssignment) {
+      onDeleteAssignment(assignmentToDelete.id)
+    }
+    setDeleteModalOpen(false)
+    setAssignmentToDelete(null)
+  }
+
+  // Handlers para selección de días
+  const handleDayMouseDown = (dayIdx: number) => {
+    setIsSelecting(true)
+    setSelectionStartIdx(dayIdx)
+    setSelectionEndIdx(dayIdx)
+  }
+  const handleDayMouseEnter = (dayIdx: number) => {
+    if (isSelecting && selectionStartIdx !== null) {
+      setSelectionEndIdx(dayIdx)
+    }
+  }
+
+  // Calcular el rango seleccionado
+  let selectedRange: [number, number] | null = null
+  if (selectionStartIdx !== null && selectionEndIdx !== null) {
+    selectedRange = [
+      Math.min(selectionStartIdx, selectionEndIdx),
+      Math.max(selectionStartIdx, selectionEndIdx)
+    ]
+  }
+
+  const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    // Solo click izquierdo y si no hay menú contextual abierto
+    if (e.button !== 0) return;
+    if (isContextMenuOpen) return;
+    setIsSelecting(false)
+    if (selectedRange) {
+      setDateRange({ from: days[selectedRange[0]], to: days[selectedRange[1]] })
+      if (onRequestCreate && dateRange) {
+        onRequestCreate({
+          person_id: person.id,
+          project_id: '', // El usuario debe seleccionar el proyecto en el modal
+          start_date: dateRange.from.toISOString().slice(0, 10),
+          end_date: dateRange.to.toISOString().slice(0, 10),
+          allocation: 100,
+          is_billable: true,
+        })
+      }
+    }
+  }, [isContextMenuOpen, selectedRange, days, person.id, dateRange, onRequestCreate])
+
   // Calculate bar position and width
   const calculateBarDimensions = (assignment: Assignment) => {
     const startDate = parseDateFromString(assignment.start_date)
@@ -70,7 +166,7 @@ export function PersonRow({
   })
 
   // Calcular el rango de días actualmente visible en el viewport horizontal
-  const VISIBILITY_MARGIN = 150; // píxeles
+  const VISIBILITY_MARGIN = 400; // píxeles
   let firstVisibleDayIdx = 0
   let lastVisibleDayIdx = days.length - 1
   if (typeof window !== 'undefined') {
@@ -107,10 +203,10 @@ export function PersonRow({
     >
       {/* Sidebar */}
       <div
-        className="sticky left-0 z-20 bg-white border-r border-gray-200 flex items-center"
+        className="sticky left-0 z-20 bg-white border-r border-gray-200 flex flex-col items-start justify-start"
         style={{ width: `${sidebarWidth}px` }}
       >
-        <div className="p-4 flex items-center space-x-3 w-full">
+        <div className="p-4 flex items-start space-x-3 w-full">
           <Avatar className="h-10 w-10">
             <AvatarFallback className="text-sm bg-gray-100 text-gray-600">{getInitials(person)}</AvatarFallback>
           </Avatar>
@@ -123,22 +219,44 @@ export function PersonRow({
       </div>
 
       {/* Timeline */}
-      <div className="relative flex-1" style={{ width: `${totalWidth}px` }}>
+      <div className="relative flex-1" style={{ width: `${totalWidth}px` }}
+        ref={timelineRef}
+        onMouseUp={handleMouseUp}
+      >
         {/* Background days */}
         {days.map((day, i) => (
           <div
             key={i}
-            className={`
-              absolute top-0 bottom-0 border-r border-gray-50
-              ${isWeekend(day) ? "bg-gray-50/50" : ""}
-              ${isSameDay(day, today) ? "bg-blue-50/30" : ""}
-            `}
+            className={[
+              "absolute top-0 bottom-0 border-r border-gray-100 transition-colors duration-75",
+              isSameDay(day, today) ? "bg-blue-50/30" : "",
+              hoveredDayIdx === i && !isDraggingAssignment
+                ? "bg-gray-300/60"
+                : isWeekend(day)
+                  ? "bg-gray-100/70"
+                  : "bg-white"
+            ].join(" ")}
             style={{
               left: `${i * dayWidth}px`,
               width: `${dayWidth}px`,
+              zIndex: 1,
             }}
+            onMouseDown={() => handleDayMouseDown(i)}
+            onMouseEnter={() => { handleDayMouseEnter(i); setHoveredDayIdx(i) }}
+            onMouseLeave={() => setHoveredDayIdx(null)}
           />
         ))}
+        {/* Barra de selección visual */}
+        {selectedRange && isSelecting && (
+          <div
+            className="absolute top-0 bottom-0 bg-gray-400/40 rounded-md pointer-events-none"
+            style={{
+              left: `${selectedRange[0] * dayWidth}px`,
+              width: `${(selectedRange[1] - selectedRange[0] + 1) * dayWidth}px`,
+              zIndex: 2,
+            }}
+          />
+        )}
 
         {/* Assignment bars with consistent heights */}
         <TooltipProvider>
@@ -149,17 +267,36 @@ export function PersonRow({
             const dimensions = calculateBarDimensions(assignment)
             const top = layout.startY + idx * (layout.barHeight + layout.barSpacing)
 
+            // Solo usar overrideBar si tiene left y width (resize), si no, usar solo dimensions originales
+            const isResizeOverride =
+              overrideBar &&
+              overrideBar.assignmentId === assignment.id &&
+              typeof (overrideBar as any).width === 'number';
+
+            const barDimensions = {
+              ...dimensions,
+              left: isResizeOverride ? overrideBar!.left : dimensions.left,
+              width: isResizeOverride ? (overrideBar as any).width : dimensions.width,
+            };
+
             return (
               <AssignmentBar
                 key={assignment.id}
                 assignment={assignment}
                 project={project}
-                dimensions={dimensions}
+                dimensions={barDimensions}
                 top={top}
                 height={layout.barHeight}
                 scrollLeft={scrollLeft}
                 sidebarWidth={sidebarWidth}
-                zIndex={10 - idx} // Higher z-index for earlier assignments
+                zIndex={10 - idx}
+                onRequestDelete={() => handleRequestDelete(assignment)}
+                onRequestEdit={onRequestEdit ? () => onRequestEdit(assignment) : undefined}
+                isContextMenuOpen={isContextMenuOpen}
+                setContextMenuOpen={setContextMenuOpen}
+                isDraggingAssignment={isDraggingAssignment}
+                disableAllTooltips={isContextMenuOpen}
+                overrideBar={isResizeOverride ? (overrideBar as { assignmentId: string; left: number; width: number }) : undefined}
               />
             )
           })}
@@ -187,6 +324,22 @@ export function PersonRow({
           />
         )}
       </div>
+
+      {/* Modal de confirmación de borrado */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar asignación</DialogTitle>
+          </DialogHeader>
+          <p className="mb-4">¿Seguro que deseas eliminar esta asignación? Esta acción no se puede deshacer.</p>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DialogClose>
+            <Button variant="destructive" onClick={handleConfirmDelete}>Eliminar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 

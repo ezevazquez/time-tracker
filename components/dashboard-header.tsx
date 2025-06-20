@@ -3,6 +3,8 @@
 import { Calendar, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { useState } from 'react'
+import { AssignmentModal } from '@/components/assignment-modal'
 
 export function DashboardHeader() {
   const currentDate = new Date().toLocaleDateString('es-ES', {
@@ -13,6 +15,8 @@ export function DashboardHeader() {
   })
 
   const formattedDate = currentDate.charAt(0).toUpperCase() + currentDate.slice(1).toLowerCase()
+
+  const [createModalOpen, setCreateModalOpen] = useState(false)
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -27,12 +31,19 @@ export function DashboardHeader() {
             Ver Timeline
           </Button>
         </Link>
-        <Link href="/assignments/new">
-          <Button size="sm">
-            <TrendingUp className="h-4 w-4 mr-2" />
-            Nueva Asignación
-          </Button>
-        </Link>
+        <Button size="sm" onClick={() => setCreateModalOpen(true)}>
+          <TrendingUp className="h-4 w-4 mr-2" />
+          Nueva Asignación
+        </Button>
+        <AssignmentModal
+          open={createModalOpen}
+          mode="new"
+          onSave={async (data) => {
+            // Aquí deberías llamar a tu función de creación de asignación
+            setCreateModalOpen(false)
+          }}
+          onCancel={() => setCreateModalOpen(false)}
+        />
       </div>
     </div>
   )
