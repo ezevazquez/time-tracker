@@ -31,10 +31,11 @@ interface ResourceTimelineProps {
   onClearFilters: () => void
   onScrollToTodayRef?: (ref: (() => void) | null) => void
   onDeleteAssignment?: (assignmentId: string) => void
+  onCreateAssignment?: (assignment: Omit<Assignment, 'id' | 'created_at' | 'updated_at'>) => Promise<any>
 }
 
 export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, ResourceTimelineProps>(
-  ({ people, projects, assignments, filters, onFiltersChange, onClearFilters, onScrollToTodayRef, onDeleteAssignment }, ref) => {
+  ({ people, projects, assignments, filters, onFiltersChange, onClearFilters, onScrollToTodayRef, onDeleteAssignment, onCreateAssignment }, ref) => {
     // State for visible date range (for infinite scroll)
     const [visibleDateRange, setVisibleDateRange] = useState({
       start: subMonths(new Date(), 1),
@@ -263,6 +264,7 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
                   today={today}
                   isEvenRow={idx % 2 === 0}
                   onDeleteAssignment={onDeleteAssignment}
+                  onCreateAssignment={onCreateAssignment}
                 />
               ))}
 

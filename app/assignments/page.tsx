@@ -62,7 +62,7 @@ export default function AssignmentsPage() {
 
   const { people, loading: loadingPeople } = usePeople()
   const { projects, loading: loadingProjects } = useProjects()
-  const { assignments, loading: loadingAssignments, deleteAssignment } = useAssignments()
+  const { assignments, loading: loadingAssignments, deleteAssignment, createAssignment } = useAssignments()
 
   const loading = loadingPeople || loadingProjects || loadingAssignments
 
@@ -344,6 +344,7 @@ export default function AssignmentsPage() {
             onClearFilters={clearFilters}
             onScrollToTodayRef={setScrollToTodayFunction}
             onDeleteAssignment={deleteAssignment}
+            onCreateAssignment={createAssignment}
           />
         ) : (
           <div className="h-full overflow-auto">

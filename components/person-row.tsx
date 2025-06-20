@@ -18,7 +18,12 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { ASSIGNMENT_ALLOCATION_VALUES } from '@/constants/assignments'
+import { toast } from '@/hooks/use-toast'
+import { useAssignments } from '@/hooks/use-assignments'
 
 interface PersonRowProps {
   person: Person
@@ -34,6 +39,7 @@ interface PersonRowProps {
   today: Date
   isEvenRow: boolean
   onDeleteAssignment?: (assignmentId: string) => void
+  onCreateAssignment?: (assignment: Omit<Assignment, 'id' | 'created_at' | 'updated_at'>) => Promise<any>
 }
 
 export function PersonRow({
@@ -50,9 +56,21 @@ export function PersonRow({
   today,
   isEvenRow,
   onDeleteAssignment,
+  onCreateAssignment,
 }: PersonRowProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null)
+  const [isSelecting, setIsSelecting] = useState(false)
+  const [selectionStartIdx, setSelectionStartIdx] = useState<number | null>(null)
+  const [selectionEndIdx, setSelectionEndIdx] = useState<number | null>(null)
+  const timelineRef = useRef<HTMLDivElement>(null)
+  const { createAssignment } = useAssignments()
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [newAssignment, setNewAssignment] = useState<{
+    project_id: string
+    allocation: number
+    is_billable: boolean
+  }>({ project_id: '', allocation: 1, is_billable: true })
 
   const handleRequestDelete = (assignment: Assignment) => {
     setAssignmentToDelete(assignment)
@@ -65,6 +83,33 @@ export function PersonRow({
     }
     setDeleteModalOpen(false)
     setAssignmentToDelete(null)
+  }
+
+  // Handlers para selección de días
+  const handleDayMouseDown = (dayIdx: number) => {
+    setIsSelecting(true)
+    setSelectionStartIdx(dayIdx)
+    setSelectionEndIdx(dayIdx)
+  }
+  const handleDayMouseEnter = (dayIdx: number) => {
+    if (isSelecting && selectionStartIdx !== null) {
+      setSelectionEndIdx(dayIdx)
+    }
+  }
+  const handleMouseUp = () => {
+    setIsSelecting(false)
+    if (selectedRange) {
+      setCreateModalOpen(true)
+    }
+  }
+
+  // Calcular el rango seleccionado
+  let selectedRange: [number, number] | null = null
+  if (selectionStartIdx !== null && selectionEndIdx !== null) {
+    selectedRange = [
+      Math.min(selectionStartIdx, selectionEndIdx),
+      Math.max(selectionStartIdx, selectionEndIdx)
+    ]
   }
 
   // Calculate bar position and width
@@ -125,6 +170,24 @@ export function PersonRow({
   // Calculate row layout with consistent bar heights, usando el máximo de asignaciones activas en un día visible
   const layout = calculateRowLayout(maxAssignmentsInADay, baseRowHeight)
 
+  const handleCreateAssignment = async () => {
+    if (!newAssignment.project_id || !selectedRange || !onCreateAssignment) return
+    const startDate = days[selectedRange[0]]
+    const endDate = days[selectedRange[1]]
+    await onCreateAssignment({
+      person_id: person.id,
+      project_id: newAssignment.project_id,
+      start_date: startDate.toISOString().slice(0, 10),
+      end_date: endDate.toISOString().slice(0, 10),
+      allocation: newAssignment.allocation,
+      is_billable: newAssignment.is_billable,
+    })
+    toast({ title: 'Asignación creada', description: 'La asignación fue creada correctamente.' })
+    setCreateModalOpen(false)
+    setSelectionStartIdx(null)
+    setSelectionEndIdx(null)
+  }
+
   return (
     <div
       className={`
@@ -151,22 +214,40 @@ export function PersonRow({
       </div>
 
       {/* Timeline */}
-      <div className="relative flex-1" style={{ width: `${totalWidth}px` }}>
+      <div className="relative flex-1" style={{ width: `${totalWidth}px` }}
+        ref={timelineRef}
+        onMouseUp={handleMouseUp}
+      >
         {/* Background days */}
         {days.map((day, i) => (
           <div
             key={i}
-            className={`
-              absolute top-0 bottom-0 border-r border-gray-50
+            className={
+              `absolute top-0 bottom-0 border-r border-gray-50
               ${isWeekend(day) ? "bg-gray-50/50" : ""}
               ${isSameDay(day, today) ? "bg-blue-50/30" : ""}
-            `}
+              `
+            }
             style={{
               left: `${i * dayWidth}px`,
               width: `${dayWidth}px`,
+              zIndex: 1,
             }}
+            onMouseDown={() => handleDayMouseDown(i)}
+            onMouseEnter={() => handleDayMouseEnter(i)}
           />
         ))}
+        {/* Barra de selección visual */}
+        {selectedRange && isSelecting && (
+          <div
+            className="absolute top-0 bottom-0 bg-gray-400/40 rounded-md pointer-events-none"
+            style={{
+              left: `${selectedRange[0] * dayWidth}px`,
+              width: `${(selectedRange[1] - selectedRange[0] + 1) * dayWidth}px`,
+              zIndex: 2,
+            }}
+          />
+        )}
 
         {/* Assignment bars with consistent heights */}
         <TooltipProvider>
@@ -229,6 +310,79 @@ export function PersonRow({
               <Button variant="outline">Cancelar</Button>
             </DialogClose>
             <Button variant="destructive" onClick={handleConfirmDelete}>Eliminar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de creación rápida de asignación */}
+      <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nueva asignación</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <div className="text-sm text-gray-600">Persona</div>
+              <div className="font-medium">{getDisplayName(person)}</div>
+            </div>
+            <div className="flex gap-4">
+              <div>
+                <div className="text-sm text-gray-600">Fecha inicio</div>
+                <div className="font-medium">{selectedRange ? days[selectedRange[0]].toLocaleDateString() : ''}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Fecha fin</div>
+                <div className="font-medium">{selectedRange ? days[selectedRange[1]].toLocaleDateString() : ''}</div>
+              </div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-600 mb-1">Proyecto</div>
+              <Select
+                value={newAssignment.project_id}
+                onValueChange={value => setNewAssignment(a => ({ ...a, project_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar proyecto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map(project => (
+                    <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <div className="text-sm text-gray-600 mb-1">% Asignación</div>
+              <Select
+                value={String(newAssignment.allocation)}
+                onValueChange={value => setNewAssignment(a => ({ ...a, allocation: Number(value) }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar %" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ASSIGNMENT_ALLOCATION_VALUES.map(val => (
+                    <SelectItem key={val} value={String(val)}>{val * 100}%</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="is_billable"
+                checked={newAssignment.is_billable}
+                onChange={e => setNewAssignment(a => ({ ...a, is_billable: e.target.checked }))}
+                className="rounded border-gray-300"
+              />
+              <label htmlFor="is_billable" className="text-sm">Facturable</label>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DialogClose>
+            <Button onClick={handleCreateAssignment} disabled={!newAssignment.project_id}>Crear asignación</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
