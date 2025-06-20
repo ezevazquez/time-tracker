@@ -105,9 +105,9 @@ export function AssignmentBar({
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: assignment.id,
-    data: { assignment },
+    data: { assignment, snappedX: 0, initialLeft: dimensions.left },
   })
-  // Sticky horizontal: snap a los días
+  // Sticky horizontal: snap a los días durante el drag
   let snappedTransform = transform
   if (transform && isDragging) {
     const snappedX = Math.round(transform.x / DAY_WIDTH) * DAY_WIDTH

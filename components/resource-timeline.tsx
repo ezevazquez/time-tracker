@@ -11,6 +11,8 @@ import {
   startOfMonth,
   endOfMonth,
   isSameMonth,
+  format,
+  addDays,
 } from "date-fns"
 import type { Person } from "@/types/people"
 import type { Project } from "@/types/project"
@@ -20,9 +22,6 @@ import { DndContext, DragStartEvent, DragEndEvent, closestCenter, Collision, Uni
 import { restrictToHorizontalAxis } from '@dnd-kit/modifiers'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { DatePickerWithRange } from "@/components/date-range-picker"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ASSIGNMENT_ALLOCATION_VALUES } from "@/constants/assignments"
 import { AssignmentModal } from './assignment-modal'
 
 interface ResourceTimelineProps {
@@ -260,39 +259,45 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
     }
 
     // Estado para el dialog de confirmación de fechas
-    const [confirmDialog, setConfirmDialog] = useState<{ open: boolean, newStart: string, newEnd: string, assignment: Assignment | null } | null>(null)
+    const [confirmDialog, setConfirmDialog] = useState<{ open: boolean, newStart: string, newEnd: string, assignment: Assignment | null, snappedLeft?: number } | null>(null)
+    // Estado temporal para override de posición de la barra
+    const [overrideBar, setOverrideBar] = useState<{ assignmentId: string, left: number } | null>(null)
 
     const handleDragEnd = (event: DragEndEvent) => {
       setDraggedAssignment(null)
-      const data = event.over && event.over.data && event.over.data.current
-      if (
-        data &&
-        typeof data === 'object' &&
-        'personId' in data &&
-        'dayIdx' in data &&
-        draggedAssignment &&
-        data.personId === draggedAssignment.person_id // Solo permitir drop en la misma persona
-      ) {
-        // Encontrar la asignación original
-        const assignment = assignments.find(a => a.id === event.active.id)
-        if (!assignment) return
-        // Calcular la nueva fecha de inicio y fin según el día dropeado y duración original
-        const days = eachDayOfInterval({
-          start: startOfMonth(visibleDateRange.start),
-          end: endOfMonth(visibleDateRange.end),
-        })
-        const newStartDate = days[data.dayIdx]
-        const originalDuration = differenceInDays(parseDateFromString(assignment.end_date), parseDateFromString(assignment.start_date))
-        const newEndDate = new Date(newStartDate)
-        newEndDate.setDate(newStartDate.getDate() + originalDuration)
-        // Mostrar dialog de confirmación
-        setConfirmDialog({
-          open: true,
-          newStart: newStartDate.toISOString().slice(0, 10),
-          newEnd: newEndDate.toISOString().slice(0, 10),
-          assignment,
-        })
+      const active = event.active
+      const assignment = assignments.find(a => a.id === active.id)
+      if (!assignment) return
+      let snappedDayIdx = null;
+      let snappedLeft = 0;
+      // Usar el array days visible para snap y fechas
+      if (active && active.data && active.data.current && typeof active.data.current.snappedX === 'number' && typeof active.data.current.initialLeft === 'number') {
+        const DAY_WIDTH = 40;
+        const initialLeft = active.data.current.initialLeft;
+        const snappedX = active.data.current.snappedX;
+        snappedLeft = Math.round((initialLeft + snappedX) / DAY_WIDTH) * DAY_WIDTH;
+        snappedDayIdx = Math.round((initialLeft + snappedX) / DAY_WIDTH);
+      } else if (event.over && event.over.data && event.over.data.current && 'dayIdx' in event.over.data.current) {
+        snappedDayIdx = event.over.data.current.dayIdx;
+        const DAY_WIDTH = 40;
+        snappedLeft = snappedDayIdx * DAY_WIDTH;
       }
+      if (snappedDayIdx === null) return;
+      // Calcular la nueva fecha de inicio y fin según el snap
+      const newStartDate = days[snappedDayIdx]
+      const originalDuration = differenceInDays(parseDateFromString(assignment.end_date), parseDateFromString(assignment.start_date))
+      const newEndDate = new Date(newStartDate)
+      newEndDate.setDate(newStartDate.getDate() + originalDuration)
+      // Guardar override temporal de la barra
+      setOverrideBar({ assignmentId: assignment.id, left: snappedLeft })
+      // Mostrar dialog de confirmación
+      setConfirmDialog({
+        open: true,
+        newStart: newStartDate.toISOString().slice(0, 10),
+        newEnd: newEndDate.toISOString().slice(0, 10),
+        assignment,
+        snappedLeft,
+      })
     }
 
     // Handler para edición desde menú contextual
@@ -353,6 +358,17 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
       };
     }
 
+    useEffect(() => {
+      if (draggedAssignment) {
+        document.body.style.overflow = 'hidden'
+      } else {
+        document.body.style.overflow = ''
+      }
+      return () => {
+        document.body.style.overflow = ''
+      }
+    }, [draggedAssignment])
+
     return (
       <DndContext
         onDragStart={handleDragStart}
@@ -408,6 +424,7 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
                     onRequestEdit={handleRequestEdit}
                     onRequestCreate={handleOpenCreateModal}
                     isDraggingAssignment={!!draggedAssignment}
+                    overrideBar={overrideBar}
                   />
                 ))}
 
@@ -446,25 +463,31 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
         />
         {/* Dialog de confirmación de fechas tras drag */}
         {confirmDialog?.open && (
-          <Dialog open={confirmDialog.open} onOpenChange={open => setConfirmDialog(c => c ? { ...c, open } : null)}>
+          <Dialog open={confirmDialog.open} onOpenChange={open => {
+            if (!open) {
+              setConfirmDialog(null)
+              setOverrideBar(null)
+            }
+          }}>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>¿Actualizar fechas de la asignación?</DialogTitle>
               </DialogHeader>
               <div className="mb-4">
                 ¿Seguro que querés actualizar la asignación a las fechas<br />
-                <b>{confirmDialog.newStart}</b> a <b>{confirmDialog.newEnd}</b>?
+                <b>{format(new Date(confirmDialog.newStart), 'dd-MM-yyyy')}</b> a <b>{format(new Date(confirmDialog.newEnd), 'dd-MM-yyyy')}</b>?
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setConfirmDialog(null)}>Cancelar</Button>
-                <Button variant="default" onClick={() => {
-                  setEditModalData({
-                    ...confirmDialog.assignment,
-                    start_date: confirmDialog.newStart,
-                    end_date: confirmDialog.newEnd,
-                  })
-                  setEditModalOpen(true)
+                <Button variant="outline" onClick={() => { setConfirmDialog(null); setOverrideBar(null); }}>Cancelar</Button>
+                <Button variant="default" onClick={async () => {
+                  if (confirmDialog.assignment && onUpdateAssignment) {
+                    await onUpdateAssignment(confirmDialog.assignment.id, {
+                      start_date: confirmDialog.newStart,
+                      end_date: confirmDialog.newEnd,
+                    })
+                  }
                   setConfirmDialog(null)
+                  setOverrideBar(null)
                 }}>Confirmar</Button>
               </DialogFooter>
             </DialogContent>

@@ -46,6 +46,7 @@ interface PersonRowProps {
   onRequestEdit?: (assignment: Assignment) => void
   onRequestCreate?: (assignment: Omit<Assignment, 'id' | 'created_at' | 'updated_at'>) => void
   isDraggingAssignment?: boolean
+  overrideBar?: { assignmentId: string, left: number } | null
 }
 
 export function PersonRow({
@@ -68,6 +69,7 @@ export function PersonRow({
   onRequestEdit,
   onRequestCreate,
   isDraggingAssignment = false,
+  overrideBar = null,
 }: PersonRowProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null)
@@ -164,7 +166,7 @@ export function PersonRow({
   })
 
   // Calcular el rango de días actualmente visible en el viewport horizontal
-  const VISIBILITY_MARGIN = 150; // píxeles
+  const VISIBILITY_MARGIN = 400; // píxeles
   let firstVisibleDayIdx = 0
   let lastVisibleDayIdx = days.length - 1
   if (typeof window !== 'undefined') {
@@ -270,7 +272,10 @@ export function PersonRow({
                 key={assignment.id}
                 assignment={assignment}
                 project={project}
-                dimensions={dimensions}
+                dimensions={{
+                  ...dimensions,
+                  left: overrideBar && overrideBar.assignmentId === assignment.id ? overrideBar.left : dimensions.left,
+                }}
                 top={top}
                 height={layout.barHeight}
                 scrollLeft={scrollLeft}
