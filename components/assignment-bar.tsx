@@ -9,6 +9,7 @@ import { fteToPercentage } from "@/lib/utils/fte-calculations"
 import { Trash2 } from 'lucide-react'
 import { useState, useRef, useLayoutEffect, useEffect } from "react"
 import { useDraggable } from '@dnd-kit/core'
+import { cn } from '@/utils/classnames'
 
 interface AssignmentBarProps {
   assignment: Assignment
@@ -30,6 +31,11 @@ interface AssignmentBarProps {
   setContextMenuOpen?: (open: boolean) => void
   isDraggingAssignment?: boolean
   disableAllTooltips?: boolean
+  overrideBar?: {
+    assignmentId: string
+    left: number
+    width: number
+  }
 }
 
 export function AssignmentBar({
@@ -47,7 +53,8 @@ export function AssignmentBar({
   setContextMenuOpen,
   isDraggingAssignment = false,
   disableAllTooltips = false,
-}: AssignmentBarProps & { onRequestEdit?: () => void, isContextMenuOpen?: boolean, setContextMenuOpen?: (open: boolean) => void, isDraggingAssignment?: boolean, disableAllTooltips?: boolean }) {
+  overrideBar,
+}: AssignmentBarProps & { onRequestEdit?: () => void, isContextMenuOpen?: boolean, setContextMenuOpen?: (open: boolean) => void, isDraggingAssignment?: boolean, disableAllTooltips?: boolean, overrideBar?: { assignmentId: string, left: number, width: number } }) {
   const bgColor = stringToColor(project.name)
   const [open, setOpen] = useState(false)
 
@@ -59,10 +66,13 @@ export function AssignmentBar({
   const showTimeout = useRef<NodeJS.Timeout | null>(null)
   const hideTimeout = useRef<NodeJS.Timeout | null>(null)
 
+  // Estado para desactivar tooltips al interactuar con el handle
+  const [disableTooltipByHandle, setDisableTooltipByHandle] = useState(false)
+
   // Mostrar tooltip con delay y centrado arriba de la barra
   const handleBarMouseEnter = () => {
     if (hideTimeout.current) clearTimeout(hideTimeout.current)
-    if (!isDraggingAssignment && !contextMenu && !disableAllTooltips) {
+    if (!isDraggingAssignment && !contextMenu && !disableAllTooltips && !disableTooltipByHandle) {
       showTimeout.current = setTimeout(() => setTooltip({ visible: true }), 500)
     }
   }
@@ -120,8 +130,8 @@ export function AssignmentBar({
       transform: `translate3d(${snappedTransform.x}px, ${snappedTransform.y}px, 0)`
     }),
     backgroundColor: bgColor,
-    left: `${dimensions.left}px`,
-    width: `${dimensions.width}px`,
+    left: overrideBar && overrideBar.assignmentId === assignment.id ? `${overrideBar.left}px` : `${dimensions.left}px`,
+    width: overrideBar && overrideBar.assignmentId === assignment.id && overrideBar.width !== undefined ? `${overrideBar.width}px` : `${dimensions.width}px`,
     top: `${top}px`,
     height: `${height}px`,
     zIndex: Math.min(zIndex, 10),
@@ -163,6 +173,22 @@ export function AssignmentBar({
     setTooltip({ visible: false }) // Ocultar tooltip si se abre el menú
   }
 
+  // Resize handles: dnd-kit
+  const leftHandle = useDraggable({
+    id: `resize-left-${assignment.id}`,
+    data: { assignment, type: 'resize-left', dimensions },
+  })
+  const rightHandle = useDraggable({
+    id: `resize-right-${assignment.id}`,
+    data: { assignment, type: 'resize-right', dimensions },
+  })
+
+  // Handler para mouse down en el handle
+  const handleHandleMouseDown = () => {
+    setDisableTooltipByHandle(true)
+    setTooltip({ visible: false })
+  }
+
   return (
     <>
       <div
@@ -178,6 +204,48 @@ export function AssignmentBar({
         onMouseLeave={handleBarMouseLeave}
         onContextMenu={handleContextMenu}
       >
+        {/* Left resize handle */}
+        <div
+          style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: 8, zIndex: 30 }}
+        >
+          <div
+            ref={leftHandle.setNodeRef}
+            {...leftHandle.listeners}
+            {...leftHandle.attributes}
+            onMouseDown={handleHandleMouseDown}
+            className={cn(
+              'absolute left-0 top-0 h-full w-2 cursor-ew-resize',
+              'bg-blue-500/60 opacity-0 group-hover:opacity-80 transition-opacity',
+              'rounded-l-md',
+              'hover:bg-blue-600/80',
+            )}
+            style={{
+              pointerEvents: isDraggingAssignment ? 'none' : 'auto',
+              display: isDraggingAssignment ? 'none' : undefined,
+            }}
+          />
+        </div>
+        {/* Right resize handle */}
+        <div
+          style={{ position: 'absolute', right: 0, top: 0, height: '100%', width: 8, zIndex: 30 }}
+        >
+          <div
+            ref={rightHandle.setNodeRef}
+            {...rightHandle.listeners}
+            {...rightHandle.attributes}
+            onMouseDown={handleHandleMouseDown}
+            className={cn(
+              'absolute right-0 top-0 h-full w-2 cursor-ew-resize',
+              'bg-blue-500/60 opacity-0 group-hover:opacity-80 transition-opacity',
+              'rounded-r-md',
+              'hover:bg-blue-600/80',
+            )}
+            style={{
+              pointerEvents: isDraggingAssignment ? 'none' : 'auto',
+              display: isDraggingAssignment ? 'none' : undefined,
+            }}
+          />
+        </div>
         {/* Assignment label container - ONLY sticky when needed */}
         <div
           className="absolute inset-0 flex items-center overflow-hidden"
@@ -197,7 +265,7 @@ export function AssignmentBar({
           </div>
         </div>
       </div>
-      {tooltip.visible && !isDraggingAssignment && !contextMenu && !disableAllTooltips && (
+      {tooltip.visible && !isDraggingAssignment && !contextMenu && !disableAllTooltips && !disableTooltipByHandle && (
         <div
           ref={tooltipRef}
           style={{

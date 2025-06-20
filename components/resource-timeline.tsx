@@ -266,39 +266,91 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
     const handleDragEnd = (event: DragEndEvent) => {
       setDraggedAssignment(null)
       const active = event.active
-      const assignment = assignments.find(a => a.id === active.id)
+      // Detectar si es un drag de resize handle
+      const isResizeLeft = active.id.toString().startsWith('resize-left-')
+      const isResizeRight = active.id.toString().startsWith('resize-right-')
+      let assignmentId = active.id.toString()
+      if (isResizeLeft) assignmentId = assignmentId.replace('resize-left-', '')
+      if (isResizeRight) assignmentId = assignmentId.replace('resize-right-', '')
+      const assignment = assignments.find(a => a.id === assignmentId)
       if (!assignment) return
-      let snappedDayIdx = null;
-      let snappedLeft = 0;
-      // Usar el array de días del mes completo para snap y fechas
       const visibleStart = startOfMonth(visibleDateRange.start)
       const days = eachDayOfInterval({
         start: visibleStart,
         end: endOfMonth(visibleDateRange.end),
       })
+      const DAY_WIDTH = 40;
+      if (isResizeLeft || isResizeRight) {
+        // Resize handle logic
+        // Calcular el snap del borde arrastrado
+        const originalStartIdx = days.findIndex(d => d.toISOString().slice(0, 10) === assignment.start_date);
+        const originalEndIdx = days.findIndex(d => d.toISOString().slice(0, 10) === assignment.end_date);
+        let newStart = parseDateFromString(assignment.start_date);
+        let newEnd = parseDateFromString(assignment.end_date);
+        if (isResizeLeft) {
+          const initialLeft = active.data?.current?.dimensions?.left ?? 0;
+          const snappedX = event.delta.x;
+          const snappedDayIdx = Math.floor((initialLeft + snappedX) / DAY_WIDTH);
+          const clampedIdx = Math.max(0, Math.min(days.length - 1, snappedDayIdx));
+          // No permitir que el inicio pase el fin
+          if (clampedIdx >= originalEndIdx) return;
+          newStart = days[clampedIdx];
+          // Si la fecha no cambia, no mostrar diálogo
+          if (newStart.toISOString().slice(0, 10) === assignment.start_date) return;
+        } else if (isResizeRight) {
+          const initialRight = (active.data?.current?.dimensions?.left ?? 0) + (active.data?.current?.dimensions?.width ?? 0);
+          const snappedX = event.delta.x;
+          const snappedRightIdx = Math.floor((initialRight + snappedX) / DAY_WIDTH);
+          const clampedIdx = Math.max(0, Math.min(days.length - 1, snappedRightIdx));
+          // No permitir que el fin sea antes del inicio
+          if (clampedIdx <= originalStartIdx) return;
+          newEnd = days[clampedIdx];
+          // Si la fecha no cambia, no mostrar diálogo
+          if (newEnd.toISOString().slice(0, 10) === assignment.end_date) return;
+        }
+        setConfirmDialog({
+          open: true,
+          newStart,
+          newEnd,
+          assignment,
+          snappedLeft: undefined,
+        });
+        return;
+      }
+      // Drag normal de barra
+      let snappedDayIdx = null;
+      let snappedLeft = 0;
       if (active && active.data && active.data.current && typeof active.data.current.initialLeft === 'number') {
-        const DAY_WIDTH = 40;
         const initialLeft = active.data.current.initialLeft;
-        // Usar el delta real del drag para calcular el desplazamiento
         const snappedX = event.delta.x;
         snappedLeft = Math.floor((initialLeft + snappedX) / DAY_WIDTH) * DAY_WIDTH;
         snappedDayIdx = Math.floor((initialLeft + snappedX) / DAY_WIDTH);
         // Clamp snappedDayIdx
         if (snappedDayIdx < 0) snappedDayIdx = 0;
         if (snappedDayIdx >= days.length) snappedDayIdx = days.length - 1;
-        console.log('DRAG FINAL DEBUG:', {
-          initialLeft,
-          snappedX,
-          snappedDayIdx,
-          newStartDate: days[snappedDayIdx],
-          days,
-          daysLength: days.length,
-          visibleStart: startOfMonth(visibleDateRange.start),
-          visibleEnd: endOfMonth(visibleDateRange.end),
+        // Si la fecha no cambia, no mostrar diálogo
+        const newStartDate = days[snappedDayIdx]
+        const originalDuration = differenceInDays(parseDateFromString(assignment.end_date), parseDateFromString(assignment.start_date))
+        const newEndDate = new Date(newStartDate)
+        newEndDate.setDate(newStartDate.getDate() + originalDuration)
+        if (
+          newStartDate.toISOString().slice(0, 10) === assignment.start_date &&
+          newEndDate.toISOString().slice(0, 10) === assignment.end_date
+        ) {
+          return;
+        }
+        // Guardar override temporal de la barra
+        setOverrideBar({ assignmentId: assignment.id, left: snappedLeft })
+        // Mostrar dialog de confirmación
+        setConfirmDialog({
+          open: true,
+          newStart: newStartDate,
+          newEnd: newEndDate,
+          assignment,
+          snappedLeft,
         })
       } else if (event.over && event.over.data && event.over.data.current && 'dayIdx' in event.over.data.current) {
         snappedDayIdx = event.over.data.current.dayIdx;
-        const DAY_WIDTH = 40;
         snappedLeft = snappedDayIdx * DAY_WIDTH;
       }
       if (snappedDayIdx === null) return;
@@ -307,6 +359,13 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
       const originalDuration = differenceInDays(parseDateFromString(assignment.end_date), parseDateFromString(assignment.start_date))
       const newEndDate = new Date(newStartDate)
       newEndDate.setDate(newStartDate.getDate() + originalDuration)
+      // Si la fecha no cambia, no mostrar diálogo
+      if (
+        newStartDate.toISOString().slice(0, 10) === assignment.start_date &&
+        newEndDate.toISOString().slice(0, 10) === assignment.end_date
+      ) {
+        return;
+      }
       // Guardar override temporal de la barra
       setOverrideBar({ assignmentId: assignment.id, left: snappedLeft })
       // Mostrar dialog de confirmación
