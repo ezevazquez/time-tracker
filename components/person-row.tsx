@@ -71,6 +71,7 @@ export function PersonRow({
     allocation: number
     is_billable: boolean
   }>({ project_id: '', allocation: 1, is_billable: true })
+  const [hoveredDayIdx, setHoveredDayIdx] = useState<number | null>(null)
 
   const handleRequestDelete = (assignment: Assignment) => {
     setAssignmentToDelete(assignment)
@@ -223,10 +224,11 @@ export function PersonRow({
           <div
             key={i}
             className={
-              `absolute top-0 bottom-0 border-r border-gray-50
-              ${isWeekend(day) ? "bg-gray-50/50" : ""}
+              `absolute top-0 bottom-0 border-r
+              ${isWeekend(day) ? "bg-gray-100/70" : "bg-white"}
               ${isSameDay(day, today) ? "bg-blue-50/30" : ""}
-              `
+              ${hoveredDayIdx === i ? "bg-gray-300/60" : ""}
+              border-gray-100 transition-colors duration-75`
             }
             style={{
               left: `${i * dayWidth}px`,
@@ -234,7 +236,8 @@ export function PersonRow({
               zIndex: 1,
             }}
             onMouseDown={() => handleDayMouseDown(i)}
-            onMouseEnter={() => handleDayMouseEnter(i)}
+            onMouseEnter={() => { handleDayMouseEnter(i); setHoveredDayIdx(i) }}
+            onMouseLeave={() => setHoveredDayIdx(null)}
           />
         ))}
         {/* Barra de selección visual */}
