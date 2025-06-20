@@ -20,6 +20,7 @@ import { useAssignments } from '@/hooks/use-assignments'
 import { supabase } from '@/lib/supabase/client'
 import { parseDateFromString } from '@/lib/assignments'
 import { fteToPercentage, isOverallocated } from '@/lib/utils/fte-calculations'
+import { AssignmentModal } from '@/components/assignment-modal'
 
 export default function AssignmentsPage() {
   const router = useRouter()
@@ -27,6 +28,7 @@ export default function AssignmentsPage() {
   const [mounted, setMounted] = useState(false)
   const [viewMode, setViewMode] = useState<'timeline' | 'list'>('timeline')
   const scrollToTodayRef = useRef<(() => void) | null>(null)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
 
   const defaultDateRange = {
     from: (() => {
@@ -271,12 +273,10 @@ export default function AssignmentsPage() {
             <h1 className="text-xl font-bold">Asignaciones</h1>
             <div className="flex gap-2 flex-wrap items-center">
               
-              <Link href="/assignments/new">
-                <Button size="sm" className="h-8">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nueva asignación
-                </Button>
-              </Link>
+              <Button size="sm" className="h-8" onClick={() => setCreateModalOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Nueva asignación
+              </Button>
             </div>
           </div>
         </div>
@@ -362,6 +362,16 @@ export default function AssignmentsPage() {
           </div>
         )}
       </div>
+
+      <AssignmentModal
+        open={createModalOpen}
+        mode="new"
+        onSave={async (data) => {
+          // Aquí deberías llamar a tu función de creación de asignación
+          setCreateModalOpen(false)
+        }}
+        onCancel={() => setCreateModalOpen(false)}
+      />
     </main>
   )
 }

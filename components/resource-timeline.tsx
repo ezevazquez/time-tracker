@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button"
 import { DatePickerWithRange } from "@/components/date-range-picker"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ASSIGNMENT_ALLOCATION_VALUES } from "@/constants/assignments"
+import { AssignmentModal } from './assignment-modal'
 
 interface ResourceTimelineProps {
   people: Person[]
@@ -68,6 +69,10 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
     const [editModalData, setEditModalData] = useState<any>(null)
     // Estado global para menú contextual
     const [contextMenuOpen, setContextMenuOpen] = useState(false)
+
+    // Estado para modal de creación
+    const [createModalOpen, setCreateModalOpen] = useState(false)
+    const [createModalInitialData, setCreateModalInitialData] = useState<any>(null)
 
     // Track scroll position with throttling for better performance
     useEffect(() => {
@@ -261,9 +266,15 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
 
     // Handler para edición desde menú contextual
     const handleRequestEdit = (assignment: Assignment) => {
-      setEditModalData({ assignmentId: assignment.id, assignment });
-      setEditModalOpen(true);
-    };
+      setEditModalData(assignment)
+      setEditModalOpen(true)
+    }
+
+    // Ejemplo: al crear una nueva asignación
+    const handleOpenCreateModal = (initialData?: any) => {
+      setCreateModalInitialData(initialData || {})
+      setCreateModalOpen(true)
+    }
 
     // Estado para el formulario de edición
     const [editForm, setEditForm] = useState<{
@@ -348,6 +359,7 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
                     isContextMenuOpen={contextMenuOpen}
                     setContextMenuOpen={setContextMenuOpen}
                     onRequestEdit={handleRequestEdit}
+                    onRequestCreate={handleOpenCreateModal}
                   />
                 ))}
 
@@ -362,73 +374,26 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
             </div>
           </div>
         </div>
-        {/* Modal de edición de asignación */}
-        <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Editar asignación</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <div className="text-sm text-gray-600 mb-1">Fechas</div>
-                {editForm.dateRange && (
-                  <DatePickerWithRange
-                    date={editForm.dateRange}
-                    setDate={dateRange => setEditForm(f => ({ ...f, dateRange }))}
-                  />
-                )}
-              </div>
-              <div>
-                <div className="text-sm text-gray-600 mb-1">Proyecto</div>
-                <Select
-                  value={editForm.project_id}
-                  onValueChange={value => setEditForm(f => ({ ...f, project_id: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar proyecto" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects.map(project => (
-                      <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <div className="text-sm text-gray-600 mb-1">% Asignación</div>
-                <Select
-                  value={String(editForm.allocation)}
-                  onValueChange={value => setEditForm(f => ({ ...f, allocation: Number(value) }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar %" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ASSIGNMENT_ALLOCATION_VALUES.map(val => (
-                      <SelectItem key={val} value={String(val)}>{val * 100}%</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="is_billable_edit"
-                  checked={editForm.is_billable}
-                  onChange={e => setEditForm(f => ({ ...f, is_billable: e.target.checked }))}
-                  className="rounded border-gray-300"
-                />
-                <label htmlFor="is_billable_edit" className="text-sm">Facturable</label>
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Cancelar</Button>
-              </DialogClose>
-              <Button onClick={handleEditAssignment} disabled={!editForm.project_id || !editForm.dateRange || !editForm.dateRange.from || !editForm.dateRange.to}>Guardar</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <AssignmentModal
+          open={createModalOpen}
+          mode="new"
+          initialData={createModalInitialData}
+          onSave={async (data) => {
+            await onCreateAssignment?.(data);
+            setCreateModalOpen(false);
+          }}
+          onCancel={() => setCreateModalOpen(false)}
+        />
+        <AssignmentModal
+          open={editModalOpen}
+          mode="edit"
+          initialData={editModalData}
+          onSave={async (data) => {
+            // Aquí deberías llamar a tu función de updateAssignment
+            setEditModalOpen(false);
+          }}
+          onCancel={() => setEditModalOpen(false)}
+        />
       </DndContext>
     )
   },

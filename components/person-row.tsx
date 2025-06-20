@@ -44,6 +44,7 @@ interface PersonRowProps {
   isContextMenuOpen?: boolean
   setContextMenuOpen?: (open: boolean) => void
   onRequestEdit?: (assignment: Assignment) => void
+  onRequestCreate?: (assignment: Omit<Assignment, 'id' | 'created_at' | 'updated_at'>) => void
 }
 
 export function PersonRow({
@@ -64,6 +65,7 @@ export function PersonRow({
   isContextMenuOpen = false,
   setContextMenuOpen,
   onRequestEdit,
+  onRequestCreate,
 }: PersonRowProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null)
@@ -72,12 +74,6 @@ export function PersonRow({
   const [selectionEndIdx, setSelectionEndIdx] = useState<number | null>(null)
   const timelineRef = useRef<HTMLDivElement>(null)
   const { createAssignment } = useAssignments()
-  const [createModalOpen, setCreateModalOpen] = useState(false)
-  const [newAssignment, setNewAssignment] = useState<{
-    project_id: string
-    allocation: number
-    is_billable: boolean
-  }>({ project_id: '', allocation: 1, is_billable: true })
   const [hoveredDayIdx, setHoveredDayIdx] = useState<number | null>(null)
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | null>(null)
 
@@ -122,9 +118,18 @@ export function PersonRow({
     setIsSelecting(false)
     if (selectedRange) {
       setDateRange({ from: days[selectedRange[0]], to: days[selectedRange[1]] })
-      setCreateModalOpen(true)
+      if (onRequestCreate && dateRange) {
+        onRequestCreate({
+          person_id: person.id,
+          project_id: '', // El usuario debe seleccionar el proyecto en el modal
+          start_date: dateRange.from.toISOString().slice(0, 10),
+          end_date: dateRange.to.toISOString().slice(0, 10),
+          allocation: 100,
+          is_billable: true,
+        })
+      }
     }
-  }, [isContextMenuOpen, selectedRange, days])
+  }, [isContextMenuOpen, selectedRange, days, person.id, dateRange, onRequestCreate])
 
   // Calculate bar position and width
   const calculateBarDimensions = (assignment: Assignment) => {
@@ -183,23 +188,6 @@ export function PersonRow({
 
   // Calculate row layout with consistent bar heights, usando el máximo de asignaciones activas en un día visible
   const layout = calculateRowLayout(maxAssignmentsInADay, baseRowHeight)
-
-  const handleCreateAssignment = async () => {
-    if (!newAssignment.project_id || !dateRange || !onCreateAssignment) return
-    await onCreateAssignment({
-      person_id: person.id,
-      project_id: newAssignment.project_id,
-      start_date: dateRange.from.toISOString().slice(0, 10),
-      end_date: dateRange.to.toISOString().slice(0, 10),
-      allocation: newAssignment.allocation,
-      is_billable: newAssignment.is_billable,
-    })
-    toast({ title: 'Asignación creada', description: 'La asignación fue creada correctamente.' })
-    setCreateModalOpen(false)
-    setSelectionStartIdx(null)
-    setSelectionEndIdx(null)
-    setDateRange(null)
-  }
 
   return (
     <div
@@ -330,78 +318,6 @@ export function PersonRow({
               <Button variant="outline">Cancelar</Button>
             </DialogClose>
             <Button variant="destructive" onClick={handleConfirmDelete}>Eliminar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de creación rápida de asignación */}
-      <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Nueva asignación</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <div className="text-sm text-gray-600">Persona</div>
-              <div className="font-medium">{getDisplayName(person)}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-600 mb-1">Fechas</div>
-              {dateRange && (
-                <DatePickerWithRange
-                  date={dateRange}
-                  setDate={setDateRange}
-                />
-              )}
-            </div>
-            <div>
-              <div className="text-sm text-gray-600 mb-1">Proyecto</div>
-              <Select
-                value={newAssignment.project_id}
-                onValueChange={value => setNewAssignment(a => ({ ...a, project_id: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar proyecto" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map(project => (
-                    <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <div className="text-sm text-gray-600 mb-1">% Asignación</div>
-              <Select
-                value={String(newAssignment.allocation)}
-                onValueChange={value => setNewAssignment(a => ({ ...a, allocation: Number(value) }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar %" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ASSIGNMENT_ALLOCATION_VALUES.map(val => (
-                    <SelectItem key={val} value={String(val)}>{val * 100}%</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="is_billable"
-                checked={newAssignment.is_billable}
-                onChange={e => setNewAssignment(a => ({ ...a, is_billable: e.target.checked }))}
-                className="rounded border-gray-300"
-              />
-              <label htmlFor="is_billable" className="text-sm">Facturable</label>
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancelar</Button>
-            </DialogClose>
-            <Button onClick={handleCreateAssignment} disabled={!newAssignment.project_id || !dateRange}>Crear asignación</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
