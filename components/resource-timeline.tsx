@@ -46,8 +46,8 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
   ({ people, projects, assignments, filters, onFiltersChange, onClearFilters, onScrollToTodayRef, onDeleteAssignment, onCreateAssignment, onUpdateAssignment }, ref) => {
     // State for visible date range (for infinite scroll)
     const [visibleDateRange, setVisibleDateRange] = useState({
-      start: subMonths(new Date(), 1),
-      end: addMonths(new Date(), 2),
+      start: startOfMonth(new Date()),
+      end: addMonths(endOfMonth(new Date()), 2),
     })
 
     // State for tracking scroll position
@@ -259,7 +259,7 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
     }
 
     // Estado para el dialog de confirmación de fechas
-    const [confirmDialog, setConfirmDialog] = useState<{ open: boolean, newStart: string, newEnd: string, assignment: Assignment | null, snappedLeft?: number } | null>(null)
+    const [confirmDialog, setConfirmDialog] = useState<{ open: boolean, newStart: Date, newEnd: Date, assignment: Assignment | null, snappedLeft?: number } | null>(null)
     // Estado temporal para override de posición de la barra
     const [overrideBar, setOverrideBar] = useState<{ assignmentId: string, left: number } | null>(null)
 
@@ -270,13 +270,32 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
       if (!assignment) return
       let snappedDayIdx = null;
       let snappedLeft = 0;
-      // Usar el array days visible para snap y fechas
-      if (active && active.data && active.data.current && typeof active.data.current.snappedX === 'number' && typeof active.data.current.initialLeft === 'number') {
+      // Usar el array de días del mes completo para snap y fechas
+      const visibleStart = startOfMonth(visibleDateRange.start)
+      const days = eachDayOfInterval({
+        start: visibleStart,
+        end: endOfMonth(visibleDateRange.end),
+      })
+      if (active && active.data && active.data.current && typeof active.data.current.initialLeft === 'number') {
         const DAY_WIDTH = 40;
         const initialLeft = active.data.current.initialLeft;
-        const snappedX = active.data.current.snappedX;
-        snappedLeft = Math.round((initialLeft + snappedX) / DAY_WIDTH) * DAY_WIDTH;
-        snappedDayIdx = Math.round((initialLeft + snappedX) / DAY_WIDTH);
+        // Usar el delta real del drag para calcular el desplazamiento
+        const snappedX = event.delta.x;
+        snappedLeft = Math.floor((initialLeft + snappedX) / DAY_WIDTH) * DAY_WIDTH;
+        snappedDayIdx = Math.floor((initialLeft + snappedX) / DAY_WIDTH);
+        // Clamp snappedDayIdx
+        if (snappedDayIdx < 0) snappedDayIdx = 0;
+        if (snappedDayIdx >= days.length) snappedDayIdx = days.length - 1;
+        console.log('DRAG FINAL DEBUG:', {
+          initialLeft,
+          snappedX,
+          snappedDayIdx,
+          newStartDate: days[snappedDayIdx],
+          days,
+          daysLength: days.length,
+          visibleStart: startOfMonth(visibleDateRange.start),
+          visibleEnd: endOfMonth(visibleDateRange.end),
+        })
       } else if (event.over && event.over.data && event.over.data.current && 'dayIdx' in event.over.data.current) {
         snappedDayIdx = event.over.data.current.dayIdx;
         const DAY_WIDTH = 40;
@@ -293,8 +312,8 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
       // Mostrar dialog de confirmación
       setConfirmDialog({
         open: true,
-        newStart: newStartDate.toISOString().slice(0, 10),
-        newEnd: newEndDate.toISOString().slice(0, 10),
+        newStart: newStartDate,
+        newEnd: newEndDate,
         assignment,
         snappedLeft,
       })
@@ -352,22 +371,59 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
       const DAY_WIDTH = 40;
       return {
         x: Math.round(transform.x / DAY_WIDTH) * DAY_WIDTH,
-        y: 0,
+        y: 0, // fuerza el eje Y a 0 para evitar movimiento vertical
         scaleX: transform.scaleX ?? 1,
         scaleY: transform.scaleY ?? 1,
       };
     }
 
     useEffect(() => {
+      function preventVerticalScroll(e: WheelEvent) {
+        if (e.deltaY !== 0) {
+          e.preventDefault();
+        }
+      }
+      function preventTouchMove(e: TouchEvent) {
+        e.preventDefault();
+      }
+      const scrollContainer = scrollContainerRef.current;
+
       if (draggedAssignment) {
-        document.body.style.overflow = 'hidden'
+        window.addEventListener('wheel', preventVerticalScroll, { passive: false });
+        window.addEventListener('touchmove', preventTouchMove, { passive: false });
+        document.body.style.overflow = 'hidden';
+        if (scrollContainer) {
+          scrollContainer.addEventListener('wheel', preventVerticalScroll, { passive: false });
+          scrollContainer.addEventListener('touchmove', preventTouchMove, { passive: false });
+          scrollContainer.style.overflowY = 'hidden';
+        }
       } else {
-        document.body.style.overflow = ''
+        window.removeEventListener('wheel', preventVerticalScroll);
+        window.removeEventListener('touchmove', preventTouchMove);
+        document.body.style.overflow = '';
+        if (scrollContainer) {
+          scrollContainer.removeEventListener('wheel', preventVerticalScroll);
+          scrollContainer.removeEventListener('touchmove', preventTouchMove);
+          scrollContainer.style.overflowY = 'visible';
+        }
       }
       return () => {
-        document.body.style.overflow = ''
-      }
-    }, [draggedAssignment])
+        window.removeEventListener('wheel', preventVerticalScroll);
+        window.removeEventListener('touchmove', preventTouchMove);
+        document.body.style.overflow = '';
+        if (scrollContainer) {
+          scrollContainer.removeEventListener('wheel', preventVerticalScroll);
+          scrollContainer.removeEventListener('touchmove', preventTouchMove);
+          scrollContainer.style.overflowY = 'visible';
+        }
+      };
+    }, [draggedAssignment]);
+
+    console.log('TIMELINE DEBUG:', {
+      visibleDateRangeStart: visibleDateRange.start,
+      visibleDateRangeEnd: visibleDateRange.end,
+      today: new Date(),
+    })
 
     return (
       <DndContext
@@ -475,15 +531,15 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
               </DialogHeader>
               <div className="mb-4">
                 ¿Seguro que querés actualizar la asignación a las fechas<br />
-                <b>{format(new Date(confirmDialog.newStart), 'dd-MM-yyyy')}</b> a <b>{format(new Date(confirmDialog.newEnd), 'dd-MM-yyyy')}</b>?
+                <b>{format(confirmDialog.newStart, 'dd-MM-yyyy')}</b> a <b>{format(confirmDialog.newEnd, 'dd-MM-yyyy')}</b>?
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => { setConfirmDialog(null); setOverrideBar(null); }}>Cancelar</Button>
                 <Button variant="default" onClick={async () => {
                   if (confirmDialog.assignment && onUpdateAssignment) {
                     await onUpdateAssignment(confirmDialog.assignment.id, {
-                      start_date: confirmDialog.newStart,
-                      end_date: confirmDialog.newEnd,
+                      start_date: confirmDialog.newStart.toISOString().slice(0, 10),
+                      end_date: confirmDialog.newEnd.toISOString().slice(0, 10),
                     })
                   }
                   setConfirmDialog(null)
