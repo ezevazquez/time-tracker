@@ -45,6 +45,7 @@ interface PersonRowProps {
   setContextMenuOpen?: (open: boolean) => void
   onRequestEdit?: (assignment: Assignment) => void
   onRequestCreate?: (assignment: Omit<Assignment, 'id' | 'created_at' | 'updated_at'>) => void
+  isDraggingAssignment?: boolean
 }
 
 export function PersonRow({
@@ -66,6 +67,7 @@ export function PersonRow({
   setContextMenuOpen,
   onRequestEdit,
   onRequestCreate,
+  isDraggingAssignment = false,
 }: PersonRowProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null)
@@ -226,7 +228,7 @@ export function PersonRow({
             className={[
               "absolute top-0 bottom-0 border-r border-gray-100 transition-colors duration-75",
               isSameDay(day, today) ? "bg-blue-50/30" : "",
-              hoveredDayIdx === i
+              hoveredDayIdx === i && !isDraggingAssignment
                 ? "bg-gray-300/60"
                 : isWeekend(day)
                   ? "bg-gray-100/70"
@@ -278,6 +280,7 @@ export function PersonRow({
                 onRequestEdit={onRequestEdit ? () => onRequestEdit(assignment) : undefined}
                 isContextMenuOpen={isContextMenuOpen}
                 setContextMenuOpen={setContextMenuOpen}
+                isDraggingAssignment={isDraggingAssignment}
               />
             )
           })}

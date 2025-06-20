@@ -16,7 +16,8 @@ import type { Person } from "@/types/people"
 import type { Project } from "@/types/project"
 import type { Assignment } from "@/types/assignment"
 import { parseDateFromString } from "@/lib/assignments"
-import { DndContext, DragStartEvent, DragEndEvent } from '@dnd-kit/core'
+import { DndContext, DragStartEvent, DragEndEvent, closestCenter, Collision, UniqueIdentifier } from '@dnd-kit/core'
+import { restrictToHorizontalAxis } from '@dnd-kit/modifiers'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { DatePickerWithRange } from "@/components/date-range-picker"
@@ -39,10 +40,11 @@ interface ResourceTimelineProps {
   onScrollToTodayRef?: (ref: (() => void) | null) => void
   onDeleteAssignment?: (assignmentId: string) => void
   onCreateAssignment?: (assignment: Omit<Assignment, 'id' | 'created_at' | 'updated_at'>) => Promise<any>
+  onUpdateAssignment?: (id: string, updates: Partial<Assignment>) => Promise<any>
 }
 
 export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, ResourceTimelineProps>(
-  ({ people, projects, assignments, filters, onFiltersChange, onClearFilters, onScrollToTodayRef, onDeleteAssignment, onCreateAssignment }, ref) => {
+  ({ people, projects, assignments, filters, onFiltersChange, onClearFilters, onScrollToTodayRef, onDeleteAssignment, onCreateAssignment, onUpdateAssignment }, ref) => {
     // State for visible date range (for infinite scroll)
     const [visibleDateRange, setVisibleDateRange] = useState({
       start: subMonths(new Date(), 1),
@@ -244,6 +246,22 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
       const found = assignments.find(a => a.id === event.active.id)
       if (found) setDraggedAssignment(found)
     }
+
+    // Custom collision detection: solo permite drop en la misma row/persona
+    function collisionDetection(args: any): Collision[] {
+      const { active, droppableContainers } = args
+      // Solo permitir drop en la misma persona
+      if (!active || !active.data?.current?.assignment) return []
+      const assignment = active.data.current.assignment
+      // Buscar solo el droppable de la misma persona
+      return droppableContainers.filter((container: any) => {
+        return container.data?.current?.personId === assignment.person_id
+      }).map((container: any) => ({ id: container.id, data: container.data }))
+    }
+
+    // Estado para el dialog de confirmación de fechas
+    const [confirmDialog, setConfirmDialog] = useState<{ open: boolean, newStart: string, newEnd: string, assignment: Assignment | null } | null>(null)
+
     const handleDragEnd = (event: DragEndEvent) => {
       setDraggedAssignment(null)
       const data = event.over && event.over.data && event.over.data.current
@@ -251,16 +269,29 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
         data &&
         typeof data === 'object' &&
         'personId' in data &&
-        'dayIdx' in data
+        'dayIdx' in data &&
+        draggedAssignment &&
+        data.personId === draggedAssignment.person_id // Solo permitir drop en la misma persona
       ) {
-        setDropTarget(data as { personId: string; dayIdx: number })
-        // Abrir modal de edición rápida con los datos nuevos
-        setEditModalData({
-          assignmentId: event.active.id,
-          newPersonId: data.personId,
-          newDayIdx: data.dayIdx,
+        // Encontrar la asignación original
+        const assignment = assignments.find(a => a.id === event.active.id)
+        if (!assignment) return
+        // Calcular la nueva fecha de inicio y fin según el día dropeado y duración original
+        const days = eachDayOfInterval({
+          start: startOfMonth(visibleDateRange.start),
+          end: endOfMonth(visibleDateRange.end),
         })
-        setEditModalOpen(true)
+        const newStartDate = days[data.dayIdx]
+        const originalDuration = differenceInDays(parseDateFromString(assignment.end_date), parseDateFromString(assignment.start_date))
+        const newEndDate = new Date(newStartDate)
+        newEndDate.setDate(newStartDate.getDate() + originalDuration)
+        // Mostrar dialog de confirmación
+        setConfirmDialog({
+          open: true,
+          newStart: newStartDate.toISOString().slice(0, 10),
+          newEnd: newEndDate.toISOString().slice(0, 10),
+          assignment,
+        })
       }
     }
 
@@ -311,8 +342,24 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
       setEditModalOpen(false);
     };
 
+    // Custom snap modifier: sticky horizontal a los días
+    function snapToDayWidthModifier({ transform }: { transform: { x: number; y: number; scaleX?: number; scaleY?: number } }) {
+      const DAY_WIDTH = 40;
+      return {
+        x: Math.round(transform.x / DAY_WIDTH) * DAY_WIDTH,
+        y: 0,
+        scaleX: transform.scaleX ?? 1,
+        scaleY: transform.scaleY ?? 1,
+      };
+    }
+
     return (
-      <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <DndContext
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        collisionDetection={collisionDetection}
+        modifiers={[restrictToHorizontalAxis, snapToDayWidthModifier]}
+      >
         <div className="h-full flex flex-col bg-white">
 
           {/* Timeline container */}
@@ -360,6 +407,7 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
                     setContextMenuOpen={setContextMenuOpen}
                     onRequestEdit={handleRequestEdit}
                     onRequestCreate={handleOpenCreateModal}
+                    isDraggingAssignment={!!draggedAssignment}
                   />
                 ))}
 
@@ -389,11 +437,39 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
           mode="edit"
           initialData={editModalData}
           onSave={async (data) => {
-            // Aquí deberías llamar a tu función de updateAssignment
+            if (editModalData && editModalData.id && onUpdateAssignment) {
+              await onUpdateAssignment(editModalData.id, data)
+            }
             setEditModalOpen(false);
           }}
           onCancel={() => setEditModalOpen(false)}
         />
+        {/* Dialog de confirmación de fechas tras drag */}
+        {confirmDialog?.open && (
+          <Dialog open={confirmDialog.open} onOpenChange={open => setConfirmDialog(c => c ? { ...c, open } : null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>¿Actualizar fechas de la asignación?</DialogTitle>
+              </DialogHeader>
+              <div className="mb-4">
+                ¿Seguro que querés actualizar la asignación a las fechas<br />
+                <b>{confirmDialog.newStart}</b> a <b>{confirmDialog.newEnd}</b>?
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setConfirmDialog(null)}>Cancelar</Button>
+                <Button variant="default" onClick={() => {
+                  setEditModalData({
+                    ...confirmDialog.assignment,
+                    start_date: confirmDialog.newStart,
+                    end_date: confirmDialog.newEnd,
+                  })
+                  setEditModalOpen(true)
+                  setConfirmDialog(null)
+                }}>Confirmar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </DndContext>
     )
   },

@@ -25,6 +25,10 @@ interface AssignmentBarProps {
   sidebarWidth: number
   zIndex?: number
   onRequestDelete?: () => void
+  onRequestEdit?: () => void
+  isContextMenuOpen?: boolean
+  setContextMenuOpen?: (open: boolean) => void
+  isDraggingAssignment?: boolean
 }
 
 export function AssignmentBar({
@@ -40,77 +44,79 @@ export function AssignmentBar({
   onRequestEdit,
   isContextMenuOpen,
   setContextMenuOpen,
-}: AssignmentBarProps & { onRequestEdit?: () => void, isContextMenuOpen?: boolean, setContextMenuOpen?: (open: boolean) => void }) {
+  isDraggingAssignment = false,
+}: AssignmentBarProps & { onRequestEdit?: () => void, isContextMenuOpen?: boolean, setContextMenuOpen?: (open: boolean) => void, isDraggingAssignment?: boolean }) {
   const bgColor = stringToColor(project.name)
   const [open, setOpen] = useState(false)
 
   // Tooltip: posición y visibilidad
-  const [tooltip, setTooltip] = useState<{ visible: boolean, x: number, y: number }>({ visible: false, x: 0, y: 0 })
+  const [tooltip, setTooltip] = useState<{ visible: boolean }>({ visible: false })
   const [tooltipPos, setTooltipPos] = useState<{ top: number, left: number }>({ top: 0, left: 0 })
   const tooltipRef = useRef<HTMLDivElement>(null)
+  const barRef = useRef<HTMLDivElement>(null)
+  const showTimeout = useRef<NodeJS.Timeout | null>(null)
   const hideTimeout = useRef<NodeJS.Timeout | null>(null)
 
-  // Mostrar tooltip en la posición del mouse
-  const handleBarMouseEnter = (e: React.MouseEvent) => {
+  // Mostrar tooltip con delay y centrado arriba de la barra
+  const handleBarMouseEnter = () => {
     if (hideTimeout.current) clearTimeout(hideTimeout.current)
-    setTooltip({ visible: true, x: e.clientX, y: e.clientY })
+    if (!isDraggingAssignment) {
+      showTimeout.current = setTimeout(() => setTooltip({ visible: true }), 500)
+    }
   }
+
+  // Fijo: tooltip a la derecha de la barra, 12px a la derecha, 5px arriba
+  const getTooltipPosition = () => {
+    if (!barRef.current) return { top: 0, left: 0 }
+    const barRect = barRef.current.getBoundingClientRect()
+    const tooltipWidth = 320 // igual que maxWidth
+    const tooltipHeight = 120 // estimado, puede ajustarse
+    let top = barRect.top + window.scrollY + 5
+    let left = barRect.right + 12 + window.scrollX
+    // Ajustar para que no se salga del viewport
+    if (left + tooltipWidth > window.innerWidth) {
+      left = window.innerWidth - tooltipWidth - 8
+    }
+    if (left < 0) left = 8
+    if (top + tooltipHeight > window.innerHeight + window.scrollY) {
+      top = window.innerHeight + window.scrollY - tooltipHeight - 8
+    }
+    if (top < 0) top = 8
+    return { top, left }
+  }
+
   // Si el mouse sale de la barra, ocultar el tooltip después de un pequeño delay (por si entra al tooltip)
   const handleBarMouseLeave = () => {
-    hideTimeout.current = setTimeout(() => setTooltip(t => ({ ...t, visible: false })), 80)
-  }
-  // Si el mouse entra al tooltip, cancelar el ocultamiento
-  const handleTooltipMouseEnter = () => {
-    if (hideTimeout.current) clearTimeout(hideTimeout.current)
-    setTooltip(t => ({ ...t, visible: true }))
+    if (showTimeout.current) clearTimeout(showTimeout.current)
+    hideTimeout.current = setTimeout(() => setTooltip({ visible: false }), 80)
   }
   // Si el mouse sale del tooltip, ocultar
   const handleTooltipMouseLeave = () => {
     setTooltip(t => ({ ...t, visible: false }))
   }
 
-  // Calcular la posición ideal del tooltip para que no se salga de la pantalla
-  useLayoutEffect(() => {
-    if (!tooltip.visible) return
-    const padding = 12
-    const offset = 12
-    const tooltipEl = tooltipRef.current
-    if (!tooltipEl) return
-    const { width, height } = tooltipEl.getBoundingClientRect()
-    let left = tooltip.x + offset
-    let top = tooltip.y + offset
-    // Si se sale por la derecha
-    if (left + width + padding > window.innerWidth) {
-      left = tooltip.x - width - offset
-    }
-    // Si se sale por abajo
-    if (top + height + padding > window.innerHeight) {
-      top = tooltip.y - height - offset
-    }
-    // Si se sale por la izquierda
-    if (left < padding) {
-      left = padding
-    }
-    // Si se sale por arriba
-    if (top < padding) {
-      top = padding
-    }
-    setTooltipPos({ top, left })
-  }, [tooltip])
-
   // Calculate sticky positioning - only when bar is partially scrolled
   const stickyInfo = calculateStickyPosition(dimensions.left, dimensions.width, scrollLeft, sidebarWidth)
   // Debug sticky values
   // console.log({ stickyInfo, scrollLeft, sidebarWidth, dimensions })
 
+  // Obtener DAY_WIDTH desde props o definirlo aquí si no está disponible
+  const DAY_WIDTH = 40 // Debe coincidir con el valor en ResourceTimeline
+
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: assignment.id,
     data: { assignment },
   })
+  // Sticky horizontal: snap a los días
+  let snappedTransform = transform
+  if (transform && isDragging) {
+    const snappedX = Math.round(transform.x / DAY_WIDTH) * DAY_WIDTH
+    snappedTransform = { ...transform, x: snappedX }
+  }
   const style = {
-    ...transform && {
-      transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`
-    },
+    ...(snappedTransform && {
+      transform: `translate3d(${snappedTransform.x}px, ${snappedTransform.y}px, 0)`
+    }),
     backgroundColor: bgColor,
     left: `${dimensions.left}px`,
     width: `${dimensions.width}px`,
@@ -152,12 +158,16 @@ export function AssignmentBar({
     e.stopPropagation()
     setContextMenu({ x: e.clientX, y: e.clientY })
     setContextMenuOpen && setContextMenuOpen(true)
+    setTooltip({ visible: false }) // Ocultar tooltip si se abre el menú
   }
 
   return (
     <>
       <div
-        ref={setNodeRef}
+        ref={node => {
+          setNodeRef(node)
+          barRef.current = node
+        }}
         {...listeners}
         {...attributes}
         className="absolute rounded-lg shadow-md transition-all hover:shadow-lg hover:translate-y-[-1px] group border border-white/20 overflow-hidden"
@@ -185,14 +195,12 @@ export function AssignmentBar({
           </div>
         </div>
       </div>
-      {tooltip.visible && (
+      {tooltip.visible && !isDraggingAssignment && (
         <div
           ref={tooltipRef}
           style={{
             position: 'fixed',
-            // Tooltip siempre hacia arriba
-            top: tooltipPos.top - (tooltipRef.current?.offsetHeight || 0) - 12,
-            left: tooltipPos.left,
+            ...getTooltipPosition(),
             zIndex: 9999,
             pointerEvents: 'auto',
             background: '#111827',
@@ -204,7 +212,6 @@ export function AssignmentBar({
             boxShadow: '0 4px 24px 0 rgba(0,0,0,0.18)',
             fontSize: 14,
           }}
-          onMouseEnter={handleTooltipMouseEnter}
           onMouseLeave={handleTooltipMouseLeave}
         >
           <div className="space-y-2">
