@@ -47,7 +47,7 @@ export function DatePickerWithRange({
               }
             }}
             disabled={(selectedDate) => {
-              return !!selectedDate && selectedDate > new Date();
+              return false;
             }}
             initialFocus
           />
@@ -81,7 +81,7 @@ export function DatePickerWithRange({
               }
             }}
             disabled={(selectedDate) => {
-              return !!selectedDate && (selectedDate > new Date() || (date.from ? selectedDate < date.from : false));
+              return !!selectedDate && (date.from ? selectedDate < date.from : false);
             }}
             initialFocus
           />
