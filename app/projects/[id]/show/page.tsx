@@ -34,6 +34,8 @@ import type { Client } from '@/types/client'
 import { TableResource } from '@/components/ui/table-resource'
 import { activityLogsColumns } from '@/constants/resource-columns/activityLogsColumns'
 import { AssignmentModal } from '@/components/assignment-modal'
+import { peopleService } from '@/lib/services/people.service'
+import { ProjectAuditLog } from '@/components/project-audit-log'
 
 
 interface ProjectWithClient extends Project {
@@ -66,20 +68,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
         setLoading(true)
         setError(null)
         const data = await projectsService.getById(unwrappedParams.id)
-
-        let { data: activityLogs, error } = await supabase.rpc('get_project_activity_logs', {
-          p_project_id: unwrappedParams.id,
-        })
-
-        if (error) {
-          console.error(error)
-        }
-
-        if (data) {
-          data.activity_logs = activityLogs || []
-        }
         setProject(data)
-
         // Calcular FTE asignado
         const fte = await projectsService.getAssignedFTE(unwrappedParams.id)
         setAssignedFTE(fte)
@@ -451,7 +440,9 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
               </CardDescription>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
-              <TableResource items={project.activity_logs || []} columns={activityLogsColumns} />
+              {project.project_code && (
+                <ProjectAuditLog projectCode={project.project_code} />
+              )}
             </CardContent>
           </Card>
         </div>

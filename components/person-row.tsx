@@ -169,6 +169,51 @@ export function PersonRow({
     }
   }
 
+  // Algoritmo para apilar barras solapadas
+  function getAssignmentLevels(assignments: Assignment[]) {
+    // Ordenar por fecha de inicio
+    const sorted = [...assignments].sort((a, b) => {
+      const dateA = parseDateFromString(a.start_date)
+      const dateB = parseDateFromString(b.start_date)
+      return dateA.getTime() - dateB.getTime()
+    })
+    // Cada nivel es un array de asignaciones ya ubicadas
+    const levels: Assignment[][] = []
+    const result: { assignment: Assignment; level: number }[] = []
+    sorted.forEach(assignment => {
+      const startA = parseDateFromString(assignment.start_date)
+      const endA = parseDateFromString(assignment.end_date)
+      // Buscar el primer nivel donde no se solape
+      let foundLevel = 0
+      for (; foundLevel < levels.length; foundLevel++) {
+        const level = levels[foundLevel]
+        // ¿Se solapa con alguna asignación ya ubicada en este nivel?
+        const overlaps = level.some(b => {
+          const startB = parseDateFromString(b.start_date)
+          const endB = parseDateFromString(b.end_date)
+          return startA <= endB && endA >= startB
+        })
+        if (!overlaps) break
+      }
+      // Si no hay nivel disponible, crea uno nuevo
+      if (!levels[foundLevel]) levels[foundLevel] = []
+      levels[foundLevel].push(assignment)
+      result.push({ assignment, level: foundLevel })
+    })
+    return result
+  }
+
+  // Calcular niveles de apilado
+  const assignmentLevels = getAssignmentLevels(assignments)
+  const maxLevel = assignmentLevels.reduce((max, a) => Math.max(max, a.level), 0)
+
+  // Calcular layout dinámico según niveles
+  const CONSISTENT_BAR_HEIGHT = 32
+  const BAR_SPACING = 4
+  const VERTICAL_PADDING = 8
+  const rowHeight = Math.max(baseRowHeight, (CONSISTENT_BAR_HEIGHT + BAR_SPACING) * (maxLevel + 1) + VERTICAL_PADDING * 2)
+  const startY = VERTICAL_PADDING
+
   // Sort assignments by start date for better stacking
   const sortedAssignments = [...assignments].sort((a, b) => {
     const dateA = parseDateFromString(a.start_date)
@@ -210,7 +255,7 @@ export function PersonRow({
         flex border-b border-gray-100 hover:bg-gray-50/30 transition-colors
         ${isEvenRow ? "bg-white" : "bg-gray-50/20"}
       `}
-      style={{ height: `${layout.rowHeight}px` }}
+      style={{ height: `${rowHeight}px` }}
     >
       {/* Sidebar */}
       <div
@@ -271,12 +316,12 @@ export function PersonRow({
 
         {/* Assignment bars with consistent heights */}
         <TooltipProvider>
-          {sortedAssignments.slice(0, layout.maxVisibleAssignments).map((assignment, idx) => {
+          {assignmentLevels.map(({ assignment, level }) => {
             const project = projects.find((p) => p.id === assignment.project_id)
             if (!project) return null
 
             const dimensions = calculateBarDimensions(assignment)
-            const top = layout.startY + idx * (layout.barHeight + layout.barSpacing)
+            const top = startY + level * (CONSISTENT_BAR_HEIGHT + BAR_SPACING)
 
             // Solo usar overrideBar si tiene left y width (resize), si no, usar solo dimensions originales
             const isResizeOverride =
@@ -299,10 +344,10 @@ export function PersonRow({
                 project={project}
                 dimensions={barDimensions}
                 top={top}
-                height={layout.barHeight}
+                height={CONSISTENT_BAR_HEIGHT}
                 scrollLeft={scrollLeft}
                 sidebarWidth={sidebarWidth}
-                zIndex={10 - idx}
+                zIndex={10 - level}
                 onRequestDelete={() => handleRequestDelete(assignment)}
                 onRequestEdit={onRequestEdit ? () => onRequestEdit(assignment) : undefined}
                 isContextMenuOpen={isContextMenuOpen}
@@ -315,18 +360,6 @@ export function PersonRow({
             )
           })}
         </TooltipProvider>
-
-        {/* Overflow indicator for more than 4 assignments */}
-        {sortedAssignments.length > layout.maxVisibleAssignments && (
-          <div
-            className="absolute right-2 bg-gray-600 text-white text-xs px-2 py-1 rounded-full shadow-md z-20"
-            style={{
-              top: `${layout.rowHeight - 25}px`,
-            }}
-          >
-            +{sortedAssignments.length - layout.maxVisibleAssignments} más
-          </div>
-        )}
 
         {/* Today marker */}
         {days.some((day) => isSameDay(day, today)) && (
