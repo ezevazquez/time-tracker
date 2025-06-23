@@ -653,7 +653,7 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
                     today={today}
                     isEvenRow={idx % 2 === 0}
                     onDeleteAssignment={onDeleteAssignment}
-                    onCreateAssignment={onCreateAssignment}
+                    onCreateAssignment={(assignment) => { handleOpenCreateModal(assignment); return Promise.resolve(); }}
                     isContextMenuOpen={contextMenuOpen}
                     setContextMenuOpen={setContextMenuOpen}
                     onRequestEdit={handleRequestEdit}

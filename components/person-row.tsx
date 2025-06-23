@@ -350,6 +350,17 @@ export function PersonRow({
                 zIndex={10 - level}
                 onRequestDelete={() => handleRequestDelete(assignment)}
                 onRequestEdit={onRequestEdit ? () => onRequestEdit(assignment) : undefined}
+                onRequestDuplicate={onRequestCreate ? () => {
+                  // Duplicar: mismo proyecto, mismas fechas, misma asignación, pero sin persona
+                  onRequestCreate({
+                    person_id: '', // El usuario debe elegir la persona
+                    project_id: assignment.project_id,
+                    start_date: assignment.start_date,
+                    end_date: assignment.end_date,
+                    allocation: assignment.allocation,
+                    is_billable: assignment.is_billable,
+                  });
+                } : undefined}
                 isContextMenuOpen={isContextMenuOpen}
                 setContextMenuOpen={setContextMenuOpen}
                 isDraggingAssignment={isDraggingAssignment}
