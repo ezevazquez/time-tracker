@@ -61,7 +61,7 @@ export function RecentActivity({ assignments, people, projects }: RecentActivity
           Actividad reciente
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 max-h-[calc(100vh-24rem)] overflow-y-auto">
         {recentActivity.length === 0 ? (
           <p className="text-gray-500 text-sm text-center py-4">No hay actividad reciente</p>
         ) : (

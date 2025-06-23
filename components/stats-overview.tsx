@@ -85,8 +85,8 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
     },
     {
       title: 'Asignaciones',
-      value: totalAssignments,
-      total: currentAssignments.length,
+      value: currentAssignments.length,
+      total: totalAssignments,
       icon: Calendar,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',

@@ -234,16 +234,16 @@ export function stringToColor(str: string): string {
 
   // Resource Guru inspired color palette
   const colors = [
-    "#4F46E5", // indigo
-    "#059669", // emerald
-    "#DC2626", // red
-    "#7C3AED", // violet
-    "#DB2777", // pink
-    "#0891B2", // cyan
-    "#CA8A04", // yellow
-    "#EA580C", // orange
-    "#16A34A", // green
-    "#9333EA", // purple
+    "#A7F3D0", // pastel green
+    "#FDE68A", // pastel yellow
+    "#FBCFE8", // pastel pink
+    "#C7D2FE", // pastel indigo
+    "#FCA5A5", // pastel red
+    "#BFDBFE", // pastel blue
+    "#FCD34D", // pastel gold
+    "#F9A8D4", // pastel magenta
+    "#D1FAE5", // pastel mint
+    "#DDD6FE", // pastel purple
   ]
 
   return colors[Math.abs(hash) % colors.length]

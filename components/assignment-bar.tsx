@@ -261,7 +261,7 @@ export function AssignmentBar({
             width: stickyInfo.isSticky ? `${stickyInfo.labelMaxWidth}px` : "100%",
           }}
         >
-          <div className="px-3 py-1 text-white font-medium flex items-center text-sm w-full min-w-0">
+          <div className="px-3 py-1 text-black font-light flex items-center text-sm w-full min-w-0">
             {/* Project name and percentage together */}
             <div className="flex items-center space-x-2 min-w-0">
               <span className="truncate">{project.name}</span>

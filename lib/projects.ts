@@ -1,5 +1,6 @@
 import type { Project } from '@/types/project'
 import { PROJECT_STATUS, ACTIVE_PROJECT_STATUSES, INACTIVE_PROJECT_STATUSES } from '@/constants/projects'
+import { parseDateFromString } from '@/lib/assignments'
 
 export function getActiveProjects(projects: Project[]) {
   return projects.filter(p =>
@@ -68,8 +69,8 @@ export function getStatusLabel(status?: string) {
 export function getDuration(startDate: string, endDate: string | null) {
   if (!endDate) return 'En curso'
 
-  const start = new Date(startDate)
-  const end = new Date(endDate)
+  const start = parseDateFromString(startDate)
+  const end = parseDateFromString(endDate)
   const diffTime = Math.abs(end.getTime() - start.getTime())
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   const months = Math.floor(diffDays / 30)
