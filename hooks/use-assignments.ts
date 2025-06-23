@@ -16,21 +16,31 @@ export function useAssignments() {
       .finally(() => setLoading(false))
   }, [])
 
+  const refreshAssignments = async () => {
+    setLoading(true)
+    try {
+      const data = await assignmentsService.getAll()
+      setAssignments(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const createAssignment = async (assignment: Omit<Assignment, 'id' | 'created_at' | 'updated_at'>) => {
-    const newAssignment = await assignmentsService.create(assignment)
-    setAssignments(prev => [...prev, newAssignment])
-    return newAssignment
+    await assignmentsService.create(assignment)
+    await refreshAssignments()
   }
 
   const updateAssignment = async (id: string, updates: Partial<Assignment>) => {
-    const updated = await assignmentsService.update(id, updates)
-    setAssignments(prev => prev.map(a => (a.id === id ? updated : a)))
-    return updated
+    await assignmentsService.update(id, updates)
+    await refreshAssignments()
   }
 
   const deleteAssignment = async (id: string) => {
     await assignmentsService.delete(id)
-    setAssignments(prev => prev.filter(a => a.id !== id))
+    await refreshAssignments()
   }
 
   return { assignments, loading, error, createAssignment, updateAssignment, deleteAssignment }
