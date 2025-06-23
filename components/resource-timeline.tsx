@@ -627,7 +627,14 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
 
                 {/* Empty state */}
                 {filteredPeople.length === 0 && (
-                  <div className="p-12 text-center text-gray-500">
+                  <div 
+                    className="absolute p-12 text-center text-gray-500 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg shadow-sm"
+                    style={{
+                      left: `${SIDEBAR_WIDTH + differenceInDays(today, startOfMonth(visibleDateRange.start)) * DAY_WIDTH - 200}px`,
+                      top: '100px',
+                      width: '400px'
+                    }}
+                  >
                     <div className="text-lg font-medium mb-2">No hay miembros activos del equipo</div>
                     <div className="text-sm">Agrega personas con estado "Activo" para ver sus asignaciones</div>
                   </div>

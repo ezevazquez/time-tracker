@@ -130,9 +130,18 @@ export default function AssignmentsPage() {
       result = result.filter(person => {
         const fullName = `${person.first_name} ${person.last_name}`.toLowerCase()
         const profile = person.profile?.toLowerCase() || ''
+        // Buscar también en los proyectos asignados a la persona
+        const personProjects = assignments
+          .filter(a => a.person_id === person.id)
+          .map(a => projects.find(p => p.id === a.project_id))
+          .filter(Boolean)
+          .map(p => p?.name?.toLowerCase() || '')
+          .join(' ')
+        
         return (
           fullName.includes(searchLower) ||
-          profile.includes(searchLower)
+          profile.includes(searchLower) ||
+          personProjects.includes(searchLower)
         )
       })
     }

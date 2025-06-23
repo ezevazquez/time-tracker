@@ -105,7 +105,7 @@ export function TeamWorkloadChart({ people, assignments }: TeamWorkloadChartProp
                 radius={[4, 4, 0, 0]}
               >
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.percentage === 100 ? '#10B981' : entry.percentage > 50 ? '#F59E0B' : '#EF4444'} />
+                  <Cell key={`cell-${index}`} fill={entry.percentage === 100 ? '#86EFAC' : entry.percentage > 50 ? '#FDE68A' : '#FCA5A5'} />
                 ))}
               </Bar>
             </BarChart>

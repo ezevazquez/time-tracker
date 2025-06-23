@@ -34,8 +34,8 @@ export function useAssignments() {
   }
 
   const updateAssignment = async (id: string, updates: Partial<Assignment>) => {
-    await assignmentsService.update(id, updates)
-    await refreshAssignments()
+    const updated = await assignmentsService.update(id, updates)
+    setAssignments(prev => prev.map(a => a.id === id ? { ...a, ...updated } : a))
   }
 
   const deleteAssignment = async (id: string) => {
