@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client'
 import type { Assignment, AssignmentWithRelations } from '@/types/assignment'
+import { parseDateFromString } from '@/lib/assignments'
 
 interface OverallocationResult {
   isOverallocated: boolean
@@ -137,8 +138,8 @@ export const assignmentsService = {
       let overallocatedDays: any[] = []
       if (isOverallocated) {
         // Generar todos los días del rango de la nueva asignación
-        const start = new Date(startDate)
-        const end = new Date(endDate)
+        const start = parseDateFromString(startDate)
+        const end = parseDateFromString(endDate)
         const days: any[] = []
         
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -149,9 +150,9 @@ export const assignmentsService = {
           
           // Sumar asignaciones existentes que cubren este día
           for (const existingAssignment of overlappingAssignments || []) {
-            const existingStart = new Date(existingAssignment.start_date)
-            const existingEnd = new Date(existingAssignment.end_date)
-            const currentDay = new Date(currentDate)
+            const existingStart = parseDateFromString(existingAssignment.start_date)
+            const existingEnd = parseDateFromString(existingAssignment.end_date)
+            const currentDay = parseDateFromString(currentDate)
             
             if (currentDay >= existingStart && currentDay <= existingEnd) {
               dayTotalAllocation += existingAssignment.allocation || 0

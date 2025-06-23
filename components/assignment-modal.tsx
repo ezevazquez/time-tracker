@@ -17,7 +17,7 @@ import { ASSIGNMENT_ALLOCATION_VALUES } from '@/constants/assignments';
 import { usePeople } from '@/hooks/use-people';
 import { useProjects } from '@/hooks/use-projects';
 import { useAssignmentValidation } from '@/hooks/use-assignment-validation';
-import { toISODateString, normalizeDate } from '@/lib/assignments';
+import { toISODateString, normalizeDate, parseDateFromString } from '@/lib/assignments';
 import { percentageToFte } from '@/lib/utils/fte-calculations';
 import { toast } from 'sonner';
 
@@ -41,8 +41,8 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
   const [formData, setFormData] = useState({
     person_id: initialData?.person_id || '',
     project_id: initialData?.project_id || '',
-    start_date: initialData?.start_date ? new Date(initialData.start_date) : undefined,
-    end_date: initialData?.end_date ? new Date(initialData.end_date) : undefined,
+    start_date: initialData?.start_date ? parseDateFromString(initialData.start_date) : undefined,
+    end_date: initialData?.end_date ? parseDateFromString(initialData.end_date) : undefined,
     allocation: initialData?.allocation ? Math.round((initialData.allocation || 1) * 100) : 100,
     is_billable: initialData?.is_billable ?? true,
   });
@@ -61,8 +61,8 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
     setFormData({
       person_id: initialData?.person_id || '',
       project_id: initialData?.project_id || '',
-      start_date: initialData?.start_date ? new Date(initialData.start_date) : undefined,
-      end_date: initialData?.end_date ? new Date(initialData.end_date) : undefined,
+      start_date: initialData?.start_date ? parseDateFromString(initialData.start_date) : undefined,
+      end_date: initialData?.end_date ? parseDateFromString(initialData.end_date) : undefined,
       allocation: initialData?.allocation ? Math.round((initialData.allocation || 1) * 100) : 100,
       is_billable: initialData?.is_billable ?? true,
     });
