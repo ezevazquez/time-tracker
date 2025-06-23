@@ -150,7 +150,7 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
     }
   };
 
-  let activeProjects = projects.filter((p: Project) => p.status === 'In Progress');
+  let activeProjects = projects.filter((p: Project) => p.status !== 'Finished');
   // Asegurarse de que el proyecto seleccionado esté en la lista
   if (initialData?.project_id) {
     const selectedProject = projects.find(p => p.id === initialData.project_id);
