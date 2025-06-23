@@ -13,7 +13,8 @@ export interface Assignment {
 export interface AssignmentWithRelations extends Assignment {
   people?: {
     id: string
-    name: string
+    first_name: string
+    last_name: string
     status: string
   }
   projects?: {

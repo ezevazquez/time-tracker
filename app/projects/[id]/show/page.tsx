@@ -8,7 +8,7 @@ import { es } from 'date-fns/locale'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase/client'
 
-import { ArrowLeft, Calendar, User, Building2, Clock, Edit, Trash2 } from 'lucide-react'
+import { ArrowLeft, Calendar, User, Building2, Clock, Edit, Trash2, Plus } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -33,6 +33,7 @@ import type { Project } from '@/types/project'
 import type { Client } from '@/types/client'
 import { TableResource } from '@/components/ui/table-resource'
 import { activityLogsColumns } from '@/constants/resource-columns/activityLogsColumns'
+import { AssignmentModal } from '@/components/assignment-modal'
 
 
 interface ProjectWithClient extends Project {
@@ -42,13 +43,15 @@ interface ProjectWithClient extends Project {
 export default function ProjectShowPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params)
   const { deleteProject } = useProjects()
-  const { assignments } = useAssignments()
+  const { assignments, createAssignment, updateAssignment, deleteAssignment } = useAssignments()
   const [project, setProject] = useState<ProjectWithClient | null>(null)
   const [assignedFTE, setAssignedFTE] = useState<number>(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false)
+  const [selectedAssignment, setSelectedAssignment] = useState<any>(null)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -237,68 +240,6 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                 )}
               </CardContent>
             </Card>
-
-            {/* Team Members Section - Placeholder for future implementation */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Equipo Asignado
-                </CardTitle>
-                <CardDescription>
-                  Miembros del equipo trabajando en este proyecto ({projectAssignments.length})
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {projectAssignments.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No hay miembros asignados aún</p>
-                    <p className="text-xs mt-1">
-                      Crea asignaciones para agregar personas al proyecto
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {projectAssignments.map(assignment => {
-                      const person = assignment.people
-                      if (!person) return null
-
-                      return (
-                        <div
-                          key={assignment.id}
-                          className="flex items-center justify-between p-3 border rounded-lg"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                              <User className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-sm">{person.name}</h4>
-                              <p className="text-xs text-muted-foreground">
-                                Estado: {person.status}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm font-medium">
-                              {(assignment.allocation * 100).toFixed(0)}%
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {format(new Date(assignment.start_date), 'dd/MM/yyyy', {
-                                locale: es,
-                              })}{' '}
-                              -{' '}
-                              {format(new Date(assignment.end_date), 'dd/MM/yyyy', { locale: es })}
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
 
           {/* Sidebar */}
@@ -399,33 +340,108 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                 </div>
               </CardContent>
             </Card>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Acciones Rápidas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button asChild className="w-full" variant="outline">
-                  <Link href={`/projects/${project.id}/edit`}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Editar Proyecto
-                  </Link>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  {isDeleting ? 'Eliminando...' : 'Eliminar Proyecto'}
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         </div>
+
+        {/* Team Members Section */}
+        <div className="mt-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Equipo Asignado
+                  </CardTitle>
+                  <CardDescription>
+                    Miembros del equipo trabajando en este proyecto ({projectAssignments.length})
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setShowAssignmentModal(true)} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {projectAssignments.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No hay miembros asignados aún</p>
+                  <p className="text-xs mt-1">
+                    Crea asignaciones para agregar personas al proyecto
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {projectAssignments.map(assignment => {
+                    const person = assignment.people
+                    if (!person) return null
+
+                    // Obtener iniciales
+                    const initials = `${person.first_name?.[0] || ''}${person.last_name?.[0] || ''}`.toUpperCase()
+
+                    return (
+                      <div
+                        key={assignment.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center font-semibold">
+                            {initials}
+                          </div>
+                          <div>
+                            <h4 className="font-medium">{person.first_name} {person.last_name}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {(assignment.allocation * 100).toFixed(0)}% · {format(new Date(assignment.start_date), 'dd/MM/yyyy')} - {format(new Date(assignment.end_date), 'dd/MM/yyyy')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedAssignment(assignment)
+                              setShowAssignmentModal(true)
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (confirm('¿Estás seguro de que deseas eliminar esta asignación?')) {
+                                deleteAssignment(assignment.id)
+                                  .then(() => {
+                                    toast({
+                                      title: 'Asignación eliminada',
+                                      description: 'La asignación fue eliminada correctamente.'
+                                    })
+                                  })
+                                  .catch(() => {
+                                    toast({
+                                      title: 'Error',
+                                      description: 'No se pudo eliminar la asignación.',
+                                      variant: 'destructive'
+                                    })
+                                  })
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
         <div className="mt-6">
           <Card>
             <CardHeader>
@@ -454,6 +470,45 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
       )}
+
+      {/* Modal de Asignación */}
+      <AssignmentModal
+        open={showAssignmentModal}
+        mode={selectedAssignment ? 'edit' : 'new'}
+        initialData={{
+          ...selectedAssignment,
+          project_id: project.id,
+        }}
+        onSave={async (data) => {
+          try {
+            if (selectedAssignment) {
+              await updateAssignment(selectedAssignment.id, data)
+              toast({
+                title: 'Asignación actualizada',
+                description: 'La asignación fue actualizada correctamente.'
+              })
+            } else {
+              await createAssignment(data)
+              toast({
+                title: 'Asignación creada',
+                description: 'La asignación fue creada correctamente.'
+              })
+            }
+            setSelectedAssignment(null)
+            setShowAssignmentModal(false)
+          } catch (error) {
+            toast({
+              title: 'Error',
+              description: 'No se pudo guardar la asignación.',
+              variant: 'destructive'
+            })
+          }
+        }}
+        onCancel={() => {
+          setSelectedAssignment(null)
+          setShowAssignmentModal(false)
+        }}
+      />
     </main>
   )
 }
