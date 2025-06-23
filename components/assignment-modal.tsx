@@ -53,6 +53,9 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
   const [overallocationData, setOverallocationData] = useState<any>(null);
   const [pendingFormData, setPendingFormData] = useState<any>(null);
 
+  // Determinar si el modal fue abierto desde el timeline (dibujar)
+  const isPersonFixed = Boolean(initialData?.person_id);
+
   useEffect(() => {
     setFormData({
       person_id: initialData?.person_id || '',
@@ -172,7 +175,7 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
             <Select
               value={formData.person_id}
               onValueChange={value => setFormData(f => ({ ...f, person_id: value }))}
-              disabled={mode === 'edit'}
+              disabled={isPersonFixed}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar persona" />
