@@ -83,6 +83,10 @@ export function PersonRow({
   const [hoveredDayIdx, setHoveredDayIdx] = useState<number | null>(null)
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | null>(null)
 
+  const CONSISTENT_BAR_HEIGHT = 32;
+  const BAR_SPACING = 4;
+  const VERTICAL_PADDING = 8;
+
   const handleRequestDelete = (assignment: Assignment) => {
     setAssignmentToDelete(assignment)
     setDeleteModalOpen(true)
@@ -207,12 +211,40 @@ export function PersonRow({
   const assignmentLevels = getAssignmentLevels(assignments)
   const maxLevel = assignmentLevels.reduce((max, a) => Math.max(max, a.level), 0)
 
-  // Calcular layout dinámico según niveles
-  const CONSISTENT_BAR_HEIGHT = 32
-  const BAR_SPACING = 4
-  const VERTICAL_PADDING = 8
-  const rowHeight = Math.max(baseRowHeight, (CONSISTENT_BAR_HEIGHT + BAR_SPACING) * (maxLevel + 1) + VERTICAL_PADDING * 2)
-  const startY = VERTICAL_PADDING
+  // Calcular los índices de los días estrictamente visibles (sin VISIBILITY_MARGIN)
+  let strictFirstVisibleDayIdx = 0
+  let strictLastVisibleDayIdx = days.length - 1
+  if (typeof window !== 'undefined') {
+    const timelineViewportWidth = document.querySelector('.resource-timeline-viewport')?.clientWidth || 800
+    const viewportLeft = scrollLeft
+    const viewportRight = scrollLeft + timelineViewportWidth
+    strictFirstVisibleDayIdx = Math.max(0, Math.floor((viewportLeft - sidebarWidth) / dayWidth))
+    strictLastVisibleDayIdx = Math.min(days.length - 1, Math.ceil((viewportRight - sidebarWidth) / dayWidth))
+  }
+  const strictlyVisibleDays = days.slice(strictFirstVisibleDayIdx, strictLastVisibleDayIdx + 1)
+
+  // Calcular el máximo de solapamientos en los días estrictamente visibles
+  let maxOverlap = 0
+  strictlyVisibleDays.forEach(day => {
+    const overlap = assignments.filter(a => {
+      const start = parseDateFromString(a.start_date)
+      const end = parseDateFromString(a.end_date)
+      return start <= day && end >= day
+    }).length
+    if (overlap > maxOverlap) maxOverlap = overlap
+  })
+
+  // Calcular la altura mínima como si tuviera 2 asignaciones
+  const minRowHeight = (CONSISTENT_BAR_HEIGHT + BAR_SPACING) * 2 + VERTICAL_PADDING * 2;
+
+  // Calcular la altura de la fila
+  let rowHeight = minRowHeight;
+  if (maxOverlap > 1) {
+    rowHeight = Math.max(
+      minRowHeight,
+      (CONSISTENT_BAR_HEIGHT + BAR_SPACING) * maxOverlap + VERTICAL_PADDING * 2
+    );
+  }
 
   // Sort assignments by start date for better stacking
   const sortedAssignments = [...assignments].sort((a, b) => {
@@ -236,8 +268,17 @@ export function PersonRow({
   }
   const visibleDays = days.slice(firstVisibleDayIdx, lastVisibleDayIdx + 1)
 
-  // Calcular el máximo de asignaciones activas en cualquier día visible
-  const maxAssignmentsInADay = visibleDays.reduce((max, day) => {
+  // Calcular si hay asignaciones superpuestas visibles en el viewport
+  // 1. Obtener las asignaciones que están activas en días visibles
+  const visibleAssignments = sortedAssignments.filter(a => {
+    const start = parseDateFromString(a.start_date)
+    const end = parseDateFromString(a.end_date)
+    // Si la asignación se solapa con algún día visible
+    return visibleDays.some(day => start <= day && end >= day)
+  })
+
+  // 2. Calcular el máximo de asignaciones activas en cualquier día visible
+  const maxAssignmentsInADayVisible = visibleDays.reduce((max, day) => {
     const activeCount = sortedAssignments.filter(a => {
       const start = parseDateFromString(a.start_date)
       const end = parseDateFromString(a.end_date)
@@ -246,8 +287,20 @@ export function PersonRow({
     return Math.max(max, activeCount)
   }, 0)
 
-  // Calculate row layout with consistent bar heights, usando el máximo de asignaciones activas en un día visible
-  const layout = calculateRowLayout(maxAssignmentsInADay, baseRowHeight)
+  // Si hay solapamiento visible, expandir. Si no, altura base.
+  if (maxAssignmentsInADayVisible > 1) {
+    // Calcular niveles de apilado solo con asignaciones visibles
+    const visibleAssignments = sortedAssignments.filter(a => {
+      return visibleDays.some(day => {
+        const start = parseDateFromString(a.start_date)
+        const end = parseDateFromString(a.end_date)
+        return start <= day && end >= day
+      })
+    })
+    const visibleAssignmentLevels = getAssignmentLevels(visibleAssignments)
+    const visibleMaxLevel = visibleAssignmentLevels.reduce((max, a) => Math.max(max, a.level), 0)
+    rowHeight = Math.max(baseRowHeight, (CONSISTENT_BAR_HEIGHT + BAR_SPACING) * (visibleMaxLevel + 1) + VERTICAL_PADDING * 2)
+  }
 
   return (
     <div
@@ -321,7 +374,7 @@ export function PersonRow({
             if (!project) return null
 
             const dimensions = calculateBarDimensions(assignment)
-            const top = startY + level * (CONSISTENT_BAR_HEIGHT + BAR_SPACING)
+            const top = VERTICAL_PADDING + level * (CONSISTENT_BAR_HEIGHT + BAR_SPACING)
 
             // Solo usar overrideBar si tiene left y width (resize), si no, usar solo dimensions originales
             const isResizeOverride =
