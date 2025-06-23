@@ -399,31 +399,6 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                 </div>
               </CardContent>
             </Card>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Acciones Rápidas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button asChild className="w-full" variant="outline">
-                  <Link href={`/projects/${project.id}/edit`}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Editar Proyecto
-                  </Link>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  {isDeleting ? 'Eliminando...' : 'Eliminar Proyecto'}
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         </div>
         <div className="mt-6">
