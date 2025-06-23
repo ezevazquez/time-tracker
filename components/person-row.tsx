@@ -47,6 +47,7 @@ interface PersonRowProps {
   onRequestCreate?: (assignment: Omit<Assignment, 'id' | 'created_at' | 'updated_at'>) => void
   isDraggingAssignment?: boolean
   overrideBar?: { assignmentId: string, left: number } | null
+  projectColors: Record<string, string>
 }
 
 export function PersonRow({
@@ -70,6 +71,7 @@ export function PersonRow({
   onRequestCreate,
   isDraggingAssignment = false,
   overrideBar = null,
+  projectColors,
 }: PersonRowProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null)
@@ -119,6 +121,13 @@ export function PersonRow({
     // Solo click izquierdo y si no hay menú contextual abierto
     if (e.button !== 0) return;
     if (isContextMenuOpen) return;
+    // Si se está haciendo drag de una barra, no crear asignación
+    if (isDraggingAssignment) {
+      setIsSelecting(false);
+      setSelectionStartIdx(null);
+      setSelectionEndIdx(null);
+      return;
+    }
     setIsSelecting(false)
     if (selectedRange) {
       const from = days[selectedRange[0]];
@@ -135,7 +144,7 @@ export function PersonRow({
       }
       setDateRange({ from, to }); // Si necesitas el estado para otra cosa
     }
-  }, [isContextMenuOpen, selectedRange, days, person.id, onRequestCreate]);
+  }, [isContextMenuOpen, isDraggingAssignment, selectedRange, days, person.id, onRequestCreate]);
 
   // Calculate bar position and width
   const calculateBarDimensions = (assignment: Assignment) => {
@@ -281,6 +290,8 @@ export function PersonRow({
               width: isResizeOverride ? (overrideBar as any).width : dimensions.width,
             };
 
+            const bgColor = projectColors[project.id] || '#D9F9F2'
+
             return (
               <AssignmentBar
                 key={assignment.id}
@@ -299,6 +310,7 @@ export function PersonRow({
                 isDraggingAssignment={isDraggingAssignment}
                 disableAllTooltips={isContextMenuOpen}
                 overrideBar={isResizeOverride ? (overrideBar as { assignmentId: string; left: number; width: number }) : undefined}
+                bgColor={bgColor}
               />
             )
           })}

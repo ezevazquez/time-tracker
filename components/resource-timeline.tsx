@@ -42,6 +42,30 @@ interface ResourceTimelineProps {
   onUpdateAssignment?: (id: string, updates: Partial<Assignment>) => Promise<any>
 }
 
+// Paleta de 15 colores intercalados por familia
+const PROJECT_COLORS = [
+  '#3CBFAE', // Verde pastel oscuro
+  '#4B6CC1', // Azul pastel oscuro
+  '#8B5FBF', // Púrpura pastel oscuro
+  '#FF9F59', // Naranja pastel oscuro
+  '#F47174', // Rosa pastel oscuro
+  '#2CA58D', // Verde intermedio oscuro
+  '#3973B7', // Azul intermedio oscuro
+  '#7C3AED', // Púrpura intermedio oscuro
+  '#FF7F3F', // Naranja intermedio oscuro
+  '#E4577B', // Rosa intermedio oscuro
+  '#1E8C6B', // Verde fuerte oscuro
+  '#1C3FAA', // Azul fuerte oscuro
+  '#6D28D9', // Púrpura fuerte oscuro
+  '#FF6700', // Naranja fuerte oscuro
+  '#C81E4A', // Rosa fuerte oscuro
+]
+
+function getProjectColor(projectId: string, projects: { id: string }[]) {
+  const idx = projects.findIndex(p => p.id === projectId)
+  return PROJECT_COLORS[idx % PROJECT_COLORS.length]
+}
+
 export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, ResourceTimelineProps>(
   ({ people, projects, assignments, filters, onFiltersChange, onClearFilters, onScrollToTodayRef, onDeleteAssignment, onCreateAssignment, onUpdateAssignment }, ref) => {
     // State for visible date range (for infinite scroll)
@@ -622,6 +646,7 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
                     onRequestCreate={handleOpenCreateModal}
                     isDraggingAssignment={!!draggedAssignment}
                     overrideBar={overrideBar}
+                    projectColors={projects.reduce((acc, p) => { acc[p.id] = getProjectColor(p.id, projects); return acc }, {} as Record<string, string>)}
                   />
                 ))}
 
