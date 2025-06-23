@@ -133,7 +133,7 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
 
     // Get assignments for a person within the visible date range
     const getPersonAssignments = (personId: string) => {
-      return assignments.filter((assignment) => {
+      const result = assignments.filter((assignment) => {
         const startDate = parseDateFromString(assignment.start_date)
         const endDate = parseDateFromString(assignment.end_date)
         return (
@@ -142,6 +142,9 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
           endDate >= startOfMonth(visibleDateRange.start)
         )
       })
+      // Log assignments for this person
+      console.log('[TIMELINE] getPersonAssignments', { personId, result })
+      return result
     }
 
     // Show all people, even if they have no assignments
@@ -326,6 +329,8 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
 
     const handleDragEnd = (event: DragEndEvent) => {
       setDraggedAssignment(null)
+      // Log assignments before update
+      console.log('[TIMELINE] assignments BEFORE update', assignments)
       const active = event.active
       // Detectar si es un drag de resize handle
       const isResizeLeft = active.id.toString().startsWith('resize-left-')
@@ -437,6 +442,10 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
         assignment,
         snappedLeft,
       })
+      // Log assignments after update (will update after confirm)
+      setTimeout(() => {
+        console.log('[TIMELINE] assignments AFTER update (setTimeout)', assignments)
+      }, 1000)
     }
 
     // Handler para edición desde menú contextual
@@ -482,8 +491,13 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
 
     // Guardar cambios (aquí deberías llamar a tu función de update real)
     const handleEditAssignment = () => {
+      // Log assignments before edit
+      console.log('[TIMELINE] assignments BEFORE edit', assignments)
       // Aquí deberías implementar la lógica real de guardado
       setEditModalOpen(false);
+      setTimeout(() => {
+        console.log('[TIMELINE] assignments AFTER edit (setTimeout)', assignments)
+      }, 1000)
     };
 
     // Custom snap modifier: sticky horizontal a los días
@@ -684,7 +698,13 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
           initialData={editModalData}
           onSave={async (data) => {
             if (editModalData && editModalData.id && onUpdateAssignment) {
+              // Log assignments before update
+              console.log('[TIMELINE] assignments BEFORE onUpdateAssignment', assignments)
               await onUpdateAssignment(editModalData.id, data)
+              // Log assignments after update
+              setTimeout(() => {
+                console.log('[TIMELINE] assignments AFTER onUpdateAssignment', assignments)
+              }, 1000)
             }
             setEditModalOpen(false);
           }}
