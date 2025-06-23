@@ -53,6 +53,10 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
   const [overallocationData, setOverallocationData] = useState<any>(null);
   const [pendingFormData, setPendingFormData] = useState<any>(null);
 
+  // Determinar si el modal fue abierto desde el timeline (dibujar)
+  const isPersonFixed = Boolean(initialData?.person_id);
+  const isProjectFixed = Boolean(initialData?.project_id);
+
   useEffect(() => {
     setFormData({
       person_id: initialData?.person_id || '',
@@ -146,8 +150,16 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
     }
   };
 
+  let activeProjects = projects.filter((p: Project) => p.status === 'In Progress');
+  // Asegurarse de que el proyecto seleccionado esté en la lista
+  if (initialData?.project_id) {
+    const selectedProject = projects.find(p => p.id === initialData.project_id);
+    if (selectedProject && !activeProjects.some(p => p.id === selectedProject.id)) {
+      activeProjects = [selectedProject, ...activeProjects];
+    }
+  }
+
   const activePeople = people.filter((p: Person) => p.status === 'Active' || p.status === 'Paused');
-  const activeProjects = projects.filter((p: Project) => p.status === 'In Progress');
 
   return (
     <Dialog open={open} onOpenChange={onCancel}>
@@ -172,7 +184,7 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
             <Select
               value={formData.person_id}
               onValueChange={value => setFormData(f => ({ ...f, person_id: value }))}
-              disabled={mode === 'edit'}
+              disabled={isPersonFixed}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar persona" />
@@ -191,6 +203,7 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
             <Select
               value={formData.project_id}
               onValueChange={value => setFormData(f => ({ ...f, project_id: value }))}
+              disabled={isProjectFixed}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar proyecto" />
@@ -216,7 +229,7 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
             </div>
           </div>
           <div>
-            <Label>% Asignación *</Label>
+            <Label>Asignación *</Label>
             <Select
               value={String(formData.allocation)}
               onValueChange={value => setFormData(f => ({ ...f, allocation: Number(value) }))}

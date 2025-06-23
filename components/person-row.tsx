@@ -121,19 +121,21 @@ export function PersonRow({
     if (isContextMenuOpen) return;
     setIsSelecting(false)
     if (selectedRange) {
-      setDateRange({ from: days[selectedRange[0]], to: days[selectedRange[1]] })
-      if (onRequestCreate && dateRange) {
+      const from = days[selectedRange[0]];
+      const to = days[selectedRange[1]];
+      if (onRequestCreate) {
         onRequestCreate({
           person_id: person.id,
           project_id: '', // El usuario debe seleccionar el proyecto en el modal
-          start_date: dateRange.from.toISOString().slice(0, 10),
-          end_date: dateRange.to.toISOString().slice(0, 10),
+          start_date: from.toISOString().slice(0, 10),
+          end_date: to.toISOString().slice(0, 10),
           allocation: 100,
           is_billable: true,
-        })
+        });
       }
+      setDateRange({ from, to }); // Si necesitas el estado para otra cosa
     }
-  }, [isContextMenuOpen, selectedRange, days, person.id, dateRange, onRequestCreate])
+  }, [isContextMenuOpen, selectedRange, days, person.id, onRequestCreate]);
 
   // Calculate bar position and width
   const calculateBarDimensions = (assignment: Assignment) => {
