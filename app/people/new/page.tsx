@@ -80,6 +80,7 @@ export default function NewPersonPage() {
       await createPerson({
         first_name: formData.first_name.trim(),
         last_name: formData.last_name.trim(),
+        name: `${formData.first_name.trim()} ${formData.last_name.trim()}`,
         profile: formData.profile,
         start_date: formData.start_date.toISOString().split('T')[0],
         end_date: formData.end_date ? formData.end_date.toISOString().split('T')[0] : null,
@@ -90,7 +91,8 @@ export default function NewPersonPage() {
       toast.success('Persona creada correctamente')
       router.push('/people')
     } catch (error) {
-      toast.error('Error al crear la persona')
+      const errorMsg = (error instanceof Error && error.message) ? error.message : 'Error al crear la persona'
+      toast.error(errorMsg)
       console.error(error)
     } finally {
       setLoading(false)

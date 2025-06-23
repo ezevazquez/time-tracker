@@ -16,7 +16,7 @@ export function usePeople() {
       .finally(() => setLoading(false))
   }, [])
 
-  const createPerson = async (person: Omit<Person, 'id' | 'created_at' | 'updated_at'>) => {
+  const createPerson = async (person: any) => {
     const newPerson = await peopleService.create(person)
     setPeople(prev => [...prev, newPerson])
     return newPerson
