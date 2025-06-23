@@ -206,8 +206,8 @@ export function calculateRowLayout(assignmentCount: number, baseRowHeight: numbe
   const VERTICAL_PADDING = 8
   const BAR_SPACING = 4
 
-  // Calculate required row height based on number of assignments
-  const maxVisibleAssignments = Math.min(assignmentCount, 4)
+  // Mostrar todas las asignaciones
+  const maxVisibleAssignments = assignmentCount
   const requiredHeight =
     CONSISTENT_BAR_HEIGHT * maxVisibleAssignments + BAR_SPACING * (maxVisibleAssignments - 1) + VERTICAL_PADDING * 2
 
