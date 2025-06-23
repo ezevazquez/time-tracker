@@ -121,6 +121,13 @@ export function PersonRow({
     // Solo click izquierdo y si no hay menú contextual abierto
     if (e.button !== 0) return;
     if (isContextMenuOpen) return;
+    // Si se está haciendo drag de una barra, no crear asignación
+    if (isDraggingAssignment) {
+      setIsSelecting(false);
+      setSelectionStartIdx(null);
+      setSelectionEndIdx(null);
+      return;
+    }
     setIsSelecting(false)
     if (selectedRange) {
       const from = days[selectedRange[0]];
@@ -137,7 +144,7 @@ export function PersonRow({
       }
       setDateRange({ from, to }); // Si necesitas el estado para otra cosa
     }
-  }, [isContextMenuOpen, selectedRange, days, person.id, onRequestCreate]);
+  }, [isContextMenuOpen, isDraggingAssignment, selectedRange, days, person.id, onRequestCreate]);
 
   // Calculate bar position and width
   const calculateBarDimensions = (assignment: Assignment) => {
