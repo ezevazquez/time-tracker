@@ -36,6 +36,7 @@ interface AssignmentBarProps {
     left: number
     width: number
   }
+  bgColor: string
 }
 
 export function AssignmentBar({
@@ -54,8 +55,8 @@ export function AssignmentBar({
   isDraggingAssignment = false,
   disableAllTooltips = false,
   overrideBar,
-}: AssignmentBarProps & { onRequestEdit?: () => void, isContextMenuOpen?: boolean, setContextMenuOpen?: (open: boolean) => void, isDraggingAssignment?: boolean, disableAllTooltips?: boolean, overrideBar?: { assignmentId: string, left: number, width: number } }) {
-  const bgColor = stringToColor(project.name)
+  bgColor,
+}: AssignmentBarProps & { onRequestEdit?: () => void, isContextMenuOpen?: boolean, setContextMenuOpen?: (open: boolean) => void, isDraggingAssignment?: boolean, disableAllTooltips?: boolean, overrideBar?: { assignmentId: string, left: number, width: number }, bgColor: string }) {
   const [open, setOpen] = useState(false)
 
   // Tooltip: posición y visibilidad

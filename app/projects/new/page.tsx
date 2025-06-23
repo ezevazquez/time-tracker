@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { toast } from 'sonner'
+import { v4 as uuidv4 } from 'uuid'
 
 import {
   ArrowLeft,
@@ -82,6 +83,7 @@ export default function NewProjectPage() {
     try {
       setIsSubmitting(true)
       await createProject({
+        id: uuidv4(),
         name: formData.name.trim(),
         description: formData.description.trim() || null,
         status: formData.status,

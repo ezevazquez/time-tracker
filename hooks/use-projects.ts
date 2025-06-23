@@ -7,6 +7,10 @@ import type { Project } from '@/types/project'
 
 interface ProjectWithFTE extends Project {
   assignedFTE?: number
+  clients?: {
+    id: string
+    name: string
+  }
 }
 
 export function useProjects() {
@@ -46,7 +50,7 @@ export function useProjects() {
     fetchProjects()
   }, [])
 
-  const createProject = async (project: Omit<Project, 'id' | 'created_at' | 'updated_at'>) => {
+  const createProject = async (project: Omit<Project, 'created_at' | 'updated_at'>) => {
     try {
       const newProject = await projectsService.create(project)
       setProjects(prev => [{ ...newProject, assignedFTE: 0 }, ...prev])

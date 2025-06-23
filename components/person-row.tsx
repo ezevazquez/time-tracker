@@ -47,6 +47,7 @@ interface PersonRowProps {
   onRequestCreate?: (assignment: Omit<Assignment, 'id' | 'created_at' | 'updated_at'>) => void
   isDraggingAssignment?: boolean
   overrideBar?: { assignmentId: string, left: number } | null
+  projectColors: Record<string, string>
 }
 
 export function PersonRow({
@@ -70,6 +71,7 @@ export function PersonRow({
   onRequestCreate,
   isDraggingAssignment = false,
   overrideBar = null,
+  projectColors,
 }: PersonRowProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null)
@@ -281,6 +283,8 @@ export function PersonRow({
               width: isResizeOverride ? (overrideBar as any).width : dimensions.width,
             };
 
+            const bgColor = projectColors[project.id] || '#D9F9F2'
+
             return (
               <AssignmentBar
                 key={assignment.id}
@@ -299,6 +303,7 @@ export function PersonRow({
                 isDraggingAssignment={isDraggingAssignment}
                 disableAllTooltips={isContextMenuOpen}
                 overrideBar={isResizeOverride ? (overrideBar as { assignmentId: string; left: number; width: number }) : undefined}
+                bgColor={bgColor}
               />
             )
           })}
