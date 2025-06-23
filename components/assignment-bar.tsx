@@ -36,6 +36,7 @@ interface AssignmentBarProps {
     left: number
     width: number
   }
+  bgColor: string
 }
 
 export function AssignmentBar({
@@ -54,8 +55,8 @@ export function AssignmentBar({
   isDraggingAssignment = false,
   disableAllTooltips = false,
   overrideBar,
-}: AssignmentBarProps & { onRequestEdit?: () => void, isContextMenuOpen?: boolean, setContextMenuOpen?: (open: boolean) => void, isDraggingAssignment?: boolean, disableAllTooltips?: boolean, overrideBar?: { assignmentId: string, left: number, width: number } }) {
-  const bgColor = stringToColor(project.name)
+  bgColor,
+}: AssignmentBarProps & { onRequestEdit?: () => void, isContextMenuOpen?: boolean, setContextMenuOpen?: (open: boolean) => void, isDraggingAssignment?: boolean, disableAllTooltips?: boolean, overrideBar?: { assignmentId: string, left: number, width: number }, bgColor: string }) {
   const [open, setOpen] = useState(false)
 
   // Tooltip: posición y visibilidad
@@ -212,47 +213,51 @@ export function AssignmentBar({
         data-assignment-bar-id={assignment.id}
       >
         {/* Left resize handle */}
-        <div
-          style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: 8, zIndex: 30 }}
-        >
+        {false && (
           <div
-            ref={leftHandle.setNodeRef}
-            {...leftHandle.listeners}
-            {...leftHandle.attributes}
-            onMouseDown={handleHandleMouseDown}
-            className={cn(
-              'absolute left-0 top-0 h-full w-2 cursor-ew-resize',
-              'bg-blue-500/60 opacity-0 group-hover:opacity-80 transition-opacity',
-              'rounded-l-md',
-              'hover:bg-blue-600/80',
-            )}
-            style={{
-              pointerEvents: isDraggingAssignment ? 'none' : 'auto',
-              display: isDraggingAssignment ? 'none' : undefined,
-            }}
-          />
-        </div>
+            style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: 8, zIndex: 30 }}
+          >
+            <div
+              ref={leftHandle.setNodeRef}
+              {...leftHandle.listeners}
+              {...leftHandle.attributes}
+              onMouseDown={handleHandleMouseDown}
+              className={cn(
+                'absolute left-0 top-0 h-full w-2 cursor-ew-resize',
+                'bg-blue-500/60 opacity-0 group-hover:opacity-80 transition-opacity',
+                'rounded-l-md',
+                'hover:bg-blue-600/80',
+              )}
+              style={{
+                pointerEvents: isDraggingAssignment ? 'none' : 'auto',
+                display: isDraggingAssignment ? 'none' : undefined,
+              }}
+            />
+          </div>
+        )}
         {/* Right resize handle */}
-        <div
-          style={{ position: 'absolute', right: 0, top: 0, height: '100%', width: 8, zIndex: 30 }}
-        >
+        {false && (
           <div
-            ref={rightHandle.setNodeRef}
-            {...rightHandle.listeners}
-            {...rightHandle.attributes}
-            onMouseDown={handleHandleMouseDown}
-            className={cn(
-              'absolute right-0 top-0 h-full w-2 cursor-ew-resize',
-              'bg-blue-500/60 opacity-0 group-hover:opacity-80 transition-opacity',
-              'rounded-r-md',
-              'hover:bg-blue-600/80',
-            )}
-            style={{
-              pointerEvents: isDraggingAssignment ? 'none' : 'auto',
-              display: isDraggingAssignment ? 'none' : undefined,
-            }}
-          />
-        </div>
+            style={{ position: 'absolute', right: 0, top: 0, height: '100%', width: 8, zIndex: 30 }}
+          >
+            <div
+              ref={rightHandle.setNodeRef}
+              {...rightHandle.listeners}
+              {...rightHandle.attributes}
+              onMouseDown={handleHandleMouseDown}
+              className={cn(
+                'absolute right-0 top-0 h-full w-2 cursor-ew-resize',
+                'bg-blue-500/60 opacity-0 group-hover:opacity-80 transition-opacity',
+                'rounded-r-md',
+                'hover:bg-blue-600/80',
+              )}
+              style={{
+                pointerEvents: isDraggingAssignment ? 'none' : 'auto',
+                display: isDraggingAssignment ? 'none' : undefined,
+              }}
+            />
+          </div>
+        )}
         {/* Assignment label container - ONLY sticky when needed */}
         <div
           className="absolute inset-0 flex items-center overflow-hidden"

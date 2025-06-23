@@ -23,7 +23,7 @@ import { toast } from 'sonner';
 
 import type { Assignment } from '@/types/assignment';
 import type { Person } from '@/types/people';
-import type { Project } from '@/types/project';
+import type { ProjectWithClient } from '@/types/project';
 
 interface AssignmentModalProps {
   open: boolean;
@@ -150,7 +150,7 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
     }
   };
 
-  let activeProjects = projects.filter((p: Project) => p.status !== 'Finished');
+  let activeProjects: ProjectWithClient[] = projects.filter((p: ProjectWithClient) => p.status !== 'Finished');
   // Asegurarse de que el proyecto seleccionado esté en la lista
   if (initialData?.project_id) {
     const selectedProject = projects.find(p => p.id === initialData.project_id);
@@ -211,7 +211,7 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
               <SelectContent>
                 {activeProjects.map(project => (
                   <SelectItem key={project.id} value={project.id}>
-                    {project.name}
+                    {project.name}{project.clients ? ` - ${project.clients.name}` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>

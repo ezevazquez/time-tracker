@@ -18,13 +18,13 @@ import { format } from 'date-fns'
 import { cn } from '@/utils/classnames'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Person } from '@/types/people'
-import type { Project } from '@/types/project'
+import type { ProjectWithClient } from '@/types/project'
 import { es } from "date-fns/locale"
 import type { TimelineFilters } from "@/types/timeline"
 
 interface FiltersPopoverProps {
   people: Person[]
-  projects: Project[]
+  projects: ProjectWithClient[]
   filters: TimelineFilters
   onFiltersChange: (filters: TimelineFilters) => void
   onClearFilters: () => void
@@ -84,7 +84,12 @@ export function FiltersPopover({
 
   useEffect(() => {
     if (!open) setIsSelectingStart(true)
-  }, [open])
+    // Debug: log project ids to find empty or invalid ones
+    if (projects && projects.length > 0) {
+      // eslint-disable-next-line no-console
+      console.log('Project IDs in filter:', projects.map(p => p.id))
+    }
+  }, [open, projects])
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -129,6 +134,29 @@ export function FiltersPopover({
                 </SelectContent>
               </Select>
             </div>
+            {projects.length > 0 && (
+              <div className="space-y-2">
+                <Label>Proyecto</Label>
+                <Select
+                  value={filters.projectId || 'all'}
+                  onValueChange={value => onFiltersChange({ ...filters, projectId: value })}
+                >
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Todos los proyectos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los proyectos</SelectItem>
+                    {projects
+                      .filter(project => typeof project.id === 'string' && project.id.trim() !== '')
+                      .map(project => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}{project.clients ? ` - ${project.clients.name}` : ''}
+                        </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Person Type Filter */}
             <div className="space-y-2">

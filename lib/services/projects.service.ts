@@ -35,7 +35,7 @@ export const projectsService = {
     return data
   },
 
-  async create(project: Omit<Project, 'id' | 'created_at' | 'updated_at'>): Promise<Project> {
+  async create(project: Omit<Project, 'created_at' | 'updated_at'>): Promise<Project> {
     const { data, error } = await supabase
       .from('projects')
       .insert(project)
