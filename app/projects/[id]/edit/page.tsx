@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { format } from 'date-fns'
-import { CalendarIcon, Loader2 } from 'lucide-react'
+import { CalendarIcon, Loader2, ArrowLeft } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useProjects } from '@/hooks/use-projects'
+import Link from 'next/link'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -63,6 +64,9 @@ type FormData = z.infer<typeof formSchema>
 
 export default function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params)
+  const searchParams = useSearchParams()
+  const from = searchParams.get('from')
+  const backHref = from === 'show' ? `/projects/${unwrappedParams.id}/show` : '/projects'
   const [project, setProject] = useState<Project | null>(null)
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
@@ -192,7 +196,14 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   return (
     <main className="flex-1 container mx-auto px-4 py-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">Editar Proyecto</h1>
+        <div className="flex items-center gap-4 mb-2">
+          <Button variant="outline" size="icon" asChild>
+            <Link href={backHref}>
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <h1 className="text-3xl font-bold">Editar Proyecto</h1>
+        </div>
         <p className="text-muted-foreground">Actualiza los datos del proyecto</p>
       </div>
 
