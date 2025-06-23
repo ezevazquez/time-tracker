@@ -104,7 +104,7 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
           <Progress value={avgUtilization} className="h-2" />
         </div> */}
 
-        <div className="space-y-4 max-h-96 overflow-y-auto">
+        <div className="space-y-4 max-h-[calc(150vh-24rem)] overflow-y-auto">
           {utilizationData.map(person => (
             <div
               key={person.id}

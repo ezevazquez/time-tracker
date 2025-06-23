@@ -16,7 +16,6 @@ import { StatsOverview } from '@/components/stats-overview'
 import { ProjectStatusChart } from '@/components/project-status-chart'
 import { TeamWorkloadChart } from '@/components/team-workload-chart'
 import { RecentActivity } from '@/components/recent-activity'
-import { UpcomingDeadlines } from '@/components/upcoming-deadlines'
 import { ResourceUtilization } from '@/components/resource-utilization'
 import { OverallocatedProjectsChart } from '@/components/overallocated-projects-chart'
 
@@ -129,7 +128,6 @@ export default function Dashboard() {
             {/* Right Column - 1/3 width */}
             <div className="space-y-6">
               <RecentActivity assignments={assignments} people={people} projects={projects} />
-              <UpcomingDeadlines projects={projects} assignments={assignments} />
             </div>
           </div>
         </div>
