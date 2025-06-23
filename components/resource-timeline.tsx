@@ -617,7 +617,7 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
           <div className="flex-1 min-h-0 relative">
             <div
               ref={scrollContainerRef}
-              className="absolute inset-0 overflow-x-auto"
+              className="absolute inset-0 overflow-x-auto resource-timeline-viewport"
               style={{
                 overflowX: "auto",
                 overflowY: "visible",
@@ -653,7 +653,7 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
                     today={today}
                     isEvenRow={idx % 2 === 0}
                     onDeleteAssignment={onDeleteAssignment}
-                    onCreateAssignment={onCreateAssignment}
+                    onCreateAssignment={(assignment) => { handleOpenCreateModal(assignment); return Promise.resolve(); }}
                     isContextMenuOpen={contextMenuOpen}
                     setContextMenuOpen={setContextMenuOpen}
                     onRequestEdit={handleRequestEdit}

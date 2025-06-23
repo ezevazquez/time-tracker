@@ -27,6 +27,7 @@ interface AssignmentBarProps {
   zIndex?: number
   onRequestDelete?: () => void
   onRequestEdit?: () => void
+  onRequestDuplicate?: () => void
   isContextMenuOpen?: boolean
   setContextMenuOpen?: (open: boolean) => void
   isDraggingAssignment?: boolean
@@ -50,13 +51,14 @@ export function AssignmentBar({
   zIndex = 5,
   onRequestDelete,
   onRequestEdit,
+  onRequestDuplicate,
   isContextMenuOpen,
   setContextMenuOpen,
   isDraggingAssignment = false,
   disableAllTooltips = false,
   overrideBar,
   bgColor,
-}: AssignmentBarProps & { onRequestEdit?: () => void, isContextMenuOpen?: boolean, setContextMenuOpen?: (open: boolean) => void, isDraggingAssignment?: boolean, disableAllTooltips?: boolean, overrideBar?: { assignmentId: string, left: number, width: number }, bgColor: string }) {
+}: AssignmentBarProps & { onRequestEdit?: () => void, onRequestDelete?: () => void, onRequestDuplicate?: () => void, isContextMenuOpen?: boolean, setContextMenuOpen?: (open: boolean) => void, isDraggingAssignment?: boolean, disableAllTooltips?: boolean, overrideBar?: { assignmentId: string, left: number, width: number }, bgColor: string }) {
   const [open, setOpen] = useState(false)
 
   // Tooltip: posición y visibilidad
@@ -338,6 +340,15 @@ export function AssignmentBar({
               onRequestEdit && onRequestEdit();
             }}
           >Editar</button>
+          <button
+            className="w-full text-left px-4 py-2 hover:bg-gray-100"
+            onClick={e => {
+              e.stopPropagation();
+              setContextMenu(null);
+              setContextMenuOpen && setContextMenuOpen(false);
+              onRequestDuplicate && onRequestDuplicate();
+            }}
+          >Duplicar</button>
           <button
             className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
             onClick={e => {
