@@ -261,7 +261,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-          <Button variant="outline" onClick={() => router.push('/assignments')} className="mt-4">
+          <Button variant="outline" onClick={() => router.push('/assignments')} className="mt-4" data-testid="back-assigment-list-button">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver a Asignaciones
           </Button>
@@ -282,11 +282,12 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
             size="sm"
             onClick={() => router.push('/assignments')}
             className="mr-4"
+            data-testid="back-assignment-list-button"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver
           </Button>
-          <h1 className="text-2xl font-bold">Editar Asignación</h1>
+          <h1 className="text-2xl font-bold" data-test="edit-assigment-list">Editar Asignación</h1>
         </div>
 
         {error && (
@@ -297,7 +298,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
 
         <Card>
           <CardHeader>
-            <CardTitle>Información de la Asignación</CardTitle>
+            <CardTitle data-test="assigment-info-title">Información de la Asignación</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -350,6 +351,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                           'w-full justify-start text-left font-normal',
                           !form.watch('start_date') && 'text-muted-foreground'
                         )}
+                        data-test="start-date-button"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {form.watch('start_date') ? (
@@ -414,6 +416,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                 <Select
                   value={form.watch('allocation')?.toString()}
                   onValueChange={value => form.setValue('allocation', parseInt(value))}
+                  data-test="allocation-select"
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar asignación" />
@@ -439,6 +442,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                     id="is_billable"
                     {...form.register('is_billable')}
                     className="rounded border-gray-300"
+                    data-test="is-billable-checkbox"
                   />
                   <Label htmlFor="is_billable">Facturable</Label>
                 </div>
@@ -452,10 +456,11 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                   type="submit"
                   className="flex-1"
                   disabled={isLoading}
+                  data-test="update-assignment-button"
                 >
                   {isLoading ? 'Actualizando...' : 'Actualizar Asignación'}
                 </Button>
-                <Button type="button" variant="outline" asChild>
+                <Button type="button" variant="outline" asChild data-test="cancel-edit-assignment-button">
                   <Link href="/assignments">Cancelar</Link>
                 </Button>
                 <Button 
@@ -463,6 +468,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                   variant="destructive" 
                   onClick={handleDeleteAssignment}
                   disabled={isLoading}
+                  data-test="delete-assignment-button"
                 >
                   Eliminar
                 </Button>
@@ -481,6 +487,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                       setShowResetButton(false)
                     }}
                     className="text-orange-700 border-orange-300 hover:bg-orange-100"
+                    data-test="reset-loading-button"
                   >
                     Resetear estado
                   </Button>
