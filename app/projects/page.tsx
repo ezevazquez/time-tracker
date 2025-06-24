@@ -113,10 +113,10 @@ export default function ProjectsPage() {
     <main className="flex-1 container mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Proyectos</h1>
+          <h1 className="text-3xl font-bold" data-test="projects-title">Proyectos</h1>
           <p className="text-muted-foreground">Gestiona los proyectos en curso</p>
         </div>
-        <Button asChild>
+        <Button asChild data-test="create-project-button">
           <Link href="/projects/new">
             <Plus className="h-4 w-4 mr-2" />
             Crear Proyecto
@@ -134,9 +134,10 @@ export default function ProjectsPage() {
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="pl-10"
+              data-test="search-projects-input"
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter} onValueChange={setStatusFilter} data-test="status-filter-select">
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
