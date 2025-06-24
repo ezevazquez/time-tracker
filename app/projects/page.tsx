@@ -155,7 +155,7 @@ export default function ProjectsPage() {
       {/* Tabla */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Proyectos</CardTitle>
+          <CardTitle data-test="projects-title">Lista de Proyectos</CardTitle>
           <CardDescription>Proyectos registrados en el sistema</CardDescription>
         </CardHeader>
         <CardContent>
@@ -177,10 +177,11 @@ export default function ProjectsPage() {
               <button
                 className="px-4 py-2 bg-gray-200 rounded"
                 onClick={() => setProjectToDelete(null)}
+                data-test="cancel-delete-project-button"
               >
                 Cancelar
               </button>
-              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete}>
+              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete} data-test="confirm-delete-project-button">
                 Eliminar
               </button>
             </div>

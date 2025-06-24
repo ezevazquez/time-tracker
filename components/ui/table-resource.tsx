@@ -8,9 +8,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ResourceAction, ResourceColumn } from '@/types'
+import { ResourceAction } from '@/types/ResourceAction'
+import { ResourceColumn } from '@/types/ResourceColumn'
 
 import { MenuActionsResource } from './menu-actions-resource'
+import { stringToKebabCase } from '@/utils/stringToKebabCase'
 
 interface TableResourceProps<T extends { id: string }> {
   items: T[]
@@ -32,7 +34,7 @@ export const TableResource = <T extends { id: string }>({
       {(title || description) && (
         <CardHeader>
           {title && (
-            <CardTitle>
+            <CardTitle data-testid={`table-${stringToKebabCase(title)}-title`}>
               {title} ({items.length})
             </CardTitle>
           )}
