@@ -18,6 +18,7 @@ import { TeamWorkloadChart } from '@/components/team-workload-chart'
 import { RecentActivity } from '@/components/recent-activity'
 import { ResourceUtilization } from '@/components/resource-utilization'
 import { OverallocatedProjectsChart } from '@/components/overallocated-projects-chart'
+import { UpcomingDeadlines } from '@/components/upcoming-deadlines'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -116,7 +117,7 @@ export default function Dashboard() {
 
             {/* Right Column - 1/3 width */}
             <div className="space-y-6">
-              <RecentActivity assignments={assignments} people={people} projects={projects} />
+              <UpcomingDeadlines projects={projects} assignments={assignments} />
             </div>
           </div>
         </div>
