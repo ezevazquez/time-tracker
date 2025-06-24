@@ -46,17 +46,6 @@ export default function Dashboard() {
         return
       }
 
-      const { data: allowed } = await supabase
-        .from('auth_users')
-        .select('email')
-        .eq('email', session.user.email)
-        .maybeSingle()
-
-      if (!allowed) {
-        router.push('/unauthorized')
-        return
-      }
-
       setAuthorized(true)
     }
 
