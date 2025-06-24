@@ -8,13 +8,7 @@ import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -29,7 +23,8 @@ import { projectColumns } from '@/constants/resource-columns/projectColumns'
 import { PROJECT_STATUS_OPTIONS } from '@/constants/projects'
 
 import type { Project } from '@/types/project'
-import type { ResourceAction, ResourceColumn } from '@/types'
+import type { ResourceAction } from '@/types/ResourceAction'
+import type { ResourceColumn } from '@/types/ResourceColumn'
 
 interface ProjectWithFTE extends Project {
   assignedFTE?: number
@@ -80,7 +75,10 @@ export default function ProjectsPage() {
     if (!projectToDelete) return
     try {
       await deleteProject(projectToDelete)
-      toast({ title: 'Proyecto eliminado', description: 'El proyecto fue eliminado correctamente.' })
+      toast({
+        title: 'Proyecto eliminado',
+        description: 'El proyecto fue eliminado correctamente.',
+      })
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error al eliminar el proyecto'
       toast({ title: 'Error al eliminar', description: errorMsg, variant: 'destructive' })
@@ -151,7 +149,6 @@ export default function ProjectsPage() {
               ))}
             </SelectContent>
           </Select>
-
         </CardContent>
       </Card>
 
@@ -177,8 +174,15 @@ export default function ProjectsPage() {
             <h2 className="text-lg font-bold mb-4">Confirmar eliminación</h2>
             <p>¿Estás seguro de que deseas eliminar este proyecto?</p>
             <div className="flex justify-end gap-2 mt-6">
-              <button className="px-4 py-2 bg-gray-200 rounded" onClick={() => setProjectToDelete(null)}>Cancelar</button>
-              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete}>Eliminar</button>
+              <button
+                className="px-4 py-2 bg-gray-200 rounded"
+                onClick={() => setProjectToDelete(null)}
+              >
+                Cancelar
+              </button>
+              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete}>
+                Eliminar
+              </button>
             </div>
           </div>
         </div>
