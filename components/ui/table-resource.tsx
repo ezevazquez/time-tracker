@@ -34,7 +34,7 @@ export const TableResource = <T extends { id: string }>({
       {(title || description) && (
         <CardHeader>
           {title && (
-            <CardTitle data-testid={`table-${stringToKebabCase(title)}-title`}>
+            <CardTitle data-test={`table-${stringToKebabCase(title)}-title`}>
               {title} ({items.length})
             </CardTitle>
           )}

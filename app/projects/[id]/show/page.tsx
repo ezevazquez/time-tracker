@@ -121,25 +121,25 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" asChild>
+            <Button variant="outline" size="icon" asChild data-test="back-button">
               <Link href="/projects">
                 <ArrowLeft className="h-4 w-4" />
               </Link>
             </Button>
             <div>
-              <h1 className="text-3xl font-bold">{project.name}</h1>
+              <h1 className="text-3xl font-bold" data-test="project-title">{project.name}</h1>
               <p className="text-muted-foreground">Detalles del proyecto</p>
             </div>
           </div>
 
           <div className="flex gap-2">
             <Button asChild>
-              <Link href={`/projects/${project.id}/edit`}>
+              <Link href={`/projects/${project.id}/edit`} data-test="edit-project-button">
                 <Edit className="h-4 w-4 mr-2" />
                 Editar
               </Link>
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting} data-test="delete-project-button">
               <Trash2 className="h-4 w-4 mr-2" />
               {isDeleting ? 'Eliminando...' : 'Eliminar'}
             </Button>
@@ -152,14 +152,14 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
             {/* Project Overview */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2" data-test="project-overview-title">
                   <Building2 className="h-5 w-5" />
                   Información General
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h3 className="font-medium text-sm text-muted-foreground mb-1">
+                  <h3 className="font-medium text-sm text-muted-foreground mb-1" data-test="project-name-label">
                     Nombre del Proyecto
                   </h3>
                   <p className="text-lg font-semibold">{project.name}</p>
@@ -167,13 +167,13 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
 
                 {project.description && (
                   <div>
-                    <h3 className="font-medium text-sm text-muted-foreground mb-1">Descripción</h3>
+                    <h3 className="font-medium text-sm text-muted-foreground mb-1" data-test="project-description-title">Descripción</h3>
                     <p className="text-sm leading-relaxed">{project.description}</p>
                   </div>
                 )}
 
                 <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-sm text-muted-foreground">Estado:</h3>
+                  <h3 className="font-medium text-sm text-muted-foreground" data-test="project-status-title">Estado:</h3>
                   <Badge className={getStatusBadge(project.status)}>
                     {getStatusLabel(project.status)}
                   </Badge>
@@ -184,7 +184,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
             {/* Timeline */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2" data-test="project-timeline-title">
                   <Calendar className="h-5 w-5" />
                   Cronograma
                 </CardTitle>
@@ -192,7 +192,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <h3 className="font-medium text-sm text-muted-foreground mb-1">
+                    <h3 className="font-medium text-sm text-muted-foreground mb-1" data-test="project-start-date-title">
                       Fecha de Inicio
                     </h3>
                     <p className="text-sm">
@@ -203,7 +203,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                   </div>
 
                   <div>
-                    <h3 className="font-medium text-sm text-muted-foreground mb-1">Fecha de Fin</h3>
+                    <h3 className="font-medium text-sm text-muted-foreground mb-1" data-test="end-date-title">Fecha de Fin</h3>
                     <p className="text-sm">
                       {project.end_date
                         ? format(new Date(project.end_date), "dd 'de' MMMM, yyyy", { locale: es })
@@ -214,7 +214,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
 
                 {project.start_date && project.end_date && (
                   <div className="mt-4 pt-4 border-t">
-                    <h3 className="font-medium text-sm text-muted-foreground mb-1">
+                    <h3 className="font-medium text-sm text-muted-foreground mb-1" data-test="estimated-duration-title">
                       Duración Estimada
                     </h3>
                     <p className="text-sm">
@@ -236,7 +236,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
             {/* Client Information */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2" data-test="client-info-title">
                   <Building2 className="h-5 w-5" />
                   Cliente
                 </CardTitle>
@@ -245,7 +245,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                 {project.client ? (
                   <div className="space-y-3">
                     <div>
-                      <h3 className="font-medium text-sm text-muted-foreground mb-1">Nombre</h3>
+                      <h3 className="font-medium text-sm text-muted-foreground mb-1" data-test="project-name-title">Nombre</h3>
                       <p className="font-semibold">{project.client.name}</p>
                     </div>
                   </div>
@@ -261,7 +261,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
             {/* Project Stats */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2" data-test="project-stats-title">
                   <Clock className="h-5 w-5" />
                   Estadísticas
                 </CardTitle>
@@ -338,7 +338,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2" data-test="project-assignments-title">
                     <User className="h-5 w-5" />
                     Equipo Asignado
                   </CardTitle>
@@ -346,7 +346,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                     Miembros del equipo trabajando en este proyecto ({projectAssignments.length})
                   </CardDescription>
                 </div>
-                <Button onClick={() => setShowAssignmentModal(true)} size="sm">
+                <Button onClick={() => setShowAssignmentModal(true)} size="sm" data-test="add-assignment-button">
                   <Plus className="h-4 w-4 mr-2" />
                   Agregar
                 </Button>
@@ -394,6 +394,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                               setSelectedAssignment(assignment)
                               setShowAssignmentModal(true)
                             }}
+                            data-test={`edit-assignment-${assignment.id}`}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -418,6 +419,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                                   })
                               }
                             }}
+                            data-test={`delete-assignment-${assignment.id}`}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -434,7 +436,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
         <div className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Historial de acciones</CardTitle>
+              <CardTitle data-test="logs-title">Historial de acciones</CardTitle>
               <CardDescription>
                 Aquí puedes ver un registro de todas las acciones realizadas en este proyecto.
               </CardDescription>
@@ -452,11 +454,11 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
       {showDeleteModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded shadow-lg">
-            <h2 className="text-lg font-bold mb-4">Confirmar eliminación</h2>
+            <h2 className="text-lg font-bold mb-4" data-test="confirm-delete-title">Confirmar eliminación</h2>
             <p>¿Estás seguro de que deseas eliminar este proyecto?</p>
             <div className="flex justify-end gap-2 mt-6">
-              <button className="px-4 py-2 bg-gray-200 rounded" onClick={() => setShowDeleteModal(false)}>Cancelar</button>
-              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete} disabled={isDeleting}>Eliminar</button>
+              <button className="px-4 py-2 bg-gray-200 rounded" onClick={() => setShowDeleteModal(false)} data-test="cancel-delete-button">Cancelar</button>
+              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete} disabled={isDeleting} data-test="confirm-delete-button">Eliminar</button>
             </div>
           </div>
         </div>

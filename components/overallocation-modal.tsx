@@ -71,7 +71,7 @@ export function OverallocationModal({
               <AlertTriangle className="w-5 h-5 text-yellow-600" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-semibold text-gray-900" data-testid="overallocation-modal-title">
+              <DialogTitle className="text-lg font-semibold text-gray-900" data-test="overallocation-modal-title">
                 Sobreasignación detectada
               </DialogTitle>
               <p className="text-sm text-gray-600 mt-1">

@@ -31,6 +31,7 @@ export function DatePickerWithRange({
               'w-[140px] justify-start text-left font-normal',
               !date?.from && 'text-muted-foreground'
             )}
+            data-test="date-picker-from"
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {date?.from ? format(date.from, 'dd/MM/yyyy') : 'Desde'}
@@ -65,6 +66,7 @@ export function DatePickerWithRange({
               'w-[140px] justify-start text-left font-normal',
               !date?.to && 'text-muted-foreground'
             )}
+            data-test="date-picker-to"
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {date?.to ? format(date.to, 'dd/MM/yyyy') : 'Hasta'}

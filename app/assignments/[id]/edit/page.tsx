@@ -261,7 +261,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-          <Button variant="outline" onClick={() => router.push('/assignments')} className="mt-4" data-testid="back-assigment-list-button">
+          <Button variant="outline" onClick={() => router.push('/assignments')} className="mt-4" data-test="back-assigment-list-button">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver a Asignaciones
           </Button>
@@ -282,7 +282,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
             size="sm"
             onClick={() => router.push('/assignments')}
             className="mr-4"
-            data-testid="back-assignment-list-button"
+            data-test="back-assignment-list-button"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver

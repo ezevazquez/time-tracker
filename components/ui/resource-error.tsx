@@ -19,7 +19,7 @@ export const ResourceError = ({ error, resourceName, resourcePath }: ResourceErr
           </AlertDescription>
         </Alert>
         <div className="mt-6">
-          <Button asChild>
+          <Button asChild data-test="back-button">
             <Link href={resourcePath}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver a la lista

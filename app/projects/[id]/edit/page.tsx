@@ -197,19 +197,19 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     <main className="flex-1 container mx-auto px-4 py-6">
       <div className="mb-6">
         <div className="flex items-center gap-4 mb-2">
-          <Button variant="outline" size="icon" asChild>
+          <Button variant="outline" size="icon" asChild data-test="back-button">
             <Link href={backHref}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <h1 className="text-3xl font-bold">Editar Proyecto</h1>
+          <h1 className="text-3xl font-bold" data-title="edit-project-title">Editar Proyecto</h1>
         </div>
         <p className="text-muted-foreground">Actualiza los datos del proyecto</p>
       </div>
 
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle>Datos del Proyecto</CardTitle>
+          <CardTitle data-test="project-info-title">Datos del Proyecto</CardTitle>
           <CardDescription>Completa los campos para actualizar el proyecto</CardDescription>
         </CardHeader>
         <CardContent>
@@ -222,7 +222,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                   <FormItem>
                     <FormLabel>Nombre del Proyecto</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nombre del proyecto" {...field} />
+                      <Input placeholder="Nombre del proyecto" {...field} data-test="project-name-input"/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -241,6 +241,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                         value={field.value || 'No asignado'}
                         disabled
                         className="bg-gray-50 text-gray-500"
+                        data-test="project-code-input"
                       />
                     </FormControl>
                     <p className="text-sm text-muted-foreground">
@@ -262,6 +263,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                         placeholder="Descripción del proyecto"
                         {...field}
                         value={field.value || ''}
+                        data-test="project-description-textarea"
                       />
                     </FormControl>
                     <FormMessage />
@@ -285,6 +287,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                                 'pl-3 text-left font-normal',
                                 !field.value && 'text-muted-foreground'
                               )}
+                              data-test="start-date-button"
                             >
                               {field.value
                                 ? format(field.value, 'dd/MM/yyyy')
@@ -323,6 +326,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                                 'pl-3 text-left font-normal',
                                 !field.value && 'text-muted-foreground'
                               )}
+                              data-test="end-date-button"
                             >
                               {field.value ? format(field.value, 'dd/MM/yyyy') : 'Sin fecha de fin'}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -355,7 +359,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Estado</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} data-test="project-status-select">
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecciona un estado" />
@@ -384,6 +388,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                         onValueChange={field.onChange}
                         defaultValue={field.value || 'null'}
                         value={field.value || 'null'}
+                        data-test="project-client-select"
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -420,6 +425,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                         {...field}
                         value={field.value || ''}
                         onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                        data-test="project-fte-input"
                       />
                     </FormControl>
                     <FormMessage />
@@ -428,8 +434,8 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
               />
 
               <CardFooter className="flex justify-end gap-2">
-                <Button type="submit" disabled={saving}>Guardar Cambios</Button>
-                <Button type="button" variant="destructive" onClick={handleDelete} disabled={saving}>Eliminar</Button>
+                <Button type="submit" disabled={saving} data-test="save-changes-button">Guardar Cambios</Button>
+                <Button type="button" variant="destructive" onClick={handleDelete} disabled={saving} data-test="cancel-button">Eliminar</Button>
               </CardFooter>
             </form>
           </Form>
@@ -440,11 +446,11 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       {showDeleteModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded shadow-lg">
-            <h2 className="text-lg font-bold mb-4">Confirmar eliminación</h2>
+            <h2 className="text-lg font-bold mb-4" data-test="confirm-delete-title">Confirmar eliminación</h2>
             <p>¿Estás seguro de que deseas eliminar este proyecto?</p>
             <div className="flex justify-end gap-2 mt-6">
-              <button className="px-4 py-2 bg-gray-200 rounded" onClick={() => setShowDeleteModal(false)}>Cancelar</button>
-              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete}>Eliminar</button>
+              <button className="px-4 py-2 bg-gray-200 rounded" onClick={() => setShowDeleteModal(false)} data-test="cancel-delete-button">Cancelar</button>
+              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete} data-test="confirm-delete-button">Eliminar</button>
             </div>
           </div>
         </div>

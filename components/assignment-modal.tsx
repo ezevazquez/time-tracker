@@ -165,7 +165,7 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
     <Dialog open={open} onOpenChange={onCancel}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{mode === 'new' ? 'Nueva asignación' : 'Editar asignación'}</DialogTitle>
+          <DialogTitle data-test="assigment-modal-title">{mode === 'new' ? 'Nueva asignación' : 'Editar asignación'}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           {warnings.length > 0 && (
@@ -185,6 +185,7 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
               value={formData.person_id}
               onValueChange={value => setFormData(f => ({ ...f, person_id: value }))}
               disabled={isPersonFixed}
+              data-test="assignment-person-select"
             >
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar persona" />
@@ -204,6 +205,7 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
               value={formData.project_id}
               onValueChange={value => setFormData(f => ({ ...f, project_id: value }))}
               disabled={isProjectFixed}
+              data-test="assignment-project-select"
             >
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar proyecto" />
@@ -233,6 +235,7 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
             <Select
               value={String(formData.allocation)}
               onValueChange={value => setFormData(f => ({ ...f, allocation: Number(value) }))}
+              data-test="assignment-allocation-select"
             >
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar %" />
@@ -251,15 +254,16 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
               checked={formData.is_billable}
               onChange={e => setFormData(f => ({ ...f, is_billable: e.target.checked }))}
               className="rounded border-gray-300"
+              data-test="assignment-billable-checkbox"
             />
             <label htmlFor="is_billable" className="text-sm">Facturable</label>
           </div>
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline" type="button" onClick={onCancel}>Cancelar</Button>
+            <Button variant="outline" type="button" onClick={onCancel} data-test="cancel-dialog-button">Cancelar</Button>
           </DialogClose>
-          <Button type="button" onClick={handleSubmit} disabled={isSubmitting || warnings.length > 0}>
+          <Button type="button" onClick={handleSubmit} disabled={isSubmitting || warnings.length > 0} data-test="save-assignment-button">
             {mode === 'new' ? 'Crear asignación' : 'Guardar cambios'}
           </Button>
         </DialogFooter>
