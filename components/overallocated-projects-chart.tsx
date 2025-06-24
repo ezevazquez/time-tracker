@@ -89,7 +89,7 @@ export function OverallocatedProjectsChart({ projects, assignments }: Overalloca
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm">
-          <AlertTriangle className="h-4 w-4 text-red-600" />
+          <AlertTriangle className="h-4 w-4 text-red-600" data-test="overallocated-projects-title" />
           Proyectos Sobre-asignados
         </CardTitle>
         <CardDescription className="text-xs">
