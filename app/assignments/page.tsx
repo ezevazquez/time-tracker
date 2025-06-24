@@ -77,14 +77,6 @@ export default function AssignmentsPage() {
 
       if (!session) return router.push('/login')
 
-      const { data: allowed } = await supabase
-        .from('auth_users')
-        .select('email')
-        .eq('email', session.user.email)
-        .maybeSingle()
-
-      if (!allowed) return router.push('/unauthorized')
-
       setAuthorized(true)
     }
 
