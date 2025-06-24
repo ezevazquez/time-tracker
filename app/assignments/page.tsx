@@ -271,10 +271,10 @@ export default function AssignmentsPage() {
       <div className="flex-shrink-0 border-b bg-white py-2">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold">Asignaciones</h1>
+            <h1 className="text-xl font-bold" data-test="assigments-title">Asignaciones</h1>
             <div className="flex gap-2 flex-wrap items-center">
               
-              <Button size="sm" className="h-8" onClick={() => setCreateModalOpen(true)}>
+              <Button size="sm" className="h-8" onClick={() => setCreateModalOpen(true)} data-test="new-assignment-button">
                 <Plus className="mr-2 h-4 w-4" />
                 Nueva asignación
               </Button>
@@ -299,6 +299,7 @@ export default function AssignmentsPage() {
                   value={filters.search}
                   onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
                   className="bg-white pl-10"
+                  data-test="search-input"
                 />
               </div>
             </div>
@@ -318,6 +319,7 @@ export default function AssignmentsPage() {
                 value="timeline" 
                 aria-label="Ver como timeline" 
                 className="rounded-md data-[state=on]:bg-white data-[state=on]:shadow-md data-[state=on]:text-blue-600 data-[state=off]:text-gray-500 data-[state=off]:hover:text-gray-700 transition-all duration-200"
+                data-test="toggle-timeline-button"
               >
                 <CalendarDays className="h-4 w-4" />
               </ToggleGroupItem>
@@ -325,6 +327,7 @@ export default function AssignmentsPage() {
                 value="list" 
                 aria-label="Ver como lista" 
                 className="rounded-md data-[state=on]:bg-white data-[state=on]:shadow-md data-[state=on]:text-blue-600 data-[state=off]:text-gray-500 data-[state=off]:hover:text-gray-700 transition-all duration-200"
+                data-test="toggle-list-button"
               >
                 <List className="h-4 w-4" />
               </ToggleGroupItem>

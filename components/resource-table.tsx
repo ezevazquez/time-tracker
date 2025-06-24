@@ -129,6 +129,7 @@ export function ResourceTable({
               <TableHead
                 className="cursor-pointer select-none"
                 onClick={() => handleSort('person')}
+                data-test="sort-person"
               >
                 Persona
                 <span className="inline-block align-middle ml-1">
@@ -138,6 +139,7 @@ export function ResourceTable({
               <TableHead
                 className="cursor-pointer select-none"
                 onClick={() => handleSort('profile')}
+                data-test="sort-profile"
               >
                 Perfil
                 <span className="inline-block align-middle ml-1">
@@ -147,6 +149,7 @@ export function ResourceTable({
               <TableHead
                 className="cursor-pointer select-none"
                 onClick={() => handleSort('project')}
+                data-test="sort-project"
               >
                 Proyecto
                 <span className="inline-block align-middle ml-1">
@@ -156,6 +159,7 @@ export function ResourceTable({
               <TableHead
                 className="cursor-pointer select-none"
                 onClick={() => handleSort('start')}
+                data-test="sort-start-date"
               >
                 Inicio
                 <span className="inline-block align-middle ml-1">
@@ -226,7 +230,7 @@ export function ResourceTable({
                     {/* Estado eliminado */}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0">
+                        <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0" data-test={`edit-assignment-${a.id}`}>
                           <Link href={`/assignments/${a.id}/edit`}>
                             <Edit className="h-4 w-4" />
                           </Link>
@@ -236,6 +240,7 @@ export function ResourceTable({
                           size="sm"
                           onClick={() => onDelete(a.id)}
                           className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          data-test={`delete-assignment-${a.id}`}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

@@ -76,7 +76,7 @@ export function FiltersPopover({
     ))
 
   const defaultTrigger = (
-    <Button variant="outline" size="sm" className="h-8">
+    <Button variant="outline" size="sm" className="h-8" data-test="filters-button">
       <Filter className="h-4 w-4 mr-2" />
       Filtros
     </Button>
@@ -97,7 +97,7 @@ export function FiltersPopover({
       <PopoverContent className="w-80 p-0" align="end">
         <Card className="border-0 shadow-none">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center justify-between" data-test="filters-title">
               Filtros
               {hasActiveFilters && (
                 <Button
@@ -108,6 +108,7 @@ export function FiltersPopover({
                     setOpen(false)
                   }}
                   className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                  data-test="clear-filters-button"
                 >
                   <X className="h-4 w-4 mr-1" />
                   Limpiar
@@ -122,6 +123,7 @@ export function FiltersPopover({
               <Select
                 value={filters.personProfile}
                 onValueChange={(value) => onFiltersChange({ ...filters, personProfile: value })}
+                data-test="profile-select"
               >
                 <SelectTrigger className="w-full mt-1">
                   <SelectValue />
@@ -140,6 +142,7 @@ export function FiltersPopover({
                 <Select
                   value={filters.projectId || 'all'}
                   onValueChange={value => onFiltersChange({ ...filters, projectId: value })}
+                  data-test="project-select"
                 >
                   <SelectTrigger className="w-full mt-1">
                     <SelectValue placeholder="Todos los proyectos" />
@@ -164,6 +167,7 @@ export function FiltersPopover({
               <Select
                 value={filters.personType}
                 onValueChange={(value) => onFiltersChange({ ...filters, personType: value })}
+                data-test="person-type-select"
               >
                 <SelectTrigger className="w-full mt-1">
                   <SelectValue />
@@ -189,6 +193,7 @@ export function FiltersPopover({
                         "w-full justify-start text-left font-normal",
                         !filters.dateRange.from && !filters.dateRange.to && "text-muted-foreground"
                       )}
+                      data-test="date-range-button"
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {filters.dateRange.from && filters.dateRange.to
@@ -229,6 +234,7 @@ export function FiltersPopover({
               <Checkbox
                 checked={filters.overallocatedOnly}
                 onCheckedChange={(checked) => onFiltersChange({ ...filters, overallocatedOnly: checked as boolean })}
+                data-test="overallocated-checkbox"
               />
             </div>
           </CardContent>
