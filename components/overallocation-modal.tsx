@@ -71,7 +71,7 @@ export function OverallocationModal({
               <AlertTriangle className="w-5 h-5 text-yellow-600" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-semibold text-gray-900">
+              <DialogTitle className="text-lg font-semibold text-gray-900" data-test="overallocation-modal-title">
                 Sobreasignación detectada
               </DialogTitle>
               <p className="text-sm text-gray-600 mt-1">
@@ -157,6 +157,7 @@ export function OverallocationModal({
             onClick={onClose}
             className="flex-1"
             disabled={isSubmitting}
+            data-test="overallocation-modal-close-button"
           >
             Seguir editando
           </Button>
@@ -164,6 +165,7 @@ export function OverallocationModal({
             onClick={handleConfirm}
             className="flex-1"
             disabled={isSubmitting}
+            data-test="overallocation-modal-confirm-button"
           >
             {isSubmitting ? 'Guardando...' : 'Continuar'}
           </Button>

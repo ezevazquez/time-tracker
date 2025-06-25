@@ -56,7 +56,7 @@ export function RecentActivity({ assignments, people, projects }: RecentActivity
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2" data-test="recent-activity-title">
           <Calendar className="h-5 w-5 text-purple-600" />
           Actividad reciente
         </CardTitle>

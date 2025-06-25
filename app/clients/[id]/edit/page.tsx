@@ -146,19 +146,19 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
     <main className="flex-1 container mx-auto px-4 py-6">
       <div className="mb-6">
         <div className="flex items-center gap-4 mb-2">
-          <Button variant="outline" size="icon" asChild>
+          <Button variant="outline" size="icon" asChild data-test="back-button">
             <Link href={backHref}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <h1 className="text-3xl font-bold">Editar Cliente</h1>
+          <h1 className="text-3xl font-bold" data-test="edit-client-button">Editar Cliente</h1>
         </div>
         <p className="text-muted-foreground">Actualiza los datos del cliente</p>
       </div>
 
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle>Datos del Cliente</CardTitle>
+          <CardTitle data-test="client-info-title">Datos del Cliente</CardTitle>
           <CardDescription>Completa los campos para actualizar el cliente</CardDescription>
         </CardHeader>
         <CardContent>
@@ -171,7 +171,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                   <FormItem>
                     <FormLabel>Nombre del Cliente</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nombre del cliente" {...field} />
+                      <Input placeholder="Nombre del cliente" {...field} data-test="client-name-field"/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -189,6 +189,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                         placeholder="Descripción del cliente"
                         {...field}
                         value={field.value || ''}
+                        data-test="client-description-field"
                       />
                     </FormControl>
                     <FormMessage />
@@ -197,8 +198,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
               />
 
               <CardFooter className="flex justify-end gap-2">
-                <Button type="submit" disabled={isLoading}>Guardar Cambios</Button>
-                <Button type="button" variant="destructive" onClick={handleDelete} disabled={isLoading}>Eliminar</Button>
+                <Button type="submit" disabled={isLoading} data-test="save-button">Guardar Cambios</Button>
+                <Button type="button" variant="destructive" onClick={handleDelete} disabled={isLoading} data-test="delete-button">Eliminar</Button>
               </CardFooter>
             </form>
           </Form>
@@ -209,11 +210,11 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
       {showDeleteModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded shadow-lg">
-            <h2 className="text-lg font-bold mb-4">Confirmar eliminación</h2>
+            <h2 className="text-lg font-bold mb-4" data-test="confirm-delete-title">Confirmar eliminación</h2>
             <p>¿Estás seguro de que deseas eliminar este cliente?</p>
             <div className="flex justify-end gap-2 mt-6">
-              <button className="px-4 py-2 bg-gray-200 rounded" onClick={() => setShowDeleteModal(false)}>Cancelar</button>
-              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete}>Eliminar</button>
+              <button className="px-4 py-2 bg-gray-200 rounded" onClick={() => setShowDeleteModal(false)} data-test="cancel-delete-button">Cancelar</button>
+              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete} data-test="confirm-delete-button">Eliminar</button>
             </div>
           </div>
         </div>
