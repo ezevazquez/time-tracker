@@ -41,6 +41,7 @@ import {
 import { usePeople } from '@/hooks/use-people'
 import { getDisplayName, getPersonStatusBadge, getPersonTypeBadge } from '@/lib/people'
 import { PERSON_STATUS_OPTIONS, PERSON_TYPE_OPTIONS, PERSON_STATUS, PERSON_TYPE, PERSON_PROFILE_OPTIONS } from '@/constants/people'
+import { renderDate } from '@/utils/renderDate'
 
 export default function PeoplePage() {
   const router = useRouter()
@@ -204,10 +205,10 @@ export default function PeoplePage() {
                   <TableCell>{person.profile}</TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      <div>{new Date(person.start_date).toLocaleDateString('es-ES')}</div>
+                      <div>{renderDate(person.start_date)}</div>
                       {person.end_date && (
                         <div className="text-muted-foreground">
-                          hasta {new Date(person.end_date).toLocaleDateString('es-ES')}
+                          hasta {renderDate(person.end_date)}
                         </div>
                       )}
                     </div>
