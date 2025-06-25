@@ -123,9 +123,8 @@ export function FiltersPopover({
               <Select
                 value={filters.personProfile}
                 onValueChange={(value) => onFiltersChange({ ...filters, personProfile: value })}
-                data-test="profile-select"
               >
-                <SelectTrigger className="w-full mt-1">
+                <SelectTrigger className="w-full mt-1" data-test="profile-select">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -142,9 +141,8 @@ export function FiltersPopover({
                 <Select
                   value={filters.projectId || 'all'}
                   onValueChange={value => onFiltersChange({ ...filters, projectId: value })}
-                  data-test="project-select"
                 >
-                  <SelectTrigger className="w-full mt-1">
+                  <SelectTrigger className="w-full mt-1" data-test="project-select">
                     <SelectValue placeholder="Todos los proyectos" />
                   </SelectTrigger>
                   <SelectContent>
@@ -167,9 +165,8 @@ export function FiltersPopover({
               <Select
                 value={filters.personType}
                 onValueChange={(value) => onFiltersChange({ ...filters, personType: value })}
-                data-test="person-type-select"
               >
-                <SelectTrigger className="w-full mt-1">
+                <SelectTrigger className="w-full mt-1" data-test="person-type-select">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
