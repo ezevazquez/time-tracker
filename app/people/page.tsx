@@ -135,8 +135,8 @@ export default function PeoplePage() {
                 />
               </div>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter} data-test="status-filter-select">
-              <SelectTrigger className="w-40">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40"  data-test="status-filter-select">
                 <SelectValue placeholder="Estado" />
               </SelectTrigger>
               <SelectContent>
@@ -149,8 +149,8 @@ export default function PeoplePage() {
               </SelectContent>
             </Select>
 
-            <Select value={typeFilter} onValueChange={setTypeFilter} data-test="type-filter-select">
-              <SelectTrigger className="w-40">
+            <Select value={typeFilter} onValueChange={setTypeFilter} >
+              <SelectTrigger className="w-40" data-test="type-filter-select">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
@@ -163,8 +163,8 @@ export default function PeoplePage() {
               </SelectContent>
             </Select>
 
-            <Select value={profileFilter} onValueChange={setProfileFilter} data-test="profile-filter-select">
-              <SelectTrigger className="w-40">
+            <Select value={profileFilter} onValueChange={setProfileFilter} >
+              <SelectTrigger className="w-40" data-test="profile-filter-select">
                 <SelectValue placeholder="Perfil" />
               </SelectTrigger>
               <SelectContent>

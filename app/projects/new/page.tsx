@@ -185,7 +185,7 @@ export default function NewProjectPage() {
                     value={formData.client_id || ''}
                     onValueChange={value => setFormData({ ...formData, client_id: value || null })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger data-test="client-select">
                       <SelectValue placeholder="Seleccionar cliente" />
                     </SelectTrigger>
                     <SelectContent>
@@ -206,7 +206,7 @@ export default function NewProjectPage() {
                       value: 'In Progress' | 'Finished' | 'On Hold' | 'Not Started'
                     ) => setFormData({ ...formData, status: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger data-test="status-select">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -229,6 +229,7 @@ export default function NewProjectPage() {
                           'w-full justify-start text-left font-normal',
                           !formData.start_date && 'text-muted-foreground'
                         )}
+                        data-test="start-date-button"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.start_date ? (
@@ -259,6 +260,7 @@ export default function NewProjectPage() {
                           'w-full justify-start text-left font-normal',
                           !formData.end_date && 'text-muted-foreground'
                         )}
+                        data-test="end-date-button"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.end_date ? (
@@ -284,6 +286,7 @@ export default function NewProjectPage() {
                   <Input
                     id="fte"
                     type="number"
+
                     step="1"
                     min="1"
                     max="60"
@@ -302,6 +305,8 @@ export default function NewProjectPage() {
                       }
                     }}
                     placeholder="Ej: 2"
+                    data-test="fte-input"
+
                   />
                   <p className="text-sm text-muted-foreground">
                     Número entero menor a 60 (Equivalente a 5 años)
@@ -317,6 +322,7 @@ export default function NewProjectPage() {
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Describe el proyecto..."
                   rows={4}
+                  data-test="description-textarea"
                 />
               </div>
 
@@ -360,11 +366,12 @@ export default function NewProjectPage() {
                   type="submit"
                   className="flex-1"
                   disabled={!formData.name.trim() || !formData.fte || formData.fte <= 0 || !formData.start_date || !formData.end_date || !formData.client_id || formData.client_id === 'no-client' || warnings.length > 0 || isSubmitting}
+                  data-test="create-project-button"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {isSubmitting ? 'Creando...' : 'Crear Proyecto'}
                 </Button>
-                <Button type="button" variant="outline" asChild>
+                <Button type="button" variant="outline" asChild data-test="cancel-project-button">
                   <Link href="/projects">Cancelar</Link>
                 </Button>
               </div>

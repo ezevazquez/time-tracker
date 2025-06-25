@@ -185,9 +185,8 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
               value={formData.person_id}
               onValueChange={value => setFormData(f => ({ ...f, person_id: value }))}
               disabled={isPersonFixed}
-              data-test="assignment-person-select"
             >
-              <SelectTrigger>
+              <SelectTrigger data-test="assignment-person-select">
                 <SelectValue placeholder="Seleccionar persona" />
               </SelectTrigger>
               <SelectContent>
@@ -205,9 +204,8 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
               value={formData.project_id}
               onValueChange={value => setFormData(f => ({ ...f, project_id: value }))}
               disabled={isProjectFixed}
-              data-test="assignment-project-select"
             >
-              <SelectTrigger>
+              <SelectTrigger data-test="assignment-project-select">
                 <SelectValue placeholder="Seleccionar proyecto" />
               </SelectTrigger>
               <SelectContent>
@@ -235,9 +233,8 @@ export function AssignmentModal({ open, mode, initialData, onSave, onCancel }: A
             <Select
               value={String(formData.allocation)}
               onValueChange={value => setFormData(f => ({ ...f, allocation: Number(value) }))}
-              data-test="assignment-allocation-select"
             >
-              <SelectTrigger>
+              <SelectTrigger data-test="assignment-allocation-select">
                 <SelectValue placeholder="Seleccionar %" />
               </SelectTrigger>
               <SelectContent>
