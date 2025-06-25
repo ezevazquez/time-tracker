@@ -416,9 +416,8 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                 <Select
                   value={form.watch('allocation')?.toString()}
                   onValueChange={value => form.setValue('allocation', parseInt(value))}
-                  data-test="allocation-select"
                 >
-                  <SelectTrigger>
+                  <SelectTrigger data-test="allocation-select">
                     <SelectValue placeholder="Seleccionar asignación" />
                   </SelectTrigger>
                   <SelectContent>

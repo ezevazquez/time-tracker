@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Search, MoreHorizontal, Edit, Trash2 } from 'lucide-react'
+import { Plus, Search, MoreHorizontal, Edit, Trash2, Folder } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 import { Button } from '@/components/ui/button'
@@ -29,14 +29,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Badge } from '@/components/ui/badge'
+import { getStatusBadge, getStatusLabel } from '@/lib/projects'
 
 import { useClients } from '@/hooks/use-clients'
+import { useProjects } from '@/hooks/use-projects'
 
 
 export default function ClientsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const router = useRouter()
   const { clients, loading, error, deleteClient } = useClients()
+  const { projects } = useProjects()
   const [clientToDelete, setClientToDelete] = useState<string | null>(null)
   const { toast } = useToast()
 
@@ -121,57 +125,104 @@ export default function ClientsPage() {
       <Card>
         <CardHeader>
           <CardTitle data-test="clients-list-title">Lista de Clientes</CardTitle>
-          <CardDescription>Clientes registrados en el sistema</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Descripción</TableHead>
-                <TableHead className="w-[100px]">Acciones</TableHead>
+                <TableHead style={{ width: 300, minWidth: 100, maxWidth: 180 }}>Nombre</TableHead>
+                <TableHead style={{ minWidth: 200 }}>Proyectos</TableHead>
+                <TableHead className="w-[100px] text-right" style={{ textAlign: 'right' }}>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredClients.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  <TableCell colSpan={3} className="text-center text-muted-foreground">
                     No se encontraron clientes
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredClients.map(client => (
-                  <TableRow key={client.id}>
-                    <TableCell className="font-medium">{client.name}</TableCell>
-                    <TableCell>{client.description || '-'}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild data-test={`client-actions-${client.id}`}>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => router.push(`/clients/${client.id}/edit`)}
-                            data-test={`edit-client-${client.id}`}
+                filteredClients.map(client => {
+                  const clientProjects = projects.filter(p => p.client_id === client.id && p.status !== 'Finished')
+                  return (
+                    <TableRow key={client.id}>
+                      <TableCell className="font-medium">
+                        <span
+                          title={client.name.length > 30 ? client.name : undefined}
+                          style={{
+                            display: 'inline-block',
+                            maxWidth: 120,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            verticalAlign: 'bottom',
+                          }}
+                        >
+                          {client.name.length > 30 ? client.name.slice(0, 30) + '…' : client.name}
+                        </span>
+                      </TableCell>
+                      <TableCell style={{ paddingRight: 0 }}>
+                        {clientProjects.length > 0 ? (
+                          <div
+                            className="bg-muted/40 rounded-lg p-2 max-h-40 overflow-y-auto border border-muted/60 shadow-sm"
+                            style={{ minWidth: 220, width: '100%', boxSizing: 'border-box' }}
                           >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => handleDelete(client.id)}
-                            data-test={`delete-client-${client.id}`}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
+                            {clientProjects.map((project, idx) => {
+                              const assigned = project.assignedFTE || 0
+                              const total = project.fte || 0
+                              const utilization = total > 0 ? Math.round((assigned / total) * 100) : 0
+                              return (
+                                <div key={project.id} className="flex items-center gap-2 py-1 border-b last:border-b-0 border-muted/30">
+                                  <Folder className="h-4 w-4 text-primary/70 shrink-0" />
+                                  <Link
+                                    href={`/projects/${project.id}/show`}
+                                    className="text-primary underline hover:text-primary/80 text-xs font-medium truncate"
+                                    style={{ maxWidth: 180, display: 'inline-block' }}
+                                    title={`${project.name}\n${project.start_date ? `Inicio: ${project.start_date}` : ''}${project.end_date ? `\nFin: ${project.end_date}` : ''}\nUtilización: ${utilization}%`}
+                                  >
+                                    {project.name.length > 36 ? project.name.slice(0, 36) + '…' : project.name}
+                                  </Link>
+                                  <Badge className={getStatusBadge(project.status)} variant="outline" style={{ fontSize: 10 }}>
+                                    {getStatusLabel(project.status)}
+                                  </Badge>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">Sin proyectos</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild data-test={`client-actions-${client.id}`}>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => router.push(`/clients/${client.id}/edit`)}
+                              data-test={`edit-client-${client.id}`}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => handleDelete(client.id)}
+                              data-test={`delete-client-${client.id}`}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
               )}
             </TableBody>
           </Table>

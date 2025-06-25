@@ -33,6 +33,10 @@ export default function NewClientPage() {
       setWarnings(['El nombre del cliente es obligatorio'])
       return
     }
+    if (formData.name.trim().length > 30) {
+      setWarnings(['El nombre del cliente no puede superar los 30 caracteres'])
+      return
+    }
 
     try {
       setIsSubmitting(true)
@@ -63,6 +67,9 @@ export default function NewClientPage() {
 
     if (!formData.name.trim()) {
       newWarnings.push('El nombre del cliente es obligatorio')
+    }
+    if (formData.name.trim().length > 30) {
+      newWarnings.push('El nombre del cliente no puede superar los 30 caracteres')
     }
 
     setWarnings(newWarnings)
@@ -115,6 +122,7 @@ export default function NewClientPage() {
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Ej: Empresa XYZ"
                   data-test="client-name-field"
+                  maxLength={30}
                 />
               </div>
 

@@ -37,7 +37,9 @@ import type { Client } from '@/types/client'
 import { ResourceError } from '@/components/ui/resource-error'
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),
+  name: z.string()
+    .min(2, { message: 'El nombre debe tener al menos 2 caracteres' })
+    .max(30, { message: 'El nombre no puede superar los 30 caracteres' }),
   description: z.string().optional(),
 })
 
@@ -171,7 +173,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                   <FormItem>
                     <FormLabel>Nombre del Cliente</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nombre del cliente" {...field} data-test="client-name-field"/>
+                      <Input placeholder="Nombre del cliente" {...field} data-test="client-name-field" maxLength={30}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

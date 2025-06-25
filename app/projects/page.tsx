@@ -137,8 +137,8 @@ export default function ProjectsPage() {
               data-test="search-projects-input"
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter} data-test="status-filter-select">
-            <SelectTrigger className="w-full sm:w-40">
+          <Select value={statusFilter} onValueChange={setStatusFilter} >
+            <SelectTrigger className="w-full sm:w-40" data-test="status-filter-select">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>

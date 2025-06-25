@@ -21,8 +21,9 @@ export const projectColumns = [
     render: (project: ProjectWithFTE) => project.name,
   },
   {
-    title: 'Descripción',
-    render: (project: ProjectWithFTE) => project.description,
+    title: 'Cliente',
+    render: (project: ProjectWithFTE & { clients?: { name: string } }) =>
+      project.clients?.name || <span className="text-muted-foreground">Sin cliente</span>,
   },
   {
     title: 'Estado',
