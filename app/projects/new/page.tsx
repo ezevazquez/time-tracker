@@ -73,7 +73,8 @@ export default function NewProjectPage() {
     e.preventDefault()
     const newWarnings: string[] = []
     if (!formData.name.trim()) newWarnings.push('El nombre del proyecto es obligatorio')
-    if (!formData.fte || formData.fte <= 0) newWarnings.push('El FTE total es obligatorio y debe ser mayor a 0')
+    if (formData.fte === null || isNaN(formData.fte)) newWarnings.push('El FTE total es obligatorio')
+    if (formData.fte !== null && (formData.fte <= 0 || formData.fte > 60 || !Number.isInteger(formData.fte))) newWarnings.push('El FTE debe ser menor a 60 (Equivalente a 5 años)')
     if (!formData.start_date) newWarnings.push('La fecha de inicio es obligatoria')
     if (!formData.end_date) newWarnings.push('La fecha de fin es obligatoria')
     if (formData.start_date && formData.end_date && formData.start_date > formData.end_date) newWarnings.push('La fecha de inicio debe ser anterior o igual a la fecha de fin')
@@ -104,7 +105,8 @@ export default function NewProjectPage() {
   const checkForWarnings = () => {
     const newWarnings: string[] = []
     if (!formData.name.trim()) newWarnings.push('El nombre del proyecto es obligatorio')
-    if (!formData.fte || formData.fte <= 0) newWarnings.push('El FTE total es obligatorio y debe ser mayor a 0')
+    if (formData.fte === null || isNaN(formData.fte)) newWarnings.push('El FTE total es obligatorio')
+    if (formData.fte !== null && (formData.fte <= 0 || formData.fte > 60 || !Number.isInteger(formData.fte))) newWarnings.push('El FTE debe ser menor a 60 (Equivalente a 5 años)')
     if (!formData.start_date) newWarnings.push('La fecha de inicio es obligatoria')
     if (!formData.end_date) newWarnings.push('La fecha de fin es obligatoria')
     if (formData.start_date && formData.end_date && formData.start_date > formData.end_date) newWarnings.push('La fecha de inicio debe ser anterior o igual a la fecha de fin')
@@ -284,15 +286,30 @@ export default function NewProjectPage() {
                   <Input
                     id="fte"
                     type="number"
-                    step="0.1"
-                    min="0"
-                    value={formData.fte || ''}
-                    onChange={e => setFormData({ ...formData, fte: e.target.value ? parseFloat(e.target.value) : null })}
-                    placeholder="Ej: 2.5"
+
+                    step="1"
+                    min="1"
+                    max="60"
+                    value={formData.fte === null ? '' : formData.fte}
+                    onChange={e => {
+                      const value = e.target.value;
+                      if (value === '') {
+                        setFormData({ ...formData, fte: null })
+                      } else {
+                        const intValue = parseInt(value, 10);
+                        if (/^\d+$/.test(value) && intValue > 0 && intValue <= 60) {
+                          setFormData({ ...formData, fte: intValue })
+                        } else {
+                          setFormData({ ...formData, fte: null })
+                        }
+                      }
+                    }}
+                    placeholder="Ej: 2"
                     data-test="fte-input"
+
                   />
                   <p className="text-sm text-muted-foreground">
-                    Número total de FTE requeridos para el proyecto
+                    Número entero menor a 60 (Equivalente a 5 años)
                   </p>
                 </div>
               </div>
