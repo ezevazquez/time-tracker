@@ -36,6 +36,7 @@ import { activityLogsColumns } from '@/constants/resource-columns/activityLogsCo
 import { AssignmentModal } from '@/components/assignment-modal'
 import { peopleService } from '@/lib/services/people.service'
 import { ProjectAuditLog } from '@/components/project-audit-log'
+import { renderDate } from '@/utils/renderDate'
 
 
 interface ProjectWithClient extends Project {
@@ -197,7 +198,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                     </h3>
                     <p className="text-sm">
                       {project.start_date
-                        ? format(new Date(project.start_date), "dd 'de' MMMM, yyyy", { locale: es })
+                        ? renderDate(project.start_date)
                         : 'No definida'}
                     </p>
                   </div>
@@ -206,7 +207,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                     <h3 className="font-medium text-sm text-muted-foreground mb-1" data-test="end-date-title">Fecha de Fin</h3>
                     <p className="text-sm">
                       {project.end_date
-                        ? format(new Date(project.end_date), "dd 'de' MMMM, yyyy", { locale: es })
+                        ? renderDate(project.end_date)
                         : 'No definida'}
                     </p>
                   </div>
@@ -382,7 +383,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                           <div>
                             <h4 className="font-medium">{person.first_name} {person.last_name}</h4>
                             <p className="text-sm text-muted-foreground">
-                              {(assignment.allocation * 100).toFixed(0)}% · {format(new Date(assignment.start_date), 'dd/MM/yyyy')} - {format(new Date(assignment.end_date), 'dd/MM/yyyy')}
+                              {(assignment.allocation * 100).toFixed(0)}% · {renderDate(assignment.start_date)} - {renderDate(assignment.end_date)}
                             </p>
                           </div>
                         </div>
