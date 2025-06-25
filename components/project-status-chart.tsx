@@ -12,7 +12,7 @@ interface ProjectStatusChartProps {
 export function ProjectStatusChart({ projects }: ProjectStatusChartProps) {
   // Filter out finished projects and count projects by status
   const activeProjects = projects.filter(project => project.status !== PROJECT_STATUS.FINISHED)
-  
+
   const statusCounts = activeProjects.reduce(
     (acc, project) => {
       acc[project.status] = (acc[project.status] || 0) + 1
@@ -29,8 +29,8 @@ export function ProjectStatusChart({ projects }: ProjectStatusChartProps) {
 
   const COLORS = {
     [PROJECT_STATUS.IN_PROGRESS]: '#10B981', // Verde para proyectos en progreso
-    [PROJECT_STATUS.FINISHED]: '#3B82F6',    // Azul para proyectos finalizados
-    [PROJECT_STATUS.ON_HOLD]: '#F59E0B',     // Amarillo para proyectos en pausa
+    [PROJECT_STATUS.FINISHED]: '#3B82F6', // Azul para proyectos finalizados
+    [PROJECT_STATUS.ON_HOLD]: '#F59E0B', // Amarillo para proyectos en pausa
     [PROJECT_STATUS.NOT_STARTED]: '#6B7280', // Gris para proyectos no iniciados
   }
 
@@ -52,7 +52,7 @@ export function ProjectStatusChart({ projects }: ProjectStatusChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2" data-test="project-status-chart-title">
           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
           Estado de proyectos
         </CardTitle>

@@ -9,6 +9,7 @@ import type { Person } from '@/types/people'
 import type { Project } from '@/types/project'
 import { fteToPercentage } from '@/lib/utils/fte-calculations'
 import { getUtilizationStatus } from '@/lib/utils/fte-calculations'
+import { renderDate } from '@/utils/renderDate'
 
 interface AssignmentSummaryProps {
   person: Person
@@ -82,7 +83,7 @@ export function AssignmentSummary({
               <span className="font-medium">Período</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              {format(startDate, 'dd/MM/yyyy', { locale: es })} - {format(endDate, 'dd/MM/yyyy', { locale: es })}
+              {renderDate(startDate.toISOString())} - {renderDate(endDate.toISOString())}
             </p>
             <Badge variant="outline" className="text-xs">
               {daysDiff} días

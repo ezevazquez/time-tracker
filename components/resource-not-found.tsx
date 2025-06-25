@@ -19,7 +19,7 @@ export const ResourceNotFound = ({ resourceName, resourcePath }: ResourceNotFoun
         </Alert>
         <div className="mt-6">
           <Button asChild>
-            <Link href={resourcePath}>
+            <Link href={resourcePath} data-test="back-button">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver a la lista
             </Link>

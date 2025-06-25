@@ -5,6 +5,7 @@ import { AlertTriangle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { renderDate } from '@/utils/renderDate'
 
 interface OverallocationDate {
   date: string
@@ -42,15 +43,7 @@ export function OverallocationModal({
     }
   }
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
+  const formatDate = (dateStr: string) => renderDate(dateStr)
 
   const getSeverityColor = (totalFte: number) => {
     if (totalFte > 2.0) return 'bg-red-100 text-red-800 border-red-200'
@@ -71,7 +64,7 @@ export function OverallocationModal({
               <AlertTriangle className="w-5 h-5 text-yellow-600" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-semibold text-gray-900">
+              <DialogTitle className="text-lg font-semibold text-gray-900" data-test="overallocation-modal-title">
                 Sobreasignación detectada
               </DialogTitle>
               <p className="text-sm text-gray-600 mt-1">
@@ -157,6 +150,7 @@ export function OverallocationModal({
             onClick={onClose}
             className="flex-1"
             disabled={isSubmitting}
+            data-test="overallocation-modal-close-button"
           >
             Seguir editando
           </Button>
@@ -164,6 +158,7 @@ export function OverallocationModal({
             onClick={handleConfirm}
             className="flex-1"
             disabled={isSubmitting}
+            data-test="overallocation-modal-confirm-button"
           >
             {isSubmitting ? 'Guardando...' : 'Continuar'}
           </Button>

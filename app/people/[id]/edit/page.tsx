@@ -157,19 +157,19 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
     <main className="flex-1 container mx-auto px-4 py-6">
       <div className="mb-6">
         <div className="flex items-center gap-4 mb-2">
-          <Button variant="outline" size="icon" asChild>
+          <Button variant="outline" size="icon" asChild data-test="back-button">
             <Link href={backHref}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <h1 className="text-3xl font-bold">Editar Persona</h1>
+          <h1 className="text-3xl font-bold" data-test="edit-person-title">Editar Persona</h1>
         </div>
         <p className="text-muted-foreground">Actualiza los datos de la persona</p>
       </div>
 
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle>Datos de la Persona</CardTitle>
+          <CardTitle data-test="person-info-title">Datos de la Persona</CardTitle>
           <CardDescription>Completa los campos para actualizar la persona</CardDescription>
         </CardHeader>
         <CardContent>
@@ -183,7 +183,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                     <FormItem>
                       <FormLabel>Nombre</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nombre" {...field} />
+                        <Input placeholder="Nombre" {...field} data-test="person-name-input"/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -197,7 +197,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                     <FormItem>
                       <FormLabel>Apellido</FormLabel>
                       <FormControl>
-                        <Input placeholder="Apellido" {...field} />
+                        <Input placeholder="Apellido" {...field} data-test="person-lastname-input"/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -212,7 +212,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                   <FormItem>
                     <FormLabel>Perfil</FormLabel>
                     <FormControl>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value} data-test="person-profile-select">
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona un perfil" />
                         </SelectTrigger>
@@ -246,6 +246,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                                 'pl-3 text-left font-normal',
                                 !field.value && 'text-muted-foreground'
                               )}
+                              data-test="person-start-date-button"
                             >
                               {field.value
                                 ? format(field.value, 'dd/MM/yyyy')
@@ -286,6 +287,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                                 'pl-3 text-left font-normal',
                                 !field.value && 'text-muted-foreground'
                               )}
+                              data-test="person-end-date-button"
                             >
                               {field.value
                                 ? format(field.value, 'dd/MM/yyyy')
@@ -319,7 +321,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Estado</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value} data-test="person-status-select">
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecciona un estado" />
@@ -344,7 +346,7 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value} data-test="person-type-select">
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecciona un tipo" />
@@ -365,10 +367,10 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
               </div>
 
               <div className="flex justify-end gap-4">
-                <Button type="button" variant="outline" onClick={() => router.push('/people')}>
+                <Button type="button" variant="outline" onClick={() => router.push('/people')} data-test="cancel-button">
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading} data-test="update-person-button">
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Actualizar Persona
                 </Button>
