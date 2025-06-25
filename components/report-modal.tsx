@@ -48,7 +48,7 @@ interface ReportData {
 }
 
 export function ReportModal() {
-  const [range, setRange] = useState<{ from: Date; to: Date }>(() => {
+  const [range, setRange] = useState<{ from: Date | undefined; to: Date |undefined }>(() => {
     const today = new Date()
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
     return { from: firstDayOfMonth, to: today }
@@ -117,6 +117,11 @@ export function ReportModal() {
       const blob = new Blob([buffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       })
+
+      if (!range?.from || !range?.to) {
+        toast.error("Rango de fechas incompleto")
+        return
+      }
 
       const fileName = `reporte-ocupacion-${format(range!.from, 'yyyy-MM-dd')}-${format(range!.to, 'yyyy-MM-dd')}-${Date.now()}.xlsx`
       
@@ -195,7 +200,9 @@ export function ReportModal() {
           <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
             <DatePickerWithRange
               date={range}
-              setDate={setRange}
+              setDate={({ from, to }) => {
+                setRange(f => ({ ...f, from,  to }))
+              }}
             />
             <Button onClick={handleGenerate} disabled={loading}>
               {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
