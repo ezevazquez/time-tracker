@@ -73,8 +73,8 @@ export default function NewProjectPage() {
     e.preventDefault()
     const newWarnings: string[] = []
     if (!formData.name.trim()) newWarnings.push('El nombre del proyecto es obligatorio')
-    if (formData.fte === null || isNaN(formData.fte)) newWarnings.push('El FTE total es obligatorio, debe ser un número entero entre 1 y 36')
-    if (formData.fte !== null && (formData.fte <= 0 || formData.fte > 36 || !Number.isInteger(formData.fte))) newWarnings.push('El FTE debe ser un número entero entre 1 y 36')
+    if (formData.fte === null || isNaN(formData.fte)) newWarnings.push('El FTE total es obligatorio')
+    if (formData.fte !== null && (formData.fte <= 0 || formData.fte > 60 || !Number.isInteger(formData.fte))) newWarnings.push('El FTE debe ser menor a 60 (Equivalente a 5 años)')
     if (!formData.start_date) newWarnings.push('La fecha de inicio es obligatoria')
     if (!formData.end_date) newWarnings.push('La fecha de fin es obligatoria')
     if (formData.start_date && formData.end_date && formData.start_date > formData.end_date) newWarnings.push('La fecha de inicio debe ser anterior o igual a la fecha de fin')
@@ -286,16 +286,15 @@ export default function NewProjectPage() {
                     type="number"
                     step="1"
                     min="1"
-                    max="36"
+                    max="60"
                     value={formData.fte === null ? '' : formData.fte}
                     onChange={e => {
                       const value = e.target.value;
-                      // Solo permitir enteros positivos hasta 36
                       if (value === '') {
                         setFormData({ ...formData, fte: null })
                       } else {
                         const intValue = parseInt(value, 10);
-                        if (/^\d+$/.test(value) && intValue > 0 && intValue <= 36) {
+                        if (/^\d+$/.test(value) && intValue > 0 && intValue <= 60) {
                           setFormData({ ...formData, fte: intValue })
                         } else {
                           setFormData({ ...formData, fte: null })
@@ -305,7 +304,7 @@ export default function NewProjectPage() {
                     placeholder="Ej: 2"
                   />
                   <p className="text-sm text-muted-foreground">
-                    Número entero entre 1 y 36. No se permiten decimales.
+                    Número entero menor a 60 (Equivalente a 5 años)
                   </p>
                 </div>
               </div>
