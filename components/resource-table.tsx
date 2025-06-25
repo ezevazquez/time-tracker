@@ -21,6 +21,7 @@ import { parseDateFromString } from '@/lib/assignments'
 import { fteToPercentage, isOverallocated } from '@/lib/utils/fte-calculations'
 import { getDisplayName } from '@/lib/people'
 import React, { useState } from 'react'
+import { renderDate } from '@/utils/renderDate'
 
 interface ResourceTableProps {
   people: Person[]
@@ -206,10 +207,10 @@ export function ResourceTable({
                       <div className="text-sm text-muted-foreground">{project?.status || ''}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm font-medium">{format(parseDateFromString(a.start_date), 'dd MMM yyyy', { locale: es })}</div>
+                      <div className="text-sm font-medium">{renderDate(a.start_date)}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm text-muted-foreground">{format(parseDateFromString(a.end_date), 'dd MMM yyyy', { locale: es })}</div>
+                      <div className="text-sm text-muted-foreground">{renderDate(a.end_date)}</div>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-2">

@@ -5,6 +5,7 @@ import { AlertTriangle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { renderDate } from '@/utils/renderDate'
 
 interface OverallocationDate {
   date: string
@@ -42,15 +43,7 @@ export function OverallocationModal({
     }
   }
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
+  const formatDate = (dateStr: string) => renderDate(dateStr)
 
   const getSeverityColor = (totalFte: number) => {
     if (totalFte > 2.0) return 'bg-red-100 text-red-800 border-red-200'
