@@ -212,8 +212,8 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                   <FormItem>
                     <FormLabel>Perfil</FormLabel>
                     <FormControl>
-                      <Select onValueChange={field.onChange} value={field.value} data-test="person-profile-select">
-                        <SelectTrigger>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger data-test="person-profile-select">
                           <SelectValue placeholder="Selecciona un perfil" />
                         </SelectTrigger>
                         <SelectContent>
@@ -321,9 +321,9 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Estado</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value} data-test="person-status-select">
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger data-test="person-status-select">
                             <SelectValue placeholder="Selecciona un estado" />
                           </SelectTrigger>
                         </FormControl>
@@ -346,9 +346,9 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value} data-test="person-type-select">
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger data-test="person-type-select">
                             <SelectValue placeholder="Selecciona un tipo" />
                           </SelectTrigger>
                         </FormControl>

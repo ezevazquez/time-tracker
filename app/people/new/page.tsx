@@ -152,7 +152,7 @@ export default function NewPersonPage() {
                       setFormData({ ...formData, profile: value })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger data-test="profile-select">
                       <SelectValue placeholder="Selecciona un perfil" />
                     </SelectTrigger>
                     <SelectContent>
@@ -175,6 +175,7 @@ export default function NewPersonPage() {
                           'w-full justify-start text-left font-normal',
                           !formData.start_date && 'text-muted-foreground'
                         )}
+                        data-test="start-date-button"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.start_date ? (
@@ -205,6 +206,7 @@ export default function NewPersonPage() {
                           'w-full justify-start text-left font-normal',
                           !formData.end_date && 'text-muted-foreground'
                         )}
+                        data-test="end-date-button"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.end_date ? (
@@ -233,7 +235,7 @@ export default function NewPersonPage() {
                       setFormData({ ...formData, status: value })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger data-test="status-select">
                       <SelectValue placeholder="Selecciona un estado" />
                     </SelectTrigger>
                     <SelectContent>
@@ -255,7 +257,7 @@ export default function NewPersonPage() {
                       setFormData({ ...formData, type: value })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger data-test="type-select">
                       <SelectValue placeholder="Selecciona un tipo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -270,10 +272,10 @@ export default function NewPersonPage() {
               </div>
 
               <div className="flex justify-end gap-4">
-                <Button type="button" variant="outline" asChild>
+                <Button type="button" variant="outline" asChild data-test="cancel-button">
                   <Link href="/people">Cancelar</Link>
                 </Button>
-                <Button type="submit" disabled={loading}>
+                <Button type="submit" disabled={loading} data-test="create-person-button">
                   {loading && <Save className="h-4 w-4 mr-2 animate-spin" />}
                   Crear Persona
                 </Button>
