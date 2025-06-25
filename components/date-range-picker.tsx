@@ -23,7 +23,7 @@ export function DatePickerWithRange({
   return (
     <div className={cn('flex items-center gap-2', className)}>
       {/* Start Date Picker */}
-      <Popover open={startOpen} onOpenChange={setStartOpen}>
+      <Popover modal={true} open={startOpen} onOpenChange={setStartOpen}>
         <PopoverTrigger asChild>
           <Button
             variant={'outline'}
@@ -58,7 +58,7 @@ export function DatePickerWithRange({
       <span className="text-gray-500">hasta</span>
 
       {/* End Date Picker */}
-      <Popover open={endOpen} onOpenChange={setEndOpen}>
+      <Popover modal={true} open={endOpen} onOpenChange={setEndOpen}>
         <PopoverTrigger asChild>
           <Button
             variant={'outline'}
