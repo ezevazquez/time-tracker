@@ -3,8 +3,7 @@
 import { AlertTriangle, Calendar, Percent } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { renderDate } from '@/utils/renderDate'
 
 interface OverallocationWarningProps {
   isOverallocated: boolean
@@ -28,15 +27,14 @@ export function OverallocationWarning({
 
   const getDateRangeText = () => {
     if (dateCount === 1) {
-      const date = new Date(overallocatedDates[0].date)
-      return format(date, 'dd/MM/yyyy', { locale: es })
+      return renderDate(overallocatedDates[0].date)
     } else if (dateCount <= 3) {
       return overallocatedDates
-        .map(d => format(new Date(d.date), 'dd/MM/yyyy', { locale: es }))
+        .map(d => renderDate(d.date))
         .join(', ')
     } else {
-      const firstDate = format(new Date(overallocatedDates[0].date), 'dd/MM/yyyy', { locale: es })
-      const lastDate = format(new Date(overallocatedDates[dateCount - 1].date), 'dd/MM/yyyy', { locale: es })
+      const firstDate = renderDate(overallocatedDates[0].date)
+      const lastDate = renderDate(overallocatedDates[dateCount - 1].date)
       return `${firstDate} - ${lastDate}`
     }
   }

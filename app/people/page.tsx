@@ -41,6 +41,7 @@ import {
 import { usePeople } from '@/hooks/use-people'
 import { getDisplayName, getPersonStatusBadge, getPersonTypeBadge } from '@/lib/people'
 import { PERSON_STATUS_OPTIONS, PERSON_TYPE_OPTIONS, PERSON_STATUS, PERSON_TYPE, PERSON_PROFILE_OPTIONS } from '@/constants/people'
+import { renderDate } from '@/utils/renderDate'
 
 export default function PeoplePage() {
   const router = useRouter()
@@ -66,11 +67,11 @@ export default function PeoplePage() {
       <div className="flex items-center justify-center min-h-screen">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-red-600">Error</CardTitle>
+            <CardTitle className="text-red-600" data-test="error-title">Error</CardTitle>
             <CardDescription>{error}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => window.location.reload()}>Reintentar</Button>
+            <Button onClick={() => window.location.reload()} data-test="retry-button">Reintentar</Button>
           </CardContent>
         </Card>
       </div>
@@ -107,10 +108,10 @@ export default function PeoplePage() {
     <main className="flex-1 container mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Personas</h1>
+          <h1 className="text-3xl font-bold" data-test="people-title">Personas</h1>
           <p className="text-muted-foreground">Gestiona colaboradores y su disponibilidad</p>
         </div>
-        <Button asChild>
+        <Button asChild data-test="create-person-button">
           <Link href="/people/new">
             <Plus className="h-4 w-4 mr-2" />
             Agregar Persona
@@ -130,10 +131,11 @@ export default function PeoplePage() {
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                   className="pl-10"
+                  data-test="search-person-input"
                 />
               </div>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={setStatusFilter} data-test="status-filter-select">
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Estado" />
               </SelectTrigger>
@@ -147,7 +149,7 @@ export default function PeoplePage() {
               </SelectContent>
             </Select>
 
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <Select value={typeFilter} onValueChange={setTypeFilter} data-test="type-filter-select">
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
@@ -161,7 +163,7 @@ export default function PeoplePage() {
               </SelectContent>
             </Select>
 
-            <Select value={profileFilter} onValueChange={setProfileFilter}>
+            <Select value={profileFilter} onValueChange={setProfileFilter} data-test="profile-filter-select">
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Perfil" />
               </SelectTrigger>
@@ -182,7 +184,7 @@ export default function PeoplePage() {
       {/* People Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Personas ({filteredPeople.length})</CardTitle>
+          <CardTitle data-test="people-list-title">Lista de Personas ({filteredPeople.length})</CardTitle>
           <CardDescription>Colaboradores registrados en el sistema</CardDescription>
         </CardHeader>
         <CardContent>
@@ -204,10 +206,10 @@ export default function PeoplePage() {
                   <TableCell>{person.profile}</TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      <div>{new Date(person.start_date).toLocaleDateString('es-ES')}</div>
+                      <div>{renderDate(person.start_date)}</div>
                       {person.end_date && (
                         <div className="text-muted-foreground">
-                          hasta {new Date(person.end_date).toLocaleDateString('es-ES')}
+                          hasta {renderDate(person.end_date)}
                         </div>
                       )}
                     </div>
@@ -231,7 +233,7 @@ export default function PeoplePage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                          <Link href={`/people/${person.id}/edit`}>
+                          <Link href={`/people/${person.id}/edit`} data-test={`edit-person-${person.id}`}>
                             <Edit className="h-4 w-4 mr-2" />
                             Editar
                           </Link>
@@ -239,6 +241,7 @@ export default function PeoplePage() {
                         <DropdownMenuItem
                           className="text-red-600"
                           onClick={() => handleDelete(person.id, getDisplayName(person))}
+                          data-test={`delete-person-${person.id}`}
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Eliminar

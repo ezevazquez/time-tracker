@@ -8,13 +8,7 @@ import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -29,7 +23,8 @@ import { projectColumns } from '@/constants/resource-columns/projectColumns'
 import { PROJECT_STATUS_OPTIONS } from '@/constants/projects'
 
 import type { Project } from '@/types/project'
-import type { ResourceAction, ResourceColumn } from '@/types'
+import type { ResourceAction } from '@/types/ResourceAction'
+import type { ResourceColumn } from '@/types/ResourceColumn'
 
 interface ProjectWithFTE extends Project {
   assignedFTE?: number
@@ -80,7 +75,10 @@ export default function ProjectsPage() {
     if (!projectToDelete) return
     try {
       await deleteProject(projectToDelete)
-      toast({ title: 'Proyecto eliminado', description: 'El proyecto fue eliminado correctamente.' })
+      toast({
+        title: 'Proyecto eliminado',
+        description: 'El proyecto fue eliminado correctamente.',
+      })
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error al eliminar el proyecto'
       toast({ title: 'Error al eliminar', description: errorMsg, variant: 'destructive' })
@@ -115,10 +113,10 @@ export default function ProjectsPage() {
     <main className="flex-1 container mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Proyectos</h1>
+          <h1 className="text-3xl font-bold" data-test="projects-title">Proyectos</h1>
           <p className="text-muted-foreground">Gestiona los proyectos en curso</p>
         </div>
-        <Button asChild>
+        <Button asChild data-test="create-project-button">
           <Link href="/projects/new">
             <Plus className="h-4 w-4 mr-2" />
             Crear Proyecto
@@ -136,9 +134,10 @@ export default function ProjectsPage() {
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="pl-10"
+              data-test="search-projects-input"
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter} onValueChange={setStatusFilter} data-test="status-filter-select">
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
@@ -151,14 +150,13 @@ export default function ProjectsPage() {
               ))}
             </SelectContent>
           </Select>
-
         </CardContent>
       </Card>
 
       {/* Tabla */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Proyectos</CardTitle>
+          <CardTitle data-test="projects-title">Lista de Proyectos</CardTitle>
           <CardDescription>Proyectos registrados en el sistema</CardDescription>
         </CardHeader>
         <CardContent>
@@ -177,8 +175,16 @@ export default function ProjectsPage() {
             <h2 className="text-lg font-bold mb-4">Confirmar eliminación</h2>
             <p>¿Estás seguro de que deseas eliminar este proyecto?</p>
             <div className="flex justify-end gap-2 mt-6">
-              <button className="px-4 py-2 bg-gray-200 rounded" onClick={() => setProjectToDelete(null)}>Cancelar</button>
-              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete}>Eliminar</button>
+              <button
+                className="px-4 py-2 bg-gray-200 rounded"
+                onClick={() => setProjectToDelete(null)}
+                data-test="cancel-delete-project-button"
+              >
+                Cancelar
+              </button>
+              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete} data-test="confirm-delete-project-button">
+                Eliminar
+              </button>
             </div>
           </div>
         </div>

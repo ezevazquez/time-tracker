@@ -15,6 +15,7 @@ import {
   isProjectOverallocated, 
   calculateOverallocationPercentage 
 } from '@/lib/utils/fte-calculations'
+import { renderDate } from '@/utils/renderDate'
 
 interface OverallocatedProjectsChartProps {
   projects: Project[]
@@ -63,7 +64,7 @@ export function OverallocatedProjectsChart({ projects, assignments }: Overalloca
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm">
+          <CardTitle className="flex items-center gap-2 text-sm" data-test="overallocated-projects-title">
             <AlertTriangle className="h-4 w-4 text-green-600" />
             Proyectos Sobre-asignados
           </CardTitle>
@@ -89,7 +90,7 @@ export function OverallocatedProjectsChart({ projects, assignments }: Overalloca
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm">
-          <AlertTriangle className="h-4 w-4 text-red-600" />
+          <AlertTriangle className="h-4 w-4 text-red-600" data-test="overallocated-projects-title" />
           Proyectos Sobre-asignados
         </CardTitle>
         <CardDescription className="text-xs">
@@ -118,7 +119,7 @@ export function OverallocatedProjectsChart({ projects, assignments }: Overalloca
                     {project.start_date && (
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {format(new Date(project.start_date), 'MMM yyyy', { locale: es })}
+                        {renderDate(project.start_date)}
                       </div>
                     )}
                     {project.end_date && (
@@ -126,7 +127,7 @@ export function OverallocatedProjectsChart({ projects, assignments }: Overalloca
                         <span>-</span>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {format(new Date(project.end_date), 'MMM yyyy', { locale: es })}
+                          {renderDate(project.end_date)}
                         </div>
                       </>
                     )}

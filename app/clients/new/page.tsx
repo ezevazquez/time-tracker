@@ -76,13 +76,13 @@ export default function NewClientPage() {
     <main className="flex-1 container mx-auto px-4 py-6">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" size="icon" asChild>
+          <Button variant="outline" size="icon" asChild data-test="back-button">
             <Link href="/clients">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Nuevo Cliente</h1>
+            <h1 className="text-3xl font-bold" data-test="new-client-title">Nuevo Cliente</h1>
             <p className="text-muted-foreground">Registra un nuevo cliente en el sistema</p>
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function NewClientPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Detalles del Cliente</CardTitle>
+            <CardTitle data-test="client-info-title">Detalles del Cliente</CardTitle>
             <CardDescription>Completa la información del nuevo cliente</CardDescription>
           </CardHeader>
           <CardContent>
@@ -114,6 +114,7 @@ export default function NewClientPage() {
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Ej: Empresa XYZ"
+                  data-test="client-name-field"
                 />
               </div>
 
@@ -125,14 +126,17 @@ export default function NewClientPage() {
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Información adicional sobre el cliente..."
                   rows={4}
+                  data-test="client-description-field"
                 />
               </div>
 
               <div className="flex justify-end space-x-2">
-                <Button variant="outline" type="button" onClick={() => router.push('/clients')}>
+                <Button variant="outline" type="button" onClick={() => router.push('/clients')}
+                  data-test="cancel-button">
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting} 
+                  data-test="create-client-button">
                   {isSubmitting && <Save className="mr-2 h-4 w-4 animate-spin" />}
                   Crear Cliente
                 </Button>

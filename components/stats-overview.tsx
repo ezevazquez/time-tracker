@@ -9,6 +9,7 @@ import type { Client } from '@/types/client'
 import { ACTIVE_PERSON_STATUSES } from '@/constants/people'
 import { parseDateFromString } from '@/lib/assignments'
 import { isOverallocated, fteToPercentage } from '@/lib/utils/fte-calculations'
+import { stringToKebabCase } from '@/utils/stringToKebabCase'
 
 interface StatsOverviewProps {
   people: Person[]
@@ -32,16 +33,14 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
     return start <= currentDate && end >= currentDate
   })
 
-  const assignedPeopleToday = new Set(
-    currentAssignments.map(a => a.person_id)
-  )
-  const totalActivePeople = people.filter(p => ACTIVE_PERSON_STATUSES.includes(p.status as any)).length
-  
+  const assignedPeopleToday = new Set(currentAssignments.map(a => a.person_id))
+  const totalActivePeople = people.filter(p =>
+    ACTIVE_PERSON_STATUSES.includes(p.status as any)
+  ).length
+
   const avgUtilization =
-    totalActivePeople > 0
-      ? Math.round((assignedPeopleToday.size / totalActivePeople) * 100)
-      : 0
-  
+    totalActivePeople > 0 ? Math.round((assignedPeopleToday.size / totalActivePeople) * 100) : 0
+
   // Overallocated people using FTE logic
   const overallocatedCount = people.filter(person => {
     const personAssignments = currentAssignments.filter(a => a.person_id === person.id)
@@ -115,22 +114,30 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
       {stats.map((stat, index) => (
-        <Card key={index} className="hover:shadow-md transition-shadow flex flex-col justify-between">
+        <Card
+          key={index}
+          className="hover:shadow-md transition-shadow flex flex-col justify-between"
+        >
           <CardContent className="p-4 h-full flex flex-col justify-between">
             <div className="flex items-start justify-between">
-              <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+              <p
+                className="text-sm font-medium text-gray-600"
+                data-test={`stat-title-${stringToKebabCase(stat.title)}`}
+              >
+                {stat.title}
+              </p>
               <div className={`p-2 rounded-full ${stat.bgColor}`}>
                 <stat.icon className={`h-5 w-5 ${stat.color}`} />
               </div>
             </div>
-  
+
             <div className="mt-4">
               <div className="flex items-baseline gap-1">
                 <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
                 {stat.total && <p className="text-sm text-gray-500">/{stat.total}</p>}
               </div>
             </div>
-  
+
             <p className="text-xs text-gray-500 mt-auto pt-4">{stat.description}</p>
           </CardContent>
         </Card>

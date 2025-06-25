@@ -90,10 +90,10 @@ export default function ClientsPage() {
     <main className="flex-1 container mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Clientes</h1>
+          <h1 className="text-3xl font-bold" data-test="clients-title">Clientes</h1>
           <p className="text-muted-foreground">Gestiona los clientes de la empresa</p>
         </div>
-        <Button asChild>
+        <Button asChild data-test="create-client-button">
           <Link href="/clients/new">
             <Plus className="h-4 w-4 mr-2" />
             Crear Cliente
@@ -111,6 +111,7 @@ export default function ClientsPage() {
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="pl-10"
+              data-test="search-client-input"
             />
           </div>
         </CardContent>
@@ -119,7 +120,7 @@ export default function ClientsPage() {
       {/* Clients Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Clientes</CardTitle>
+          <CardTitle data-test="clients-list-title">Lista de Clientes</CardTitle>
           <CardDescription>Clientes registrados en el sistema</CardDescription>
         </CardHeader>
         <CardContent>
@@ -145,7 +146,7 @@ export default function ClientsPage() {
                     <TableCell>{client.description || '-'}</TableCell>
                     <TableCell>
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                        <DropdownMenuTrigger asChild data-test={`client-actions-${client.id}`}>
                           <Button variant="ghost" size="icon">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
@@ -153,6 +154,7 @@ export default function ClientsPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
                             onClick={() => router.push(`/clients/${client.id}/edit`)}
+                            data-test={`edit-client-${client.id}`}
                           >
                             <Edit className="h-4 w-4 mr-2" />
                             Editar
@@ -160,6 +162,7 @@ export default function ClientsPage() {
                           <DropdownMenuItem
                             className="text-red-600"
                             onClick={() => handleDelete(client.id)}
+                            data-test={`delete-client-${client.id}`}
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Eliminar
@@ -179,11 +182,11 @@ export default function ClientsPage() {
       {clientToDelete && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded shadow-lg">
-            <h2 className="text-lg font-bold mb-4">Confirmar eliminación</h2>
+            <h2 className="text-lg font-bold mb-4" data-test="confirm-delete-client-title">Confirmar eliminación</h2>
             <p>¿Estás seguro de que deseas eliminar este cliente?</p>
             <div className="flex justify-end gap-2 mt-6">
-              <button className="px-4 py-2 bg-gray-200 rounded" onClick={() => setClientToDelete(null)}>Cancelar</button>
-              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete}>Eliminar</button>
+              <button className="px-4 py-2 bg-gray-200 rounded" onClick={() => setClientToDelete(null)} data-test="cancel-delete-client-button">Cancelar</button>
+              <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete} data-test="confirm-delete-client-button">Eliminar</button>
             </div>
           </div>
         </div>

@@ -26,19 +26,23 @@ export function DashboardHeader() {
 
       <div className="flex gap-3">
         <Link href="/assignments">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" data-test="view-timeline-button">
             <Calendar className="h-4 w-4 mr-2" />
             Ver Timeline
           </Button>
         </Link>
-        <Button size="sm" onClick={() => setCreateModalOpen(true)}>
+        <Button
+          size="sm"
+          onClick={() => setCreateModalOpen(true)}
+          data-test="new-assignment-button"
+        >
           <TrendingUp className="h-4 w-4 mr-2" />
           Nueva Asignación
         </Button>
         <AssignmentModal
           open={createModalOpen}
           mode="new"
-          onSave={async (data) => {
+          onSave={async data => {
             // Aquí deberías llamar a tu función de creación de asignación
             setCreateModalOpen(false)
           }}
