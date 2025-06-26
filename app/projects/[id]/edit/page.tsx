@@ -387,7 +387,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Estado</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-test="project-status-select">
                             <SelectValue placeholder="Selecciona un estado" />
