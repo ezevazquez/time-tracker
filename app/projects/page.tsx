@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Eye, ArrowDown, ArrowUp } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,6 +37,10 @@ export default function ProjectsPage() {
   const router = useRouter()
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null)
   const { toast } = useToast()
+  const [sortField, setSortField] = useState<'nombre' | 'cliente' | 'estado' | 'fechas'>('nombre')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+
+  const sortableKeys = ['nombre', 'cliente', 'estado', 'fechas'] as const;
 
   if (loading) {
     return (
@@ -65,6 +69,58 @@ export default function ProjectsPage() {
       (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase()))
     const matchesStatus = statusFilter === 'all' || project.status === statusFilter
     return matchesSearch && matchesStatus
+  })
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortOrder(order => order === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder('asc')
+    }
+  }
+
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    let valA, valB
+    if (sortField === 'nombre') {
+      valA = a.name?.toLowerCase() || ''
+      valB = b.name?.toLowerCase() || ''
+    } else if (sortField === 'cliente') {
+      valA = a.clients?.name?.toLowerCase() || ''
+      valB = b.clients?.name?.toLowerCase() || ''
+    } else if (sortField === 'estado') {
+      valA = a.status || ''
+      valB = b.status || ''
+    } else if (sortField === 'fechas') {
+      valA = a.start_date || ''
+      valB = b.start_date || ''
+    }
+    if (typeof valA === 'string' && typeof valB === 'string') {
+      return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+    } else {
+      return 0
+    }
+  })
+
+  const columnsWithSorting = projectColumns.map(col => {
+    if (sortableKeys.includes(col.key as typeof sortableKeys[number])) {
+      return {
+        ...col,
+        title: (
+          <span
+            className="cursor-pointer select-none flex items-center gap-1"
+            onClick={() => handleSort(col.key as typeof sortableKeys[number])}
+            data-test={`sort-${col.key}`}
+          >
+            {col.title}
+            {sortField === col.key && (
+              sortOrder === 'asc' ? <ArrowDown className="inline h-3 w-3" /> : <ArrowUp className="inline h-3 w-3" />
+            )}
+          </span>
+        ),
+      }
+    }
+    return col
   })
 
   const handleDelete = async (id: string) => {
@@ -161,8 +217,8 @@ export default function ProjectsPage() {
         </CardHeader>
         <CardContent>
           <TableResource
-            items={filteredProjects}
-            columns={projectColumns as ResourceColumn<ProjectWithFTE>[]}
+            items={sortedProjects}
+            columns={columnsWithSorting as ResourceColumn<ProjectWithFTE>[]}
             actions={actions}
           />
         </CardContent>
