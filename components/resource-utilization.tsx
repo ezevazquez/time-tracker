@@ -89,7 +89,7 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
             </div>
             <div className="flex items-center gap-1">
               <TrendingDown className="h-4 w-4 text-yellow-500" />
-              <span className="text-yellow-600">{underutilizedCount} subutilizados</span>
+              <span className="text-yellow-600">{underutilizedCount} subasignados</span>
             </div>
             <div className="flex items-center gap-1">
               <MinusCircle className="h-4 w-4 text-gray-400" />
@@ -128,7 +128,7 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
                     <Badge variant="secondary" className="text-xs bg-gray-200 text-gray-700">Sin asignación</Badge>
                   )}
                   {person.utilization > 0 && person.utilization < 100 && (
-                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">Subutilizado</Badge>
+                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">Subasignado</Badge>
                   )}
                   {person.utilization > 100 && (
                     <Badge variant="destructive" className="text-xs">Sobreasignado</Badge>
