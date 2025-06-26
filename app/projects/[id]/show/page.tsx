@@ -472,6 +472,12 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
         initialData={{
           ...selectedAssignment,
           project_id: project.id,
+          ...(selectedAssignment == null && project.start_date && project.end_date
+            ? {
+                start_date: project.start_date,
+                end_date: project.end_date,
+              }
+            : {})
         }}
         onSave={async (data) => {
           try {
