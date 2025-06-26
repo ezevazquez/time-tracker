@@ -10,6 +10,8 @@ import {
   MoreHorizontal,
   Edit,
   Trash2,
+  X,
+  ChevronDown,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -37,6 +39,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
+import { Checkbox } from '@/components/ui/checkbox'
 
 import { usePeople } from '@/hooks/use-people'
 import { getDisplayName, getPersonStatusBadge, getPersonTypeBadge } from '@/lib/people'
@@ -47,9 +51,12 @@ export default function PeoplePage() {
   const router = useRouter()
   const { people, loading, error, deletePerson } = usePeople()
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [typeFilter, setTypeFilter] = useState('all')
-  const [profileFilter, setProfileFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
+  const [typeFilter, setTypeFilter] = useState<string[]>([])
+  const [profileFilter, setProfileFilter] = useState<string[]>([])
+  const [statusPopoverOpen, setStatusPopoverOpen] = useState(false)
+  const [typePopoverOpen, setTypePopoverOpen] = useState(false)
+  const [profilePopoverOpen, setProfilePopoverOpen] = useState(false)
 
   if (loading) {
     return (
@@ -83,9 +90,9 @@ export default function PeoplePage() {
     const matchesSearch =
       fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       person.profile.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || person.status === statusFilter
-    const matchesType = typeFilter === 'all' || person.type === typeFilter
-    const matchesProfile = profileFilter === 'all' || person.profile === profileFilter
+    const matchesStatus = statusFilter.length === 0 || statusFilter.includes(person.status)
+    const matchesType = typeFilter.length === 0 || typeFilter.includes(person.type)
+    const matchesProfile = profileFilter.length === 0 || profileFilter.includes(person.profile)
 
     return matchesSearch && matchesStatus && matchesType && matchesProfile
   })
@@ -133,45 +140,159 @@ export default function PeoplePage() {
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-end items-center">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40"  data-test="status-filter-select">
-                <SelectValue placeholder="Estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los estados</SelectItem>
-                {PERSON_STATUS_OPTIONS.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={typeFilter} onValueChange={setTypeFilter} >
-              <SelectTrigger className="w-40" data-test="type-filter-select">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los tipos</SelectItem>
-                {PERSON_TYPE_OPTIONS.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={profileFilter} onValueChange={setProfileFilter} >
-              <SelectTrigger className="w-40" data-test="profile-filter-select">
-                <SelectValue placeholder="Perfil" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los perfiles</SelectItem>
-                {PERSON_PROFILE_OPTIONS.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Estado */}
+            <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="min-w-[220px] justify-between"
+                  data-test="status-filter-popover-trigger"
+                >
+                  <span className="truncate">
+                    {statusFilter.length === 0
+                      ? 'Todos los estados'
+                      : statusFilter.map(val => PERSON_STATUS_OPTIONS.find(opt => opt.value === val)?.label || val).join(', ')
+                    }
+                  </span>
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-2">
+                <div className="flex items-center justify-between px-2 pb-2">
+                  <span className="font-semibold text-sm">Estado</span>
+                  {statusFilter.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setStatusFilter([])}
+                      className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 px-2 py-1 rounded transition-colors"
+                      data-test="clear-status-filter"
+                    >
+                      <X className="h-3 w-3" /> Limpiar
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+                  {PERSON_STATUS_OPTIONS.map(option => (
+                    <label key={option.value} className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-accent">
+                      <Checkbox
+                        checked={statusFilter.includes(option.value)}
+                        onCheckedChange={checked => {
+                          setStatusFilter(prev =>
+                            checked
+                              ? [...prev, option.value]
+                              : prev.filter(val => val !== option.value)
+                          )
+                        }}
+                        id={`status-checkbox-${option.value}`}
+                      />
+                      <span className="text-sm">{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+            {/* Tipo */}
+            <Popover open={typePopoverOpen} onOpenChange={setTypePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="min-w-[220px] justify-between"
+                  data-test="type-filter-popover-trigger"
+                >
+                  <span className="truncate">
+                    {typeFilter.length === 0
+                      ? 'Todos los tipos'
+                      : typeFilter.map(val => PERSON_TYPE_OPTIONS.find(opt => opt.value === val)?.label || val).join(', ')
+                    }
+                  </span>
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-2">
+                <div className="flex items-center justify-between px-2 pb-2">
+                  <span className="font-semibold text-sm">Tipo</span>
+                  {typeFilter.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setTypeFilter([])}
+                      className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 px-2 py-1 rounded transition-colors"
+                      data-test="clear-type-filter"
+                    >
+                      <X className="h-3 w-3" /> Limpiar
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+                  {PERSON_TYPE_OPTIONS.map(option => (
+                    <label key={option.value} className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-accent">
+                      <Checkbox
+                        checked={typeFilter.includes(option.value)}
+                        onCheckedChange={checked => {
+                          setTypeFilter(prev =>
+                            checked
+                              ? [...prev, option.value]
+                              : prev.filter(val => val !== option.value)
+                          )
+                        }}
+                        id={`type-checkbox-${option.value}`}
+                      />
+                      <span className="text-sm">{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+            {/* Perfil */}
+            <Popover open={profilePopoverOpen} onOpenChange={setProfilePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="min-w-[220px] justify-between"
+                  data-test="profile-filter-popover-trigger"
+                >
+                  <span className="truncate">
+                    {profileFilter.length === 0
+                      ? 'Todos los perfiles'
+                      : profileFilter.map(val => PERSON_PROFILE_OPTIONS.find(opt => opt.value === val)?.label || val).join(', ')
+                    }
+                  </span>
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-2">
+                <div className="flex items-center justify-between px-2 pb-2">
+                  <span className="font-semibold text-sm">Perfil</span>
+                  {profileFilter.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setProfileFilter([])}
+                      className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 px-2 py-1 rounded transition-colors"
+                      data-test="clear-profile-filter"
+                    >
+                      <X className="h-3 w-3" /> Limpiar
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+                  {PERSON_PROFILE_OPTIONS.map(option => (
+                    <label key={option.value} className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-accent">
+                      <Checkbox
+                        checked={profileFilter.includes(option.value)}
+                        onCheckedChange={checked => {
+                          setProfileFilter(prev =>
+                            checked
+                              ? [...prev, option.value]
+                              : prev.filter(val => val !== option.value)
+                          )
+                        }}
+                        id={`profile-checkbox-${option.value}`}
+                      />
+                      <span className="text-sm">{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </CardContent>
       </Card>
