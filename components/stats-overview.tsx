@@ -50,7 +50,7 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
 
   const stats = [
     {
-      title: 'Equipo activo',
+      title: 'Personas activas',
       value: activePeople,
       total: people.length,
       icon: Users,
