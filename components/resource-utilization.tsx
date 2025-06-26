@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Users, TrendingUp, TrendingDown } from 'lucide-react'
+import { Users, TrendingUp, TrendingDown, MinusCircle } from 'lucide-react'
 import type { Person } from '@/types/people'
 import type { AssignmentWithRelations } from '@/types/assignment'
 import { PERSON_STATUS } from '@/constants/people'
@@ -70,8 +70,9 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
         )
       : 0
 
-  const overallocatedCount = utilizationData.filter(p => p.isOverallocated).length
-  const underutilizedCount = utilizationData.filter(p => p.isUnderutilized).length
+  const overallocatedCount = utilizationData.filter(p => p.utilization > 100).length
+  const underutilizedCount = utilizationData.filter(p => p.utilization > 0 && p.utilization < 100).length
+  const noAssignmentCount = utilizationData.filter(p => p.utilization === 0).length
 
   return (
     <Card>
@@ -89,6 +90,10 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
             <div className="flex items-center gap-1">
               <TrendingDown className="h-4 w-4 text-yellow-500" />
               <span className="text-yellow-600">{underutilizedCount} subutilizados</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <MinusCircle className="h-4 w-4 text-gray-400" />
+              <span className="text-gray-600">{noAssignmentCount} sin asignación</span>
             </div>
           </div>
         </CardTitle>
@@ -119,15 +124,14 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <p className="text-sm font-medium text-gray-900 truncate">{getDisplayName(person)}</p>
-                  {person.isOverallocated && (
-                    <Badge variant="destructive" className="text-xs">
-                      Sobreasignado
-                    </Badge>
+                  {person.utilization === 0 && (
+                    <Badge variant="secondary" className="text-xs bg-gray-200 text-gray-700">Sin asignación</Badge>
                   )}
-                  {person.isUnderutilized && (
-                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
-                      Subutilizado
-                    </Badge>
+                  {person.utilization > 0 && person.utilization < 100 && (
+                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">Subutilizado</Badge>
+                  )}
+                  {person.utilization > 100 && (
+                    <Badge variant="destructive" className="text-xs">Sobreasignado</Badge>
                   )}
                 </div>
 
