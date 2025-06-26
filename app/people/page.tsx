@@ -121,20 +121,18 @@ export default function PeoplePage() {
 
       {/* Filters */}
       <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nombre o perfil..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                  data-test="search-person-input"
-                />
-              </div>
-            </div>
+        <CardContent className="pt-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
+          <div className="relative w-full sm:w-1/4 sm:max-w-xs">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nombre o perfil..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="pl-10"
+              data-test="search-person-input"
+            />
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-end items-center">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40"  data-test="status-filter-select">
                 <SelectValue placeholder="Estado" />
@@ -148,7 +146,6 @@ export default function PeoplePage() {
                 ))}
               </SelectContent>
             </Select>
-
             <Select value={typeFilter} onValueChange={setTypeFilter} >
               <SelectTrigger className="w-40" data-test="type-filter-select">
                 <SelectValue placeholder="Tipo" />
@@ -162,7 +159,6 @@ export default function PeoplePage() {
                 ))}
               </SelectContent>
             </Select>
-
             <Select value={profileFilter} onValueChange={setProfileFilter} >
               <SelectTrigger className="w-40" data-test="profile-filter-select">
                 <SelectValue placeholder="Perfil" />
@@ -176,7 +172,6 @@ export default function PeoplePage() {
                 ))}
               </SelectContent>
             </Select>
-
           </div>
         </CardContent>
       </Card>
