@@ -185,8 +185,8 @@ export default function ProjectsPage() {
 
       {/* Filtros */}
       <Card className="mb-6">
-        <CardContent className="pt-6 flex flex-col sm:flex-row gap-4 justify-end">
-          <div className="relative w-full sm:w-2/3">
+        <CardContent className="pt-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
+          <div className="relative w-full sm:w-1/4 sm:max-w-xs">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por nombre o descripción..."
