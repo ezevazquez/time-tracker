@@ -48,6 +48,8 @@ import type { Project } from '@/types/project'
 import type { Client } from '@/types/client'
 import { PROJECT_STATUS_OPTIONS, PROJECT_STATUS } from '@/constants/projects'
 import { ResourceError } from '@/components/ui/resource-error'
+import { ProjectAssignmentsPanel } from '@/components/project-assignments-panel'
+import { useAssignments } from '@/hooks/use-assignments'
 
 
 const formSchema = z.object({
@@ -77,6 +79,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const { toast } = useToast()
   const [warnings, setWarnings] = useState<string[]>([])
+  const { assignments, createAssignment, updateAssignment, deleteAssignment } = useAssignments()
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -235,255 +238,273 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         </Alert>
       )}
 
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle data-test="project-info-title">Datos del Proyecto</CardTitle>
-          <CardDescription>Completa los campos para actualizar el proyecto</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nombre del Proyecto</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nombre del proyecto" {...field} data-test="project-name-input"/>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Columna izquierda: Formulario */}
+        <div className="w-full md:w-1/2">
+          <Card className="max-w-2xl mx-auto">
+            <CardHeader>
+              <CardTitle data-test="project-info-title">Datos del Proyecto</CardTitle>
+              <CardDescription>Completa los campos para actualizar el proyecto</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nombre del Proyecto</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nombre del proyecto" {...field} data-test="project-name-input"/>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="project_code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Código del Proyecto</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        value={field.value || 'No asignado'}
-                        disabled
-                        className="bg-gray-50 text-gray-500"
-                        data-test="project-code-input"
-                      />
-                    </FormControl>
-                    <p className="text-sm text-muted-foreground">
-                      Código único generado automáticamente (no editable)
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descripción</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Descripción del proyecto"
-                        {...field}
-                        value={field.value || ''}
-                        data-test="project-description-textarea"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="start_date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Fecha de Inicio</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={'outline'}
-                              className={cn(
-                                'pl-3 text-left font-normal',
-                                !field.value && 'text-muted-foreground'
-                              )}
-                              data-test="start-date-button"
-                            >
-                              {field.value
-                                ? format(field.value, 'dd/MM/yyyy')
-                                : 'Seleccionar fecha'}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value || undefined}
-                            onSelect={field.onChange}
-                            disabled={date => date < new Date('1900-01-01')}
-                            initialFocus
+                  <FormField
+                    control={form.control}
+                    name="project_code"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Código del Proyecto</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            value={field.value || 'No asignado'}
+                            disabled
+                            className="bg-gray-50 text-gray-500"
+                            data-test="project-code-input"
                           />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        </FormControl>
+                        <p className="text-sm text-muted-foreground">
+                          Código único generado automáticamente (no editable)
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="end_date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Fecha de Fin (opcional)</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={'outline'}
-                              className={cn(
-                                'pl-3 text-left font-normal',
-                                !field.value && 'text-muted-foreground'
-                              )}
-                              data-test="end-date-button"
-                            >
-                              {field.value ? format(field.value, 'dd/MM/yyyy') : 'Sin fecha de fin'}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value || undefined}
-                            onSelect={field.onChange}
-                            disabled={date => {
-                              const startDate = form.getValues('start_date')
-                              return startDate ? date < startDate : false
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descripción</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Descripción del proyecto"
+                            {...field}
+                            value={field.value || ''}
+                            data-test="project-description-textarea"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="start_date"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Fecha de Inicio</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={'outline'}
+                                  className={cn(
+                                    'pl-3 text-left font-normal',
+                                    !field.value && 'text-muted-foreground'
+                                  )}
+                                  data-test="start-date-button"
+                                >
+                                  {field.value
+                                    ? format(field.value, 'dd/MM/yyyy')
+                                    : 'Seleccionar fecha'}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value || undefined}
+                                onSelect={field.onChange}
+                                disabled={date => date < new Date('1900-01-01')}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="end_date"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Fecha de Fin (opcional)</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={'outline'}
+                                  className={cn(
+                                    'pl-3 text-left font-normal',
+                                    !field.value && 'text-muted-foreground'
+                                  )}
+                                  data-test="end-date-button"
+                                >
+                                  {field.value ? format(field.value, 'dd/MM/yyyy') : 'Sin fecha de fin'}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value || undefined}
+                                onSelect={field.onChange}
+                                disabled={date => {
+                                  const startDate = form.getValues('start_date')
+                                  return startDate ? date < startDate : false
+                                }}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Estado</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-test="project-status-select">
+                                <SelectValue placeholder="Selecciona un estado" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {PROJECT_STATUS_OPTIONS.map(option => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="client_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cliente</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value || 'null'}
+                            value={field.value || 'null'}
+                            data-test="project-client-select"
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecciona un cliente" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="null">Sin cliente</SelectItem>
+                              {clients.map(client => (
+                                <SelectItem key={client.id} value={client.id}>
+                                  {client.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="fte"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>FTE Total</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="1"
+                            min="1"
+                            max="60"
+                            value={field.value || ''}
+                            onChange={e => {
+                              const value = e.target.value;
+                              if (value === '') {
+                                field.onChange(null)
+                              } else {
+                                const intValue = parseInt(value, 10);
+                                if (/^\d+$/.test(value) && intValue > 0 && intValue <= 60) {
+                                  field.onChange(intValue)
+                                } else {
+                                  field.onChange(null)
+                                }
+                              }
                             }}
-                            initialFocus
+                            placeholder="Ej: 2"
+                            data-test="project-fte-input"
                           />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estado</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-test="project-status-select">
-                            <SelectValue placeholder="Selecciona un estado" />
-                          </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
-                          {PROJECT_STATUS_OPTIONS.map(option => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <p className="text-sm text-muted-foreground">
+                          Número entero menor a 60 (Equivalente a 5 años)
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="client_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cliente</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value || 'null'}
-                        value={field.value || 'null'}
-                        data-test="project-client-select"
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un cliente" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="null">Sin cliente</SelectItem>
-                          {clients.map(client => (
-                            <SelectItem key={client.id} value={client.id}>
-                              {client.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="fte"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>FTE Total</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="1"
-                        min="1"
-                        max="60"
-                        value={field.value || ''}
-                        onChange={e => {
-                          const value = e.target.value;
-                          if (value === '') {
-                            field.onChange(null)
-                          } else {
-                            const intValue = parseInt(value, 10);
-                            if (/^\d+$/.test(value) && intValue > 0 && intValue <= 60) {
-                              field.onChange(intValue)
-                            } else {
-                              field.onChange(null)
-                            }
-                          }
-                        }}
-                        placeholder="Ej: 2"
-                        data-test="project-fte-input"
-                      />
-                    </FormControl>
-                    <p className="text-sm text-muted-foreground">
-                      Número entero menor a 60 (Equivalente a 5 años)
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <CardFooter className="flex justify-end gap-2">
-                <Button type="submit" disabled={saving || warnings.length > 0} data-test="save-changes-button">Guardar Cambios</Button>
-                <Button type="button" variant="destructive" onClick={handleDelete} disabled={saving} data-test="cancel-button">Eliminar</Button>
-              </CardFooter>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                  <CardFooter className="flex justify-end gap-2">
+                    <Button type="submit" disabled={saving || warnings.length > 0} data-test="save-changes-button">Guardar Cambios</Button>
+                    <Button type="button" variant="destructive" onClick={handleDelete} disabled={saving} data-test="cancel-button">Eliminar</Button>
+                  </CardFooter>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
+        {/* Columna derecha: Asignaciones */}
+        <div className="w-full md:w-1/2">
+          {project && (
+            <ProjectAssignmentsPanel
+              project={project}
+              assignments={assignments}
+              onCreate={createAssignment}
+              onUpdate={updateAssignment}
+              onDelete={deleteAssignment}
+              showAddButton={true}
+            />
+          )}
+        </div>
+      </div>
 
       {/* Modal de confirmación */}
       {showDeleteModal && (
