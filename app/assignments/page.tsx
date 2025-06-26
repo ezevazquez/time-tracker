@@ -275,8 +275,8 @@ export default function AssignmentsPage() {
             <div className="flex gap-2 flex-wrap items-center">
               
               <Button size="sm" className="h-8" onClick={() => setCreateModalOpen(true)} data-test="new-assignment-button">
-                <Plus className="mr-2 h-4 w-4" />
-                Nueva asignación
+                <Plus className="h-4 w-4" />
+                Crear asignación
               </Button>
             </div>
           </div>

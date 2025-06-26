@@ -1,6 +1,6 @@
 'use client'
 
-import { Calendar, TrendingUp } from 'lucide-react'
+import { Calendar, TrendingUp, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -36,8 +36,8 @@ export function DashboardHeader() {
           onClick={() => setCreateModalOpen(true)}
           data-test="new-assignment-button"
         >
-          <TrendingUp className="h-4 w-4 mr-2" />
-          Nueva Asignación
+          <Plus className="h-4 w-4 mr-2" />
+          Crear asignación
         </Button>
         <AssignmentModal
           open={createModalOpen}

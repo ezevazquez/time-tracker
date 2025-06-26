@@ -79,7 +79,7 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
         <CardTitle className="flex items-center justify-between" data-test="resource-utilization-title">
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-blue-600" />
-            Utilización de personas
+            Personal asignado
           </div>
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-1">

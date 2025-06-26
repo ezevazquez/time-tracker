@@ -67,7 +67,7 @@ export function OverallocatedProjects({ projects, assignments }: OverallocatedPr
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-green-600" />
-            Proyectos Sobre-asignados
+            Proyectos sobreasignados
           </CardTitle>
           <CardDescription>
             Estado de asignación de recursos
@@ -79,7 +79,7 @@ export function OverallocatedProjects({ projects, assignments }: OverallocatedPr
               <AlertTriangle className="h-8 w-8 mx-auto" />
             </div>
             <p className="text-sm text-muted-foreground">
-              No hay proyectos sobre-asignados
+              No hay proyectos sobreasignados
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               Todos los proyectos están dentro de su capacidad FTE
@@ -95,10 +95,10 @@ export function OverallocatedProjects({ projects, assignments }: OverallocatedPr
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-red-600" />
-          Proyectos Sobre-asignados
+          Proyectos sobreasignados
         </CardTitle>
         <CardDescription>
-          {projectsWithOverallocation.length} proyecto{projectsWithOverallocation.length !== 1 ? 's' : ''} con sobre-asignación
+          {projectsWithOverallocation.length} proyecto{projectsWithOverallocation.length !== 1 ? 's' : ''} con sobreasignación
         </CardDescription>
       </CardHeader>
       <CardContent>
