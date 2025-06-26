@@ -37,6 +37,7 @@ import { AssignmentModal } from '@/components/assignment-modal'
 import { peopleService } from '@/lib/services/people.service'
 import { ProjectAuditLog } from '@/components/project-audit-log'
 import { renderDate } from '@/utils/renderDate'
+import { ProjectAssignmentsPanel } from '@/components/project-assignments-panel'
 
 
 interface ProjectWithClient extends Project {
@@ -335,103 +336,14 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
 
         {/* Team Members Section */}
         <div className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2" data-test="project-assignments-title">
-                    <User className="h-5 w-5" />
-                    Equipo Asignado
-                  </CardTitle>
-                  <CardDescription>
-                    Miembros del equipo trabajando en este proyecto ({projectAssignments.length})
-                  </CardDescription>
-                </div>
-                <Button onClick={() => setShowAssignmentModal(true)} size="sm" data-test="add-assignment-button">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Agregar
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {projectAssignments.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No hay miembros asignados aún</p>
-                  <p className="text-xs mt-1">
-                    Crea asignaciones para agregar personas al proyecto
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {projectAssignments.map(assignment => {
-                    const person = assignment.people
-                    if (!person) return null
-
-                    // Obtener iniciales
-                    const initials = `${person.first_name?.[0] || ''}${person.last_name?.[0] || ''}`.toUpperCase()
-
-                    return (
-                      <div
-                        key={assignment.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center font-semibold">
-                            {initials}
-                          </div>
-                          <div>
-                            <h4 className="font-medium">{person.first_name} {person.last_name}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {(assignment.allocation * 100).toFixed(0)}% · {renderDate(assignment.start_date)} - {renderDate(assignment.end_date)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedAssignment(assignment)
-                              setShowAssignmentModal(true)
-                            }}
-                            data-test={`edit-assignment-${assignment.id}`}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              if (confirm('¿Estás seguro de que deseas eliminar esta asignación?')) {
-                                deleteAssignment(assignment.id)
-                                  .then(() => {
-                                    toast({
-                                      title: 'Asignación eliminada',
-                                      description: 'La asignación fue eliminada correctamente.'
-                                    })
-                                  })
-                                  .catch(() => {
-                                    toast({
-                                      title: 'Error',
-                                      description: 'No se pudo eliminar la asignación.',
-                                      variant: 'destructive'
-                                    })
-                                  })
-                              }
-                            }}
-                            data-test={`delete-assignment-${assignment.id}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <ProjectAssignmentsPanel
+            project={project}
+            assignments={assignments}
+            onCreate={createAssignment}
+            onUpdate={updateAssignment}
+            onDelete={deleteAssignment}
+            showAddButton={false}
+          />
         </div>
 
         <div className="mt-6">
@@ -472,6 +384,12 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
         initialData={{
           ...selectedAssignment,
           project_id: project.id,
+          ...(selectedAssignment == null && project.start_date && project.end_date
+            ? {
+                start_date: project.start_date,
+                end_date: project.end_date,
+              }
+            : {})
         }}
         onSave={async (data) => {
           try {
