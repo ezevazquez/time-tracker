@@ -1,7 +1,9 @@
-import { Badge } from '@/components/ui/badge'
+ import { Badge } from '@/components/ui/badge'
 import type { Project } from '@/types/project'
 import { calculateFTEUtilization, isProjectOverallocated, calculateOverallocationPercentage } from '@/lib/utils/fte-calculations'
 import { getStatusBadge, getStatusLabel } from '@/lib/projects'
+import { renderDate } from '@/utils/renderDate'
+import calculateMonths from '@/utils/calculateMonths'
 
 interface ProjectWithFTE extends Project {
   assignedFTE?: number
@@ -57,6 +59,20 @@ export const projectColumns = [
           >
             {isOverallocated ? `+${percentage}%` : `${percentage}%`}
           </Badge>
+        </div>
+      )
+    },
+  },
+  {
+    title: 'Fechas',
+    render: (project: ProjectWithFTE) => {
+      const { start_date, end_date } = project
+      if (!start_date || !end_date) return <span className="text-muted-foreground">-</span>
+      const months = calculateMonths(start_date, end_date)
+      return (
+        <div className="flex flex-col text-sm">
+          <span>{renderDate(start_date)} - {renderDate(end_date)}</span>
+          <span className="text-xs text-muted-foreground">({months} meses)</span>
         </div>
       )
     },
