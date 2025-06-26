@@ -1,4 +1,4 @@
- import { Badge } from '@/components/ui/badge'
+import { Badge } from '@/components/ui/badge'
 import type { Project } from '@/types/project'
 import { calculateFTEUtilization, isProjectOverallocated, calculateOverallocationPercentage } from '@/lib/utils/fte-calculations'
 import { getStatusBadge, getStatusLabel } from '@/lib/projects'
@@ -64,7 +64,7 @@ export const projectColumns = [
     },
   },
   {
-    title: 'Fechas',
+    title: 'Fechas (duración)',
     render: (project: ProjectWithFTE) => {
       const { start_date, end_date } = project
       if (!start_date || !end_date) return <span className="text-muted-foreground">-</span>
