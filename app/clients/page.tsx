@@ -107,8 +107,8 @@ export default function ClientsPage() {
 
       {/* Filters */}
       <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="relative">
+        <CardContent className="pt-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
+          <div className="relative w-full sm:w-1/4 sm:max-w-xs">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por nombre o descripción..."
