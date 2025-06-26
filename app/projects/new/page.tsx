@@ -286,7 +286,6 @@ export default function NewProjectPage() {
                   <Input
                     id="fte"
                     type="number"
-
                     step="1"
                     min="1"
                     max="60"
@@ -306,10 +305,9 @@ export default function NewProjectPage() {
                     }}
                     placeholder="Ej: 2"
                     data-test="fte-input"
-
                   />
                   <p className="text-sm text-muted-foreground">
-                    Número entero menor a 60 (Equivalente a 5 años)
+                    Número entero menor o igual a 60 (Equivalente a 5 años)
                   </p>
                 </div>
               </div>

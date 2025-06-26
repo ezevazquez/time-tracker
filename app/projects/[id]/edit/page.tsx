@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { format } from 'date-fns'
-import { CalendarIcon, Loader2, ArrowLeft } from 'lucide-react'
+import { CalendarIcon, Loader2, ArrowLeft, AlertTriangle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useProjects } from '@/hooks/use-projects'
 import Link from 'next/link'
@@ -39,6 +39,7 @@ import {
 } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 import { cn } from '@/utils/classnames'
 import { projectsService } from '@/lib/services/projects.service'
@@ -75,6 +76,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const { deleteProject } = useProjects()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const { toast } = useToast()
+  const [warnings, setWarnings] = useState<string[]>([])
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -141,6 +143,19 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     fetchProject()
   }, [unwrappedParams.id, form])
 
+  // Validación de FTE similar a New Project
+  const checkForWarnings = (fte: number | null | undefined) => {
+    const newWarnings: string[] = []
+    if (fte === null || fte === undefined || isNaN(fte)) newWarnings.push('El FTE total es obligatorio')
+    if (fte !== null && fte !== undefined && (!Number.isInteger(fte) || fte <= 0 || fte > 60)) newWarnings.push('El FTE debe ser un número entero mayor a 0 y menor o igual a 60 (Equivalente a 5 años)')
+    setWarnings(newWarnings)
+  }
+
+  // Llamar a checkForWarnings cuando cambia el valor de FTE
+  useEffect(() => {
+    checkForWarnings(form.getValues('fte'))
+  }, [form.watch('fte')])
+
   async function onSubmit(values: FormData) {
     try {
       setSaving(true)
@@ -206,6 +221,19 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         </div>
         <p className="text-muted-foreground">Actualiza los datos del proyecto</p>
       </div>
+
+      {warnings.length > 0 && (
+        <Alert className="mb-6 border-yellow-200 bg-yellow-50">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            <ul className="list-disc list-inside">
+              {warnings.map((warning, index) => (
+                <li key={index}>{warning}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
@@ -419,22 +447,37 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                     <FormControl>
                       <Input
                         type="number"
-                        step="0.1"
-                        min="0"
-                        placeholder="Ej: 2.5"
-                        {...field}
+                        step="1"
+                        min="1"
+                        max="60"
                         value={field.value || ''}
-                        onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                        onChange={e => {
+                          const value = e.target.value;
+                          if (value === '') {
+                            field.onChange(null)
+                          } else {
+                            const intValue = parseInt(value, 10);
+                            if (/^\d+$/.test(value) && intValue > 0 && intValue <= 60) {
+                              field.onChange(intValue)
+                            } else {
+                              field.onChange(null)
+                            }
+                          }
+                        }}
+                        placeholder="Ej: 2"
                         data-test="project-fte-input"
                       />
                     </FormControl>
+                    <p className="text-sm text-muted-foreground">
+                      Número entero menor a 60 (Equivalente a 5 años)
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
               <CardFooter className="flex justify-end gap-2">
-                <Button type="submit" disabled={saving} data-test="save-changes-button">Guardar Cambios</Button>
+                <Button type="submit" disabled={saving || warnings.length > 0} data-test="save-changes-button">Guardar Cambios</Button>
                 <Button type="button" variant="destructive" onClick={handleDelete} disabled={saving} data-test="cancel-button">Eliminar</Button>
               </CardFooter>
             </form>
