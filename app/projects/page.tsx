@@ -22,7 +22,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 
 import { useProjects } from '@/hooks/use-projects'
 import { projectColumns } from '@/constants/resource-columns/projectColumns'
-import { PROJECT_STATUS_OPTIONS } from '@/constants/projects'
+import { PROJECT_STATUS_OPTIONS, PROJECT_STATUS } from '@/constants/projects'
 
 import type { Project } from '@/types/project'
 import type { ResourceAction } from '@/types/ResourceAction'
@@ -34,7 +34,7 @@ interface ProjectWithFTE extends Project {
 
 export default function ProjectsPage() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string[]>([])
+  const [statusFilter, setStatusFilter] = useState<string[]>(PROJECT_STATUS_OPTIONS.filter(opt => opt.value !== PROJECT_STATUS.FINISHED).map(opt => opt.value))
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false)
   const { projects, loading, error, deleteProject } = useProjects()
   const router = useRouter()

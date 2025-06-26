@@ -51,7 +51,7 @@ export default function PeoplePage() {
   const router = useRouter()
   const { people, loading, error, deletePerson } = usePeople()
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string[]>([])
+  const [statusFilter, setStatusFilter] = useState<string[]>([PERSON_STATUS.ACTIVE, PERSON_STATUS.PAUSED])
   const [typeFilter, setTypeFilter] = useState<string[]>([])
   const [profileFilter, setProfileFilter] = useState<string[]>([])
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false)
