@@ -59,7 +59,12 @@ const formSchema = z.object({
   end_date: z.date().nullable().optional(),
   status: z.enum(['In Progress', 'Finished', 'On Hold', 'Not Started']),
   client_id: z.string().nullable().optional(),
-  fte: z.number().nullable().optional(),
+  fte: z
+    .number({ invalid_type_error: 'El FTE debe ser un número' })
+    .min(0.1, 'El FTE debe ser mayor a 0')
+    .max(60, 'El FTE debe ser menor o igual a 60')
+    .nullable()
+    .optional(),
   project_code: z.string().nullable().optional(),
 })
 
@@ -78,7 +83,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const { deleteProject } = useProjects()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const { toast } = useToast()
-  const [warnings, setWarnings] = useState<string[]>([])
   const { assignments, createAssignment, updateAssignment, deleteAssignment } = useAssignments()
 
   const form = useForm<FormData>({
@@ -146,19 +150,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     fetchProject()
   }, [unwrappedParams.id, form])
 
-  // Validación de FTE similar a New Project
-  const checkForWarnings = (fte: number | null | undefined) => {
-    const newWarnings: string[] = []
-    if (fte === null || fte === undefined || isNaN(fte)) newWarnings.push('El FTE total es obligatorio')
-    if (fte !== null && fte !== undefined && (!Number.isInteger(fte) || fte <= 0 || fte > 60)) newWarnings.push('El FTE debe ser un número entero mayor a 0 y menor o igual a 60 (Equivalente a 5 años)')
-    setWarnings(newWarnings)
-  }
-
-  // Llamar a checkForWarnings cuando cambia el valor de FTE
-  useEffect(() => {
-    checkForWarnings(form.getValues('fte'))
-  }, [form.watch('fte')])
-
   async function onSubmit(values: FormData) {
     try {
       setSaving(true)
@@ -224,19 +215,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         </div>
         <p className="text-muted-foreground">Actualiza los datos del proyecto</p>
       </div>
-
-      {warnings.length > 0 && (
-        <Alert className="mb-6 border-yellow-200 bg-yellow-50">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            <ul className="list-disc list-inside">
-              {warnings.map((warning, index) => (
-                <li key={index}>{warning}</li>
-              ))}
-            </ul>
-          </AlertDescription>
-        </Alert>
-      )}
 
       <div className="flex flex-col md:flex-row gap-6">
         {/* Columna izquierda: Formulario */}
@@ -453,29 +431,31 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                         <FormControl>
                           <Input
                             type="number"
-                            step="1"
-                            min="1"
+                            step="0.1"
+                            min="0.1"
                             max="60"
-                            value={field.value || ''}
+                            value={field.value ?? ''}
                             onChange={e => {
-                              const value = e.target.value;
+                              let value = e.target.value;
                               if (value === '') {
                                 field.onChange(null)
                               } else {
-                                const intValue = parseInt(value, 10);
-                                if (/^\d+$/.test(value) && intValue > 0 && intValue <= 60) {
-                                  field.onChange(intValue)
+                                // Permitir punto o coma como separador decimal
+                                value = value.replace(',', '.');
+                                const floatValue = parseFloat(value);
+                                if (/^\d+([\.,]\d{0,1})?$/.test(e.target.value) && floatValue > 0 && floatValue <= 60) {
+                                  field.onChange(floatValue)
                                 } else {
                                   field.onChange(null)
                                 }
                               }
                             }}
-                            placeholder="Ej: 2"
+                            placeholder="Ej: 4.5"
                             data-test="project-fte-input"
                           />
                         </FormControl>
                         <p className="text-sm text-muted-foreground">
-                          Número entero menor a 60 (Equivalente a 5 años)
+                          Número mayor a 0 y menor o igual a 60. Se permite un decimal (Ej: 4.5)
                         </p>
                         <FormMessage />
                       </FormItem>
@@ -483,8 +463,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                   />
 
                   <CardFooter className="flex justify-end gap-2">
-                    <Button type="submit" disabled={saving || warnings.length > 0} data-test="save-changes-button">Guardar Cambios</Button>
-                    <Button type="button" variant="destructive" onClick={handleDelete} disabled={saving} data-test="cancel-button">Eliminar</Button>
+                    <Button type="submit" disabled={saving || !form.formState.isValid} data-test="save-changes-button">Guardar Cambios</Button>
                   </CardFooter>
                 </form>
               </Form>

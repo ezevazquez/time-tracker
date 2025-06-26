@@ -286,28 +286,29 @@ export default function NewProjectPage() {
                   <Input
                     id="fte"
                     type="number"
-                    step="1"
-                    min="1"
+                    step="0.1"
+                    min="0.1"
                     max="60"
                     value={formData.fte === null ? '' : formData.fte}
                     onChange={e => {
-                      const value = e.target.value;
+                      let value = e.target.value;
                       if (value === '') {
                         setFormData({ ...formData, fte: null })
                       } else {
-                        const intValue = parseInt(value, 10);
-                        if (/^\d+$/.test(value) && intValue > 0 && intValue <= 60) {
-                          setFormData({ ...formData, fte: intValue })
+                        value = value.replace(',', '.');
+                        const floatValue = parseFloat(value);
+                        if (/^\d+([\.,]\d{0,1})?$/.test(e.target.value) && floatValue > 0 && floatValue <= 60) {
+                          setFormData({ ...formData, fte: floatValue })
                         } else {
                           setFormData({ ...formData, fte: null })
                         }
                       }
                     }}
-                    placeholder="Ej: 2"
+                    placeholder="Ej: 4.5"
                     data-test="fte-input"
                   />
                   <p className="text-sm text-muted-foreground">
-                    Número entero menor o igual a 60 (Equivalente a 5 años)
+                    Número mayor a 0 y menor o igual a 60. Se permite un decimal (Ej: 4.5)
                   </p>
                 </div>
               </div>

@@ -141,10 +141,6 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                 Editar
               </Link>
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting} data-test="delete-project-button">
-              <Trash2 className="h-4 w-4 mr-2" />
-              {isDeleting ? 'Eliminando...' : 'Eliminar'}
-            </Button>
           </div>
         </div>
 
