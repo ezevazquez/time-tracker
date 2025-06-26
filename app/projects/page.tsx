@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Eye, ArrowDown, ArrowUp, X, ChevronDown } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,10 +17,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { TableResource } from '@/components/ui/table-resource'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Checkbox } from '@/components/ui/checkbox'
 
 import { useProjects } from '@/hooks/use-projects'
 import { projectColumns } from '@/constants/resource-columns/projectColumns'
-import { PROJECT_STATUS_OPTIONS } from '@/constants/projects'
+import { PROJECT_STATUS_OPTIONS, PROJECT_STATUS } from '@/constants/projects'
 
 import type { Project } from '@/types/project'
 import type { ResourceAction } from '@/types/ResourceAction'
@@ -32,11 +34,16 @@ interface ProjectWithFTE extends Project {
 
 export default function ProjectsPage() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState<string[]>(PROJECT_STATUS_OPTIONS.filter(opt => opt.value !== PROJECT_STATUS.FINISHED).map(opt => opt.value))
+  const [statusPopoverOpen, setStatusPopoverOpen] = useState(false)
   const { projects, loading, error, deleteProject } = useProjects()
   const router = useRouter()
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null)
   const { toast } = useToast()
+  const [sortField, setSortField] = useState<'nombre' | 'cliente' | 'estado' | 'fechas'>('nombre')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+
+  const sortableKeys = ['nombre', 'cliente', 'estado', 'fechas'] as const;
 
   if (loading) {
     return (
@@ -63,8 +70,60 @@ export default function ProjectsPage() {
     const matchesSearch =
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter
+    const matchesStatus = statusFilter.length === 0 || statusFilter.includes(project.status)
     return matchesSearch && matchesStatus
+  })
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortOrder(order => order === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder('asc')
+    }
+  }
+
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    let valA, valB
+    if (sortField === 'nombre') {
+      valA = a.name?.toLowerCase() || ''
+      valB = b.name?.toLowerCase() || ''
+    } else if (sortField === 'cliente') {
+      valA = a.clients?.name?.toLowerCase() || ''
+      valB = b.clients?.name?.toLowerCase() || ''
+    } else if (sortField === 'estado') {
+      valA = a.status || ''
+      valB = b.status || ''
+    } else if (sortField === 'fechas') {
+      valA = a.start_date || ''
+      valB = b.start_date || ''
+    }
+    if (typeof valA === 'string' && typeof valB === 'string') {
+      return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+    } else {
+      return 0
+    }
+  })
+
+  const columnsWithSorting = projectColumns.map(col => {
+    if (sortableKeys.includes(col.key as typeof sortableKeys[number])) {
+      return {
+        ...col,
+        title: (
+          <span
+            className="cursor-pointer select-none flex items-center gap-1"
+            onClick={() => handleSort(col.key as typeof sortableKeys[number])}
+            data-test={`sort-${col.key}`}
+          >
+            {col.title}
+            {sortField === col.key && (
+              sortOrder === 'asc' ? <ArrowDown className="inline h-3 w-3" /> : <ArrowUp className="inline h-3 w-3" />
+            )}
+          </span>
+        ),
+      }
+    }
+    return col
   })
 
   const handleDelete = async (id: string) => {
@@ -126,8 +185,8 @@ export default function ProjectsPage() {
 
       {/* Filtros */}
       <Card className="mb-6">
-        <CardContent className="pt-6 flex flex-col sm:flex-row gap-4">
-          <div className="relative w-full sm:w-2/3">
+        <CardContent className="pt-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
+          <div className="relative w-full sm:w-1/4 sm:max-w-xs">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por nombre o descripción..."
@@ -137,19 +196,58 @@ export default function ProjectsPage() {
               data-test="search-projects-input"
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter} >
-            <SelectTrigger className="w-full sm:w-40" data-test="status-filter-select">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los estados</SelectItem>
-              {PROJECT_STATUS_OPTIONS.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2 items-center justify-end w-full sm:w-auto">
+            <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="min-w-[220px] justify-between"
+                  data-test="status-filter-popover-trigger"
+                >
+                  <span className="truncate">
+                    {statusFilter.length === 0
+                      ? 'Todos los estados'
+                      : statusFilter.map(val => PROJECT_STATUS_OPTIONS.find(opt => opt.value === val)?.label || val).join(', ')
+                    }
+                  </span>
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-2">
+                <div className="flex items-center justify-between px-2 pb-2">
+                  <span className="font-semibold text-sm">Filtros</span>
+                  {statusFilter.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setStatusFilter([])}
+                      className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 px-2 py-1 rounded transition-colors"
+                      data-test="clear-status-filter"
+                    >
+                      <X className="h-3 w-3" /> Limpiar
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+                  {PROJECT_STATUS_OPTIONS.map(option => (
+                    <label key={option.value} className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-accent">
+                      <Checkbox
+                        checked={statusFilter.includes(option.value)}
+                        onCheckedChange={checked => {
+                          setStatusFilter(prev =>
+                            checked
+                              ? [...prev, option.value]
+                              : prev.filter(val => val !== option.value)
+                          )
+                        }}
+                        id={`status-checkbox-${option.value}`}
+                      />
+                      <span className="text-sm">{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
         </CardContent>
       </Card>
 
@@ -161,8 +259,8 @@ export default function ProjectsPage() {
         </CardHeader>
         <CardContent>
           <TableResource
-            items={filteredProjects}
-            columns={projectColumns as ResourceColumn<ProjectWithFTE>[]}
+            items={sortedProjects}
+            columns={columnsWithSorting as ResourceColumn<ProjectWithFTE>[]}
             actions={actions}
           />
         </CardContent>
