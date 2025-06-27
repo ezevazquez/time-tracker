@@ -1,7 +1,7 @@
 'use client'
 
 import type React from 'react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Save, CalendarIcon } from 'lucide-react'
@@ -34,12 +34,16 @@ import { usePeople } from '@/hooks/use-people'
 import {
   PERSON_STATUS_OPTIONS,
   PERSON_TYPE_OPTIONS,
-  PERSON_PROFILE_OPTIONS,
 } from '@/constants/people'
-import { PERSON_STATUS, PERSON_TYPE, PERSON_PROFILE } from '@/constants/people'
+import { PERSON_STATUS, PERSON_TYPE } from '@/constants/people'
+import { getProfiles, Profile } from '@/lib/services/profiles.service'
 
 
 export default function NewPersonPage() {
+  const [profiles, setProfiles] = useState<Profile[]>([])
+  const [loadingProfiles, setLoadingProfiles] = useState(false)
+  const [errorProfiles, setErrorProfiles] = useState<string | null>(null)
+
   const router = useRouter()
   const { createPerson } = usePeople()
   const [loading, setLoading] = useState(false)
@@ -54,12 +58,20 @@ export default function NewPersonPage() {
   }>({
     first_name: '',
     last_name: '',
-    profile: PERSON_PROFILE.PROJECT_MANAGER,
+    profile: '',
     start_date: new Date(),
     end_date: undefined,
     status: PERSON_STATUS.ACTIVE,
     type: PERSON_TYPE.INTERNAL,
   })
+
+  useEffect(() => {
+    setLoadingProfiles(true)
+    getProfiles()
+      .then(data => setProfiles(data))
+      .catch(e => setErrorProfiles(e.message || 'Error al cargar perfiles'))
+      .finally(() => setLoadingProfiles(false))
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -153,14 +165,22 @@ export default function NewPersonPage() {
                     }
                   >
                     <SelectTrigger data-test="profile-select">
-                      <SelectValue placeholder="Selecciona un perfil" />
+                      <SelectValue placeholder={loadingProfiles ? 'Cargando perfiles...' : 'Selecciona un perfil'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {PERSON_PROFILE_OPTIONS.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
+                      {loadingProfiles ? (
+                        <div className="px-4 py-2 text-gray-500">Cargando...</div>
+                      ) : errorProfiles ? (
+                        <div className="px-4 py-2 text-red-500">{errorProfiles}</div>
+                      ) : profiles.length === 0 ? (
+                        <div className="px-4 py-2 text-gray-500">No hay perfiles</div>
+                      ) : (
+                        profiles.map(profile => (
+                          <SelectItem key={profile.id} value={profile.name}>
+                            {profile.name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
