@@ -56,6 +56,7 @@ export function ReportModal() {
   const [report, setReport] = useState<ReportData[]>([])
   const [loading, setLoading] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [sort, setSort] = useState<{ field: string, direction: 'asc' | 'desc' }>({ field: 'person', direction: 'asc' })
 
   const handleGenerate = async () => {
     if (!range?.from || !range?.to) {
@@ -175,6 +176,18 @@ export function ReportModal() {
     underutilized: report.filter(r => r.allocation < 0.5).length,
   }
 
+  // Sorting logic
+  const sortedReport = [...report].sort((a, b) => {
+    if (sort.field === 'person') {
+      const nameA = `${a.person_first_name} ${a.person_last_name}`.toLowerCase()
+      const nameB = `${b.person_first_name} ${b.person_last_name}`.toLowerCase()
+      if (nameA < nameB) return sort.direction === 'asc' ? -1 : 1
+      if (nameA > nameB) return sort.direction === 'asc' ? 1 : -1
+      return 0
+    }
+    return 0
+  })
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -255,7 +268,17 @@ export function ReportModal() {
                 <Table>
                   <TableHeader className="sticky top-0 bg-white z-10">
                     <TableRow>
-                      <TableHead>Persona</TableHead>
+                      <TableHead
+                        className="cursor-pointer select-none"
+                        onClick={() => setSort(s => ({
+                          field: 'person',
+                          direction: s.direction === 'asc' ? 'desc' : 'asc'
+                        }))}
+                      >Persona
+                        <span className="inline-block align-middle ml-1">
+                          {sort.direction === 'asc' ? '▲' : '▼'}
+                        </span>
+                      </TableHead>
                       <TableHead>Perfil</TableHead>
                       <TableHead>Proyecto</TableHead>
                       <TableHead>Fechas</TableHead>
@@ -265,7 +288,7 @@ export function ReportModal() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {report.map((r, index) => (
+                    {sortedReport.map((r, index) => (
                       <TableRow 
                         key={`${r.person_id}-${r.project_name}-${index}`}
                         className={cn(
