@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Edit, Trash2, AlertTriangle, ArrowDown, ArrowUp } from 'lucide-react'
+import { Edit, Trash2, AlertTriangle, ArrowDown, ArrowUp, ChevronDown, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -19,7 +19,7 @@ import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
 import { parseDateFromString } from '@/lib/assignments'
 import { fteToPercentage, isOverallocated } from '@/lib/utils/fte-calculations'
-import { getDisplayName } from '@/lib/people'
+import { getDisplayName, getPersonTypeBadge } from '@/lib/people'
 import React, { useState } from 'react'
 import { renderDate } from '@/utils/renderDate'
 
@@ -38,6 +38,11 @@ interface ResourceTableProps {
   onDelete: (id: string) => void
 }
 
+// Constante para ancho y padding de la columna Acciones
+const ACTIONS_COL_STYLE = { width: 80, paddingRight: 24 };
+// Constante para ancho de la columna de asignaciones
+const ASSIGN_COL_STYLE = { width: 120 };
+
 export function ResourceTable({
   people,
   projects,
@@ -50,6 +55,9 @@ export function ResourceTable({
   // Sorting state
   const [sortField, setSortField] = useState<'person' | 'profile' | 'project' | 'start' | 'end'>('start')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+
+  // Estado para expandir/collapse por persona
+  const [expandedPersonIds, setExpandedPersonIds] = useState<string[]>([])
 
   // Calcular personas sobreasignadas en el rango
   const overallocatedPersonIds = (() => {
@@ -74,6 +82,18 @@ export function ResourceTable({
       return isOver
     }).map(p => p.id)
   })()
+
+  // Agrupar asignaciones por persona
+  const assignmentsByPerson = people.map(person => {
+    const personAssignments = assignments.filter(a => a.person_id === person.id)
+    const totalFte = personAssignments.reduce((sum, a) => sum + a.allocation, 0)
+    return {
+      person,
+      assignments: personAssignments,
+      totalFte,
+      isOverallocated: isOverallocated(totalFte),
+    }
+  })
 
   // Ordenar assignments por campo seleccionado
   const sortedAssignments = [...assignments].sort((a, b) => {
@@ -127,129 +147,103 @@ export function ResourceTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead
-                className="cursor-pointer select-none"
-                onClick={() => handleSort('person')}
-                data-test="sort-person"
-              >
-                Persona
-                <span className="inline-block align-middle ml-1">
-                  {sortField === 'person' && (sortOrder === 'asc' ? <ArrowDown className="inline h-3 w-3" /> : <ArrowUp className="inline h-3 w-3" />)}
-                </span>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer select-none"
-                onClick={() => handleSort('profile')}
-                data-test="sort-profile"
-              >
-                Perfil
-                <span className="inline-block align-middle ml-1">
-                  {sortField === 'profile' && (sortOrder === 'asc' ? <ArrowDown className="inline h-3 w-3" /> : <ArrowUp className="inline h-3 w-3" />)}
-                </span>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer select-none"
-                onClick={() => handleSort('project')}
-                data-test="sort-project"
-              >
-                Proyecto
-                <span className="inline-block align-middle ml-1">
-                  {sortField === 'project' && (sortOrder === 'asc' ? <ArrowDown className="inline h-3 w-3" /> : <ArrowUp className="inline h-3 w-3" />)}
-                </span>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer select-none"
-                onClick={() => handleSort('start')}
-                data-test="sort-start-date"
-              >
-                Inicio
-                <span className="inline-block align-middle ml-1">
-                  {sortField === 'start' && (sortOrder === 'asc' ? <ArrowDown className="inline h-3 w-3" /> : <ArrowUp className="inline h-3 w-3" />)}
-                </span>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer select-none"
-                onClick={() => handleSort('end')}
-              >
-                Fin
-                <span className="inline-block align-middle ml-1">
-                  {sortField === 'end' && (sortOrder === 'asc' ? <ArrowDown className="inline h-3 w-3" /> : <ArrowUp className="inline h-3 w-3" />)}
-                </span>
-              </TableHead>
-              <TableHead className="text-center">Asignación</TableHead>
-              <TableHead className="text-center">Facturable</TableHead>
-              {/* <TableHead>Estado</TableHead> */}
-              <TableHead className="text-right">Acciones</TableHead>
+              <TableHead>Persona</TableHead>
+              <TableHead>Perfil</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead className="text-center" style={ASSIGN_COL_STYLE}>Asignación</TableHead>
+              <TableHead className="text-right" style={ACTIONS_COL_STYLE}>Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedAssignments.length === 0 ? (
+            {assignmentsByPerson.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                   No se encontraron asignaciones
                 </TableCell>
               </TableRow>
             ) : (
-              sortedAssignments.map(a => {
-                const person = people.find(p => p.id === a.person_id)
-                const project = projects.find(p => p.id === a.project_id)
-                const isPersonOverallocated = overallocatedPersonIds.includes(a.person_id)
-                return (
-                  <TableRow key={a.id} className="hover:bg-muted/50">
-                    <TableCell>
-                      <div className="font-medium">{person ? getDisplayName(person) : 'N/A'}</div>
+              assignmentsByPerson.map(({ person, assignments, totalFte, isOverallocated }) => (
+                <React.Fragment key={person.id}>
+                  <TableRow
+                    className={assignments.length > 0 ? "hover:bg-muted/50 cursor-pointer" : "bg-white"}
+                    style={{ height: 36, minHeight: 36 }}
+                    onClick={assignments.length > 0 ? () => setExpandedPersonIds(ids => ids.includes(person.id) ? ids.filter(id => id !== person.id) : [...ids, person.id]) : undefined}
+                  >
+                    <TableCell className="align-middle" style={{ verticalAlign: 'middle' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                        {assignments.length > 0 && (expandedPersonIds.includes(person.id) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />)}
+                        <span className="font-medium">{getDisplayName(person)}</span>
+                      </span>
                     </TableCell>
+                    <TableCell className="align-middle" style={{ verticalAlign: 'middle' }}>{person.profile}</TableCell>
                     <TableCell>
-                      <div className="text-sm text-muted-foreground">{person?.profile || 'Sin especificar'}</div>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${getPersonTypeBadge(person.type)}`}>
+                        {person.type === 'Internal' ? 'Interno' : person.type === 'External' ? 'Externo' : person.type}
+                      </span>
                     </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{project?.name || 'N/A'}</div>
-                      <div className="text-sm text-muted-foreground">{project?.status || ''}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm font-medium">{renderDate(a.start_date)}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm text-muted-foreground">{renderDate(a.end_date)}</div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <Badge
-                          variant={isPersonOverallocated ? 'destructive' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {fteToPercentage(a.allocation)}%
+                    <TableCell className="text-center align-middle" style={{ ...ASSIGN_COL_STYLE, verticalAlign: 'middle' }}>
+                      <div className="flex items-center justify-center min-h-[36px] h-full">
+                        <Badge variant={isOverallocated ? 'destructive' : 'secondary'} className="text-xs">
+                          {fteToPercentage(totalFte)}%
                         </Badge>
-                        {isPersonOverallocated && <AlertTriangle className="h-4 w-4 text-destructive" />}
                       </div>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant={a.is_billable ? 'default' : 'secondary'} className="text-xs">
-                        {a.is_billable ? 'Sí' : 'No'}
-                      </Badge>
-                    </TableCell>
-                    {/* Estado eliminado */}
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0" data-test={`edit-assignment-${a.id}`}>
-                          <Link href={`/assignments/${a.id}/edit`}>
-                            <Edit className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onDelete(a.id)}
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                          data-test={`delete-assignment-${a.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
+                    <TableCell className="text-right align-middle" style={{ ...ACTIONS_COL_STYLE, verticalAlign: 'middle' }}>
+                      <div className="flex items-center justify-end min-h-[36px] h-full">
+                        <Button size="icon" variant="ghost" asChild>
+                          <Link href={`/people/${person.id}/edit`}><Edit className="w-4 h-4" /></Link>
                         </Button>
                       </div>
                     </TableCell>
                   </TableRow>
-                )
-              })
+                  {expandedPersonIds.includes(person.id) && assignments.length > 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="p-0 bg-gray-50" style={{ paddingLeft: 32, paddingRight: 0 }}>
+                        <div style={{ width: '100%' }}>
+                          <Table className="w-full text-sm">
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Proyecto</TableHead>
+                                <TableHead>Inicio</TableHead>
+                                <TableHead>Fin</TableHead>
+                                <TableHead className="text-center">Facturable</TableHead>
+                                <TableHead className="text-center" style={ASSIGN_COL_STYLE}>Asignación</TableHead>
+                                <TableHead className="text-right" style={ACTIONS_COL_STYLE}>Acciones</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {assignments.map(a => {
+                                const project = projects.find(p => p.id === a.project_id)
+                                return (
+                                  <TableRow key={a.id}>
+                                    <TableCell>{project?.name || 'N/A'}</TableCell>
+                                    <TableCell>{renderDate(a.start_date)}</TableCell>
+                                    <TableCell>{renderDate(a.end_date)}</TableCell>
+                                    <TableCell className="text-center">{a.is_billable ? 'Sí' : 'No'}</TableCell>
+                                    <TableCell className="text-center align-middle" style={ASSIGN_COL_STYLE}>
+                                      <div className="flex items-center justify-center min-h-[36px] h-full">
+                                        <Badge variant={isOverallocated ? 'destructive' : 'secondary'} className="text-xs">
+                                          {fteToPercentage(a.allocation)}%
+                                        </Badge>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="text-right" style={ACTIONS_COL_STYLE}>
+                                      <div className="flex flex-row gap-1 justify-end items-center min-h-[36px] h-full">
+                                        <Button size="icon" variant="ghost" asChild><Link href={`/assignments/${a.id}/edit`}><Edit className="w-4 h-4" /></Link></Button>
+                                        <Button size="icon" variant="ghost" onClick={e => { e.stopPropagation(); onDelete(a.id) }}><Trash2 className="w-4 h-4" /></Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                )
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
+              ))
             )}
           </TableBody>
         </Table>

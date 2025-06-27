@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import type { Person } from '@/types/people'
 import type { AssignmentWithRelations } from '@/types/assignment'
-import { PERSON_STATUS, PERSON_PROFILE_LABELS } from '@/constants/people'
+import { PERSON_STATUS } from '@/constants/people'
 import { parseDateFromString } from '@/lib/assignments'
+import { useEffect, useState } from 'react'
+import { getProfiles, Profile } from '@/lib/services/profiles.service'
 
 interface TeamWorkloadChartProps {
   people: Person[]
@@ -14,21 +16,38 @@ interface TeamWorkloadChartProps {
 
 export function TeamWorkloadChart({ people, assignments }: TeamWorkloadChartProps) {
   const currentDate = new Date()
+  const [profiles, setProfiles] = useState<Profile[]>([])
+  const [loadingProfiles, setLoadingProfiles] = useState(false)
+  const [errorProfiles, setErrorProfiles] = useState<string | null>(null)
 
-  // Calculate percentage of people assigned per profile
+  useEffect(() => {
+    setLoadingProfiles(true)
+    getProfiles()
+      .then(data => setProfiles(data))
+      .catch(e => setErrorProfiles(e.message || 'Error al cargar perfiles'))
+      .finally(() => setLoadingProfiles(false))
+  }, [])
+
+  // Map profile name to label (description)
+  const profileNameToLabel: Record<string, string> = {}
+  profiles.forEach(p => {
+    profileNameToLabel[p.name] = p.description?.trim() || p.name
+  })
+
+  // Agrupar por label
   const assignmentData = people
     .filter(person => person.status === PERSON_STATUS.ACTIVE)
     .reduce((acc, person) => {
-      const profile = person.profile
-      if (!acc[profile]) {
-        acc[profile] = {
-          profile,
+      const label = profileNameToLabel[person.profile] || person.profile
+      if (!acc[label]) {
+        acc[label] = {
+          label,
           totalPeople: 0,
           assignedPeople: 0,
         }
       }
 
-      acc[profile].totalPeople += 1
+      acc[label].totalPeople += 1
 
       // Check if person has any current assignments
       const hasCurrentAssignment = assignments.some(assignment => {
@@ -38,17 +57,16 @@ export function TeamWorkloadChart({ people, assignments }: TeamWorkloadChartProp
       })
 
       if (hasCurrentAssignment) {
-        acc[profile].assignedPeople += 1
+        acc[label].assignedPeople += 1
       }
-      
       return acc
-    }, {} as Record<string, { profile: string; totalPeople: number; assignedPeople: number }>)
+    }, {} as Record<string, { label: string; totalPeople: number; assignedPeople: number }>)
 
-  // Convert to array and calculate percentage assigned per profile
+  // Convert to array and calculate percentage assigned per label
   const chartData = Object.values(assignmentData)
     .map(item => ({
-      name: PERSON_PROFILE_LABELS[item.profile as keyof typeof PERSON_PROFILE_LABELS] || item.profile,
-      fullName: item.profile,
+      name: item.label,
+      fullName: item.label,
       percentage: Math.round((item.assignedPeople / item.totalPeople) * 100),
       totalPeople: item.totalPeople,
       assignedPeople: item.assignedPeople,

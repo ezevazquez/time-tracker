@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -44,8 +44,9 @@ import { Checkbox } from '@/components/ui/checkbox'
 
 import { usePeople } from '@/hooks/use-people'
 import { getDisplayName, getPersonStatusBadge, getPersonTypeBadge } from '@/lib/people'
-import { PERSON_STATUS_OPTIONS, PERSON_TYPE_OPTIONS, PERSON_STATUS, PERSON_TYPE, PERSON_PROFILE_OPTIONS } from '@/constants/people'
+import { PERSON_STATUS_OPTIONS, PERSON_TYPE_OPTIONS, PERSON_STATUS, PERSON_TYPE } from '@/constants/people'
 import { renderDate } from '@/utils/renderDate'
+import { getProfiles, Profile } from '@/lib/services/profiles.service'
 
 export default function PeoplePage() {
   const router = useRouter()
@@ -57,6 +58,17 @@ export default function PeoplePage() {
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false)
   const [typePopoverOpen, setTypePopoverOpen] = useState(false)
   const [profilePopoverOpen, setProfilePopoverOpen] = useState(false)
+  const [profiles, setProfiles] = useState<Profile[]>([])
+  const [loadingProfiles, setLoadingProfiles] = useState(false)
+  const [errorProfiles, setErrorProfiles] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLoadingProfiles(true)
+    getProfiles()
+      .then(data => setProfiles(data))
+      .catch(e => setErrorProfiles(e.message || 'Error al cargar perfiles'))
+      .finally(() => setLoadingProfiles(false))
+  }, [])
 
   if (loading) {
     return (
@@ -253,7 +265,7 @@ export default function PeoplePage() {
                   <span className="truncate">
                     {profileFilter.length === 0
                       ? 'Todos los perfiles'
-                      : profileFilter.map(val => PERSON_PROFILE_OPTIONS.find(opt => opt.value === val)?.label || val).join(', ')
+                      : profileFilter.join(', ')
                     }
                   </span>
                   <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -274,22 +286,30 @@ export default function PeoplePage() {
                   )}
                 </div>
                 <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
-                  {PERSON_PROFILE_OPTIONS.map(option => (
-                    <label key={option.value} className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-accent">
-                      <Checkbox
-                        checked={profileFilter.includes(option.value)}
-                        onCheckedChange={checked => {
-                          setProfileFilter(prev =>
-                            checked
-                              ? [...prev, option.value]
-                              : prev.filter(val => val !== option.value)
-                          )
-                        }}
-                        id={`profile-checkbox-${option.value}`}
-                      />
-                      <span className="text-sm">{option.label}</span>
-                    </label>
-                  ))}
+                  {loadingProfiles ? (
+                    <div className="px-4 py-2 text-gray-500">Cargando...</div>
+                  ) : errorProfiles ? (
+                    <div className="px-4 py-2 text-red-500">{errorProfiles}</div>
+                  ) : profiles.length === 0 ? (
+                    <div className="px-4 py-2 text-gray-500">No hay perfiles</div>
+                  ) : (
+                    profiles.map(profile => (
+                      <label key={profile.id} className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-accent">
+                        <Checkbox
+                          checked={profileFilter.includes(profile.name)}
+                          onCheckedChange={checked => {
+                            setProfileFilter(prev =>
+                              checked
+                                ? [...prev, profile.name]
+                                : prev.filter(val => val !== profile.name)
+                            )
+                          }}
+                          id={`profile-checkbox-${profile.id}`}
+                        />
+                        <span className="text-sm">{profile.name}</span>
+                      </label>
+                    ))
+                  )}
                 </div>
               </PopoverContent>
             </Popover>

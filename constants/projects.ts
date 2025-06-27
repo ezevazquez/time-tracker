@@ -22,3 +22,15 @@ export const PROJECT_STATUS = {
     PROJECT_STATUS.NOT_STARTED,
   ] as const
   
+  export const PROJECT_CONTRACT_TYPE = {
+    RETAINER: 'Retainers',
+    FIX_TIME: 'Fix time',
+    TM: 'TyM',
+  } as const
+  
+  export const PROJECT_CONTRACT_TYPE_OPTIONS = [
+    { label: 'Retainer', value: PROJECT_CONTRACT_TYPE.RETAINER },
+    { label: 'FP-FT', value: PROJECT_CONTRACT_TYPE.FIX_TIME },
+    { label: 'T&M', value: PROJECT_CONTRACT_TYPE.TM },
+  ]
+  

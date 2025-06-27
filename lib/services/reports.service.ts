@@ -9,6 +9,7 @@ interface FTEReportData {
   person_status: string
   project_name: string
   project_status: string
+  client_name: string | null
   allocation: number
   allocation_percentage: number
   start_date: string
@@ -30,7 +31,7 @@ export async function fetchOcupationReport(startDate: string, endDate: string): 
     // Fetch all assignments that overlap with the date range
     const { data: assignments, error: assignmentsError } = await supabase
       .from('assignments')
-      .select('*, projects(*)')
+      .select('*, projects(*, clients(name))')
       .or(`and(start_date.lte.${endDate},end_date.gte.${startDate})`)
 
     if (assignmentsError) throw assignmentsError
@@ -108,6 +109,7 @@ export async function fetchOcupationReport(startDate: string, endDate: string): 
           person_status: person.status,
           project_name: projectId === 'bench' ? 'Bench' : (project?.name || 'Proyecto sin nombre'),
           project_status: projectId === 'bench' ? 'Bench' : (project?.status || 'Sin estado'),
+          client_name: projectId === 'bench' ? null : (project?.clients?.name || null),
           allocation: allocationSum / daysInRange,
           allocation_percentage: Math.round((allocationSum / daysInRange) * 100),
           start_date: start.toISOString().slice(0, 10),

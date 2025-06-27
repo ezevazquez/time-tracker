@@ -36,7 +36,6 @@ export const projectsService = {
   },
 
   async create(project: Omit<Project, 'created_at' | 'updated_at'>): Promise<Project> {
-    // Filtrar project_code si viene en el objeto
     const { project_code, ...projectWithoutCode } = project as any
     const { data, error } = await supabase
       .from('projects')
