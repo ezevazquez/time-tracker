@@ -42,102 +42,79 @@ export async function fetchOcupationReport(startDate: string, endDate: string): 
 
     for (const person of people) {
       const personAssignments = assignments.filter(a => a.person_id === person.id)
-      // Generar un array de días con allocation y proyecto
-      const days: { date: Date, allocation: number, projects: any[], is_billable: boolean[] }[] = []
+      // Para cada día del rango, calcular allocation por proyecto
+      const days: { date: Date, projectId: string, project: any, allocation: number, is_billable: boolean }[] = []
       for (let i = 0; i < daysInRange; i++) {
         const day = new Date(rangeStart)
         day.setDate(day.getDate() + i)
-        // Asignaciones activas ese día
-        const activeAssignments = personAssignments.filter(a => {
+        // Map de projectId a allocation ese día
+        const projectAllocMap: Record<string, { project: any, allocation: number, is_billable: boolean }> = {}
+        let totalAllocation = 0
+        for (const a of personAssignments) {
           const aStart = parseDateFromString(a.start_date)
           const aEnd = parseDateFromString(a.end_date)
-          return day >= aStart && day <= aEnd
-        })
-        const allocation = activeAssignments.reduce((sum, a) => sum + a.allocation, 0)
-        const projects = activeAssignments.map(a => Array.isArray(a.projects) ? a.projects[0] : a.projects)
-        const is_billable = activeAssignments.map(a => a.is_billable !== false)
-        days.push({ date: new Date(day), allocation, projects, is_billable })
-      }
-      // Agrupar días consecutivos con el mismo allocation y proyecto(s)
-      let current = null
-      for (let i = 0; i <= days.length; i++) {
-        const d = days[i]
-        const key = d ? `${d.allocation}|${d.projects.map(p => p?.id || 'bench').join(',')}` : null
-        if (!current) {
-          if (d) {
-            current = { start: d.date, end: d.date, allocation: d.allocation, projects: d.projects, is_billable: d.is_billable }
-          }
-        } else {
-          const currentKey = `${current.allocation}|${current.projects.map(p => p?.id || 'bench').join(',')}`
-          if (!d || key !== currentKey) {
-            // Calcular días del período
-            const periodDays = Math.floor((current.end.getTime() - current.start.getTime()) / (1000 * 60 * 60 * 24)) + 1
-            // Emitir row para el período actual
-            if (current.allocation === 0) {
-              // Bench 100%
-              fteReportData.push({
-                person_id: person.id,
-                person_first_name: person.first_name,
-                person_last_name: person.last_name,
-                person_profile: person.profile,
-                person_status: person.status,
-                project_name: 'Bench',
-                project_status: 'Bench',
-                allocation: 1.0 * periodDays / daysInRange,
-                allocation_percentage: 100,
-                start_date: current.start.toISOString().slice(0, 10),
-                end_date: current.end.toISOString().slice(0, 10),
-                is_bench: true,
-                is_billable: false
-              })
-            } else {
-              // Si hay proyectos, emitir una row por proyecto y una por bench si allocation < 1
-              const totalAllocation = current.allocation
-              for (let idx = 0; idx < current.projects.length; idx++) {
-                const project = current.projects[idx]
-                const is_billable = current.is_billable[idx]
-                if (project) {
-                  fteReportData.push({
-                    person_id: person.id,
-                    person_first_name: person.first_name,
-                    person_last_name: person.last_name,
-                    person_profile: person.profile,
-                    person_status: person.status,
-                    project_name: project?.name || 'Proyecto sin nombre',
-                    project_status: project?.status || 'Sin estado',
-                    allocation: (project ? project.allocation || totalAllocation : totalAllocation) * periodDays / daysInRange,
-                    allocation_percentage: Math.round((project ? project.allocation || totalAllocation : totalAllocation) * 100),
-                    start_date: current.start.toISOString().slice(0, 10),
-                    end_date: current.end.toISOString().slice(0, 10),
-                    is_bench: false,
-                    is_billable
-                  })
-                }
-              }
-              if (totalAllocation < 1) {
-                fteReportData.push({
-                  person_id: person.id,
-                  person_first_name: person.first_name,
-                  person_last_name: person.last_name,
-                  person_profile: person.profile,
-                  person_status: person.status,
-                  project_name: 'Bench',
-                  project_status: 'Bench',
-                  allocation: (1 - totalAllocation) * periodDays / daysInRange,
-                  allocation_percentage: Math.round((1 - totalAllocation) * 100),
-                  start_date: current.start.toISOString().slice(0, 10),
-                  end_date: current.end.toISOString().slice(0, 10),
-                  is_bench: true,
-                  is_billable: false
-                })
-              }
+          if (day >= aStart && day <= aEnd) {
+            const project = Array.isArray(a.projects) ? a.projects[0] : a.projects
+            const projectId = project?.id || 'unknown'
+            if (!projectAllocMap[projectId]) {
+              projectAllocMap[projectId] = { project, allocation: 0, is_billable: a.is_billable !== false }
             }
-            current = d ? { start: d.date, end: d.date, allocation: d.allocation, projects: d.projects, is_billable: d.is_billable } : null
-          } else {
-            // Continuar el período
-            if (d) current.end = d.date
+            projectAllocMap[projectId].allocation += a.allocation
+            totalAllocation += a.allocation
           }
         }
+        // Push rows por proyecto
+        for (const projectId in projectAllocMap) {
+          days.push({
+            date: new Date(day),
+            projectId,
+            project: projectAllocMap[projectId].project,
+            allocation: projectAllocMap[projectId].allocation,
+            is_billable: projectAllocMap[projectId].is_billable
+          })
+        }
+        // Si allocation total < 1, agregar Bench
+        if (totalAllocation < 1) {
+          days.push({
+            date: new Date(day),
+            projectId: 'bench',
+            project: null,
+            allocation: 1 - totalAllocation,
+            is_billable: false
+          })
+        }
+      }
+      // Agrupar por proyectoId
+      const projectRows: Record<string, { allocationSum: number, days: Date[], project: any, is_billable: boolean }> = {}
+      for (const d of days) {
+        if (!projectRows[d.projectId]) {
+          projectRows[d.projectId] = { allocationSum: 0, days: [], project: d.project, is_billable: d.is_billable }
+        }
+        projectRows[d.projectId].allocationSum += d.allocation
+        projectRows[d.projectId].days.push(d.date)
+      }
+      // Emitir una sola row por proyecto y por Bench
+      for (const projectId in projectRows) {
+        const { allocationSum, days: projectDays, project, is_billable } = projectRows[projectId]
+        // Calcular fechas de actividad
+        const sortedDays = projectDays.sort((a, b) => a.getTime() - b.getTime())
+        const start = sortedDays[0]
+        const end = sortedDays[sortedDays.length - 1]
+        fteReportData.push({
+          person_id: person.id,
+          person_first_name: person.first_name,
+          person_last_name: person.last_name,
+          person_profile: person.profile,
+          person_status: person.status,
+          project_name: projectId === 'bench' ? 'Bench' : (project?.name || 'Proyecto sin nombre'),
+          project_status: projectId === 'bench' ? 'Bench' : (project?.status || 'Sin estado'),
+          allocation: allocationSum / daysInRange,
+          allocation_percentage: Math.round((allocationSum / daysInRange) * 100),
+          start_date: start.toISOString().slice(0, 10),
+          end_date: end.toISOString().slice(0, 10),
+          is_bench: projectId === 'bench',
+          is_billable
+        })
       }
     }
     return fteReportData
