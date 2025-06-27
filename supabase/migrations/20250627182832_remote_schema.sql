@@ -749,6 +749,7 @@ CREATE TABLE IF NOT EXISTS "public"."people" (
     "first_name" "text" DEFAULT 'a'::"text" NOT NULL,
     "last_name" "text" DEFAULT ''::"text" NOT NULL,
     "is_archived" boolean DEFAULT false NOT NULL,
+    "profile_id" "uuid",
     CONSTRAINT "people_is_archived_check" CHECK (("is_archived" = ANY (ARRAY[true, false]))),
     CONSTRAINT "people_status_check" CHECK ((("status")::"text" = ANY (ARRAY[('Active'::character varying)::"text", ('Paused'::character varying)::"text", ('Terminated'::character varying)::"text"]))),
     CONSTRAINT "people_type_check" CHECK ((("type")::"text" = ANY (ARRAY[('Internal'::character varying)::"text", ('External'::character varying)::"text"])))
@@ -782,6 +783,16 @@ CREATE TABLE IF NOT EXISTS "public"."people_history" (
 ALTER TABLE "public"."people_history" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."profiles" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "name" "text" NOT NULL,
+    "description" "text"
+);
+
+
+ALTER TABLE "public"."profiles" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."projects" (
     "id" "uuid" NOT NULL,
     "name" character varying NOT NULL,
@@ -795,6 +806,9 @@ CREATE TABLE IF NOT EXISTS "public"."projects" (
     "project_code" "text" DEFAULT "public"."generate_unique_llnn_code"(),
     "fte" double precision,
     "is_archived" boolean DEFAULT false NOT NULL,
+    "owner" "uuid",
+    "contract_type" "text",
+    CONSTRAINT "projects_contract_type_check" CHECK (("contract_type" = ANY (ARRAY['Retainers'::"text", 'Fix time'::"text", 'Fix price'::"text", 'TyM'::"text"]))),
     CONSTRAINT "projects_is_archived_check" CHECK (("is_archived" = ANY (ARRAY[true, false]))),
     CONSTRAINT "projects_project_code_check" CHECK (("project_code" ~ '^[A-Za-z]{2}[0-9]{2}$'::"text")),
     CONSTRAINT "projects_status_check" CHECK ((("status")::"text" = ANY ((ARRAY['In Progress'::character varying, 'Finished'::character varying, 'On Hold'::character varying, 'Not Started'::character varying])::"text"[])))
@@ -893,6 +907,11 @@ ALTER TABLE ONLY "public"."people"
 
 
 
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."projects_history"
     ADD CONSTRAINT "projects_history_pkey" PRIMARY KEY ("id");
 
@@ -974,8 +993,18 @@ ALTER TABLE ONLY "public"."timeoffs"
 
 
 
+ALTER TABLE ONLY "public"."people"
+    ADD CONSTRAINT "people_profile_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id");
+
+
+
 ALTER TABLE ONLY "public"."projects"
     ADD CONSTRAINT "projects_client_id_fkey" FOREIGN KEY ("client_id") REFERENCES "public"."clients"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."projects"
+    ADD CONSTRAINT "projects_owner_fkey" FOREIGN KEY ("owner") REFERENCES "public"."people"("id");
 
 
 
@@ -1572,6 +1601,12 @@ GRANT ALL ON TABLE "public"."people" TO "service_role";
 GRANT ALL ON TABLE "public"."people_history" TO "anon";
 GRANT ALL ON TABLE "public"."people_history" TO "authenticated";
 GRANT ALL ON TABLE "public"."people_history" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."profiles" TO "anon";
+GRANT ALL ON TABLE "public"."profiles" TO "authenticated";
+GRANT ALL ON TABLE "public"."profiles" TO "service_role";
 
 
 
