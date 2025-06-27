@@ -13,6 +13,8 @@ import {
   isSameMonth,
   format,
   addDays,
+  min as dateMin,
+  max as dateMax,
 } from "date-fns"
 import type { Person } from "@/types/people"
 import type { Project } from "@/types/project"
@@ -558,6 +560,23 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
       visibleDateRangeEnd: visibleDateRange.end,
       today: new Date(),
     })
+
+    useEffect(() => {
+      if (!assignments.length) return;
+      // Encontrar la asignación más temprana y más tardía
+      const minStart = assignments.reduce((min, a) => dateMin([min, parseDateFromString(a.start_date)]), parseDateFromString(assignments[0].start_date));
+      const maxEnd = assignments.reduce((max, a) => dateMax([max, parseDateFromString(a.end_date)]), parseDateFromString(assignments[0].end_date));
+      // Expandir 5 días antes y después
+      const expandedStart = addDays(minStart, -5);
+      const expandedEnd = addDays(maxEnd, 5);
+      // Si el visibleDateRange no cubre este rango, expandirlo
+      if (expandedStart < visibleDateRange.start || expandedEnd > visibleDateRange.end) {
+        setVisibleDateRange(prev => ({
+          start: expandedStart < prev.start ? expandedStart : prev.start,
+          end: expandedEnd > prev.end ? expandedEnd : prev.end,
+        }));
+      }
+    }, [assignments, visibleDateRange.start, visibleDateRange.end]);
 
     return (
       <DndContext
