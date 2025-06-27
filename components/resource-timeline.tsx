@@ -46,16 +46,24 @@ interface ResourceTimelineProps {
 
 // Paleta de 15 colores intercalados por familia
 const PROJECT_COLORS = [
-  '#3CBFAE', // Verde pastel oscuro
-  '#4B6CC1', // Azul pastel oscuro
-  '#8B5FBF', // Púrpura pastel oscuro
-  '#FF9F59', // Naranja pastel oscuro
-  '#F47174', // Rosa pastel oscuro
+  // Pasteles
+  '#A7F3D0', // Verde pastel
+  '#BFDBFE', // Azul pastel
+  '#DDD6FE', // Violeta pastel
+  '#FDE68A', // Amarillo pastel
+  '#FBCFE8', // Rosa pastel
+  '#FECACA', // Rojo pastel
+  '#FCD34D', // Naranja pastel
+  // Intermedios
+  '#3CBFAE', // Verde intermedio
+  '#4B6CC1', // Azul intermedio
+  '#8B5FBF', // Púrpura intermedio
+  '#FF9F59', // Naranja intermedio
+  '#F47174', // Rosa intermedio
   '#2CA58D', // Verde intermedio oscuro
   '#3973B7', // Azul intermedio oscuro
   '#7C3AED', // Púrpura intermedio oscuro
-  '#FF7F3F', // Naranja intermedio oscuro
-  '#E4577B', // Rosa intermedio oscuro
+  // Oscuros
   '#1E8C6B', // Verde fuerte oscuro
   '#1C3FAA', // Azul fuerte oscuro
   '#6D28D9', // Púrpura fuerte oscuro
