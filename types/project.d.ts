@@ -11,6 +11,7 @@ export interface Project {
   activity_logs?: any[]
   fte: number | null // Total FTE requerido para el proyecto
   project_code?: string | null // Código automático de 2 letras + 2 números
+  contract_type?: string | null
 }
 
 export interface ProjectWithClient extends Project {

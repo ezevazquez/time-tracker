@@ -176,6 +176,11 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                     {getStatusLabel(project.status)}
                   </Badge>
                 </div>
+
+                <div className="flex items-center gap-2">
+                  <h3 className="font-medium text-sm text-muted-foreground" data-test="project-contract-type-title">Tipo de contratación:</h3>
+                  <span className="text-sm">{project.contract_type || '-'}</span>
+                </div>
               </CardContent>
             </Card>
 

@@ -111,7 +111,14 @@ export default function ProjectsPage() {
       })
     : filteredProjects
 
-  const columnsWithSorting = projectColumns.map(col => {
+  const columnsWithSorting = [
+    ...projectColumns,
+    {
+      key: 'contract_type',
+      title: 'Tipo de contratación',
+      render: (project: Project) => project.contract_type || '-',
+    },
+  ].map(col => {
     if (sortableKeys.includes(col.key as typeof sortableKeys[number])) {
       return {
         ...col,
