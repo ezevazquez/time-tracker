@@ -45,6 +45,7 @@ interface ReportData {
   assigned_role?: string
   is_bench: boolean
   is_billable: boolean
+  client_name: string | null
 }
 
 export function ReportModal() {
@@ -90,6 +91,7 @@ export function ReportModal() {
       'First Name': item.person_first_name,
       'Last Name': item.person_last_name,
       'Profile': item.person_profile,
+      'Cliente': item.is_bench ? '' : (item.client_name || ''),
       'Project': item.is_bench ? 'Bench' : item.project_name,
       'Fecha Inicio': format(parseDateFromString(item.start_date), 'dd/MM/yyyy'),
       'Fecha Fin': format(parseDateFromString(item.end_date), 'dd/MM/yyyy'),
@@ -280,6 +282,7 @@ export function ReportModal() {
                         </span>
                       </TableHead>
                       <TableHead>Perfil</TableHead>
+                      <TableHead>Cliente</TableHead>
                       <TableHead>Proyecto</TableHead>
                       <TableHead>Fechas</TableHead>
                       <TableHead>Asignación</TableHead>
@@ -301,6 +304,9 @@ export function ReportModal() {
                         </TableCell>
                         <TableCell className="text-sm text-gray-600">
                           {r.person_profile}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {r.is_bench ? '' : (r.client_name || '')}
                         </TableCell>
                         <TableCell className="text-sm">
                           <div className={`font-medium ${r.is_bench ? 'text-gray-600 italic' : 'text-blue-600'}`}>

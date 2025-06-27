@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Search, Edit, Trash2, Eye, ArrowDown, ArrowUp, X, ChevronDown } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Eye, ArrowDown, ArrowUp, X, ChevronDown, ArrowUpDown } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -40,7 +40,7 @@ export default function ProjectsPage() {
   const router = useRouter()
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null)
   const { toast } = useToast()
-  const [sortField, setSortField] = useState<'nombre' | 'cliente' | 'estado' | 'fechas'>('nombre')
+  const [sortField, setSortField] = useState<'nombre' | 'cliente' | 'estado' | 'fechas' | null>(null)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
   const sortableKeys = ['nombre', 'cliente', 'estado', 'fechas'] as const;
@@ -76,36 +76,49 @@ export default function ProjectsPage() {
 
   const handleSort = (field: typeof sortField) => {
     if (sortField === field) {
-      setSortOrder(order => order === 'asc' ? 'desc' : 'asc')
+      if (sortOrder === 'desc') {
+        setSortField(null)
+      } else if (sortOrder === 'asc') {
+        setSortOrder('desc')
+      }
     } else {
       setSortField(field)
       setSortOrder('asc')
     }
   }
 
-  const sortedProjects = [...filteredProjects].sort((a, b) => {
-    let valA, valB
-    if (sortField === 'nombre') {
-      valA = a.name?.toLowerCase() || ''
-      valB = b.name?.toLowerCase() || ''
-    } else if (sortField === 'cliente') {
-      valA = a.clients?.name?.toLowerCase() || ''
-      valB = b.clients?.name?.toLowerCase() || ''
-    } else if (sortField === 'estado') {
-      valA = a.status || ''
-      valB = b.status || ''
-    } else if (sortField === 'fechas') {
-      valA = a.start_date || ''
-      valB = b.start_date || ''
-    }
-    if (typeof valA === 'string' && typeof valB === 'string') {
-      return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
-    } else {
-      return 0
-    }
-  })
+  const sortedProjects = sortField
+    ? [...filteredProjects].sort((a, b) => {
+        let valA, valB
+        if (sortField === 'nombre') {
+          valA = a.name?.toLowerCase() || ''
+          valB = b.name?.toLowerCase() || ''
+        } else if (sortField === 'cliente') {
+          valA = a.clients?.name?.toLowerCase() || ''
+          valB = b.clients?.name?.toLowerCase() || ''
+        } else if (sortField === 'estado') {
+          valA = a.status || ''
+          valB = b.status || ''
+        } else if (sortField === 'fechas') {
+          valA = a.start_date || ''
+          valB = b.start_date || ''
+        }
+        if (typeof valA === 'string' && typeof valB === 'string') {
+          return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+        } else {
+          return 0
+        }
+      })
+    : filteredProjects
 
-  const columnsWithSorting = projectColumns.map(col => {
+  const columnsWithSorting = [
+    ...projectColumns,
+    {
+      key: 'contract_type',
+      title: 'Tipo de contratación',
+      render: (project: Project) => project.contract_type || '-',
+    },
+  ].map(col => {
     if (sortableKeys.includes(col.key as typeof sortableKeys[number])) {
       return {
         ...col,
@@ -116,8 +129,10 @@ export default function ProjectsPage() {
             data-test={`sort-${col.key}`}
           >
             {col.title}
-            {sortField === col.key && (
+            {sortField === col.key ? (
               sortOrder === 'asc' ? <ArrowDown className="inline h-3 w-3" /> : <ArrowUp className="inline h-3 w-3" />
+            ) : (
+              <ArrowUpDown className="inline h-3 w-3 text-muted-foreground" />
             )}
           </span>
         ),
