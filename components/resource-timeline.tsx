@@ -13,6 +13,8 @@ import {
   isSameMonth,
   format,
   addDays,
+  min as dateMin,
+  max as dateMax,
 } from "date-fns"
 import type { Person } from "@/types/people"
 import type { Project } from "@/types/project"
@@ -44,16 +46,24 @@ interface ResourceTimelineProps {
 
 // Paleta de 15 colores intercalados por familia
 const PROJECT_COLORS = [
-  '#3CBFAE', // Verde pastel oscuro
-  '#4B6CC1', // Azul pastel oscuro
-  '#8B5FBF', // Púrpura pastel oscuro
-  '#FF9F59', // Naranja pastel oscuro
-  '#F47174', // Rosa pastel oscuro
+  // Pasteles
+  '#A7F3D0', // Verde pastel
+  '#BFDBFE', // Azul pastel
+  '#DDD6FE', // Violeta pastel
+  '#FDE68A', // Amarillo pastel
+  '#FBCFE8', // Rosa pastel
+  '#FECACA', // Rojo pastel
+  '#FCD34D', // Naranja pastel
+  // Intermedios
+  '#3CBFAE', // Verde intermedio
+  '#4B6CC1', // Azul intermedio
+  '#8B5FBF', // Púrpura intermedio
+  '#FF9F59', // Naranja intermedio
+  '#F47174', // Rosa intermedio
   '#2CA58D', // Verde intermedio oscuro
   '#3973B7', // Azul intermedio oscuro
   '#7C3AED', // Púrpura intermedio oscuro
-  '#FF7F3F', // Naranja intermedio oscuro
-  '#E4577B', // Rosa intermedio oscuro
+  // Oscuros
   '#1E8C6B', // Verde fuerte oscuro
   '#1C3FAA', // Azul fuerte oscuro
   '#6D28D9', // Púrpura fuerte oscuro
@@ -558,6 +568,23 @@ export const ResourceTimeline = forwardRef<{ scrollToToday: () => void }, Resour
       visibleDateRangeEnd: visibleDateRange.end,
       today: new Date(),
     })
+
+    useEffect(() => {
+      if (!assignments.length) return;
+      // Encontrar la asignación más temprana y más tardía
+      const minStart = assignments.reduce((min, a) => dateMin([min, parseDateFromString(a.start_date)]), parseDateFromString(assignments[0].start_date));
+      const maxEnd = assignments.reduce((max, a) => dateMax([max, parseDateFromString(a.end_date)]), parseDateFromString(assignments[0].end_date));
+      // Expandir 5 días antes y después
+      const expandedStart = addDays(minStart, -5);
+      const expandedEnd = addDays(maxEnd, 5);
+      // Si el visibleDateRange no cubre este rango, expandirlo
+      if (expandedStart < visibleDateRange.start || expandedEnd > visibleDateRange.end) {
+        setVisibleDateRange(prev => ({
+          start: expandedStart < prev.start ? expandedStart : prev.start,
+          end: expandedEnd > prev.end ? expandedEnd : prev.end,
+        }));
+      }
+    }, [assignments, visibleDateRange.start, visibleDateRange.end]);
 
     return (
       <DndContext

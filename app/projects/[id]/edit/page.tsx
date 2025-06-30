@@ -46,7 +46,7 @@ import { projectsService } from '@/lib/services/projects.service'
 import { clientsService } from '@/lib/services/clients.service'
 import type { Project } from '@/types/project'
 import type { Client } from '@/types/client'
-import { PROJECT_STATUS_OPTIONS, PROJECT_STATUS } from '@/constants/projects'
+import { PROJECT_STATUS_OPTIONS, PROJECT_STATUS, PROJECT_CONTRACT_TYPE_OPTIONS } from '@/constants/projects'
 import { ResourceError } from '@/components/ui/resource-error'
 import { ProjectAssignmentsPanel } from '@/components/project-assignments-panel'
 import { useAssignments } from '@/hooks/use-assignments'
@@ -66,6 +66,7 @@ const formSchema = z.object({
     .nullable()
     .optional(),
   project_code: z.string().nullable().optional(),
+  contract_type: z.string().min(1, 'El tipo de contratación es requerido'),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -96,6 +97,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       client_id: '',
       fte: undefined,
       project_code: '',
+      contract_type: PROJECT_CONTRACT_TYPE_OPTIONS[0].value,
     },
   })
 
@@ -135,6 +137,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
             client_id: projectData.client_id,
             fte: projectData.fte,
             project_code: projectData.project_code || '',
+            contract_type: projectData.contract_type || PROJECT_CONTRACT_TYPE_OPTIONS[0].value,
           })
         } else {
           console.error('Proyecto no encontrado')
@@ -457,6 +460,31 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                         <p className="text-sm text-muted-foreground">
                           Número mayor a 0 y menor o igual a 60. Se permite un decimal (Ej: 4.5)
                         </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="contract_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipo de contratación</FormLabel>
+                        <FormControl>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger data-test="contract-type-select">
+                              <SelectValue placeholder="Seleccionar tipo de contratación" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PROJECT_CONTRACT_TYPE_OPTIONS.map(option => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

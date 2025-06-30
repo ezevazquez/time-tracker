@@ -28,7 +28,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/utils/classnames'
 import { useProjects } from '@/hooks/use-projects'
 import { clientsService } from '@/lib/services/clients.service'
-import { PROJECT_STATUS_OPTIONS } from '@/constants/projects'
+import { PROJECT_STATUS_OPTIONS, PROJECT_CONTRACT_TYPE_OPTIONS } from '@/constants/projects'
 
 import type { Client } from '@/types/client'
 
@@ -48,6 +48,7 @@ export default function NewProjectPage() {
     end_date: undefined as Date | undefined,
     client_id: '' as string | null,
     fte: null as number | null,
+    contract_type: PROJECT_CONTRACT_TYPE_OPTIONS[0].value,
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -92,6 +93,7 @@ export default function NewProjectPage() {
         end_date: formData.end_date?.toISOString().split('T')[0] || null,
         client_id: formData.client_id || null,
         fte: formData.fte,
+        contract_type: formData.contract_type,
       })
       toast.success('El proyecto se ha creado exitosamente.')
       router.push('/projects')
@@ -310,6 +312,25 @@ export default function NewProjectPage() {
                   <p className="text-sm text-muted-foreground">
                     Número mayor a 0 y menor o igual a 60. Se permite un decimal (Ej: 4.5)
                   </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contract_type">Tipo de contratación *</Label>
+                  <Select
+                    value={formData.contract_type}
+                    onValueChange={value => setFormData({ ...formData, contract_type: value })}
+                  >
+                    <SelectTrigger data-test="contract-type-select">
+                      <SelectValue placeholder="Seleccionar tipo de contratación" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PROJECT_CONTRACT_TYPE_OPTIONS.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

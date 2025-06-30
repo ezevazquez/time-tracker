@@ -198,6 +198,15 @@ export function AssignmentBar({
     }
   }, [overrideBar, assignment.id])
 
+  function getContrastYIQ(hexcolor: string) {
+    hexcolor = hexcolor.replace('#', '');
+    const r = parseInt(hexcolor.substr(0,2),16);
+    const g = parseInt(hexcolor.substr(2,2),16);
+    const b = parseInt(hexcolor.substr(4,2),16);
+    const yiq = ((r*299)+(g*587)+(b*114))/1000;
+    return yiq >= 128 ? '#111' : '#fff';
+  }
+
   return (
     <>
       <div
@@ -268,11 +277,11 @@ export function AssignmentBar({
             width: stickyInfo.isSticky ? `${stickyInfo.labelMaxWidth}px` : "100%",
           }}
         >
-          <div className="px-3 py-1 text-black font-light flex items-center text-sm w-full min-w-0">
+          <div className="px-3 py-1 font-light flex items-center text-sm w-full min-w-0" style={{ color: getContrastYIQ(bgColor) }}>
             {/* Project name and percentage together */}
             <div className="flex items-center space-x-2 min-w-0">
               <span className="truncate">{project.name}</span>
-              <span className="bg-black/30 text-white text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
+              <span className="text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0" style={{ background: 'rgba(0,0,0,0.18)', color: getContrastYIQ(bgColor) }}>
                 {fteToPercentage(assignment.allocation)}%
               </span>
             </div>

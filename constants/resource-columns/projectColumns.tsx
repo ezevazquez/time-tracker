@@ -20,15 +20,15 @@ export const projectColumns = [
     ),
   },
   {
-    title: 'Nombre',
-    key: 'nombre',
-    render: (project: ProjectWithFTE) => project.name,
-  },
-  {
     title: 'Cliente',
     key: 'cliente',
     render: (project: ProjectWithFTE & { clients?: { name: string } }) =>
       project.clients?.name || <span className="text-muted-foreground">Sin cliente</span>,
+  },
+  {
+    title: 'Nombre',
+    key: 'nombre',
+    render: (project: ProjectWithFTE) => project.name,
   },
   {
     title: 'Estado',

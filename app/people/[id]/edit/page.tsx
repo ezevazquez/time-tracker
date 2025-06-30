@@ -44,11 +44,11 @@ import type { Person } from '@/types/people'
 import {
   PERSON_STATUS_OPTIONS,
   PERSON_TYPE_OPTIONS,
-  PERSON_PROFILE_OPTIONS,
   PERSON_STATUS,
   PERSON_TYPE,
 } from '@/constants/people'
 import { ResourceError } from '@/components/ui/resource-error'
+import { getProfiles, Profile } from '@/lib/services/profiles.service'
 
 const formSchema = z.object({
   first_name: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }),
@@ -74,6 +74,9 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
   const [person, setPerson] = useState<Person | null>(null)
   const [isLoadingPerson, setIsLoadingPerson] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [profiles, setProfiles] = useState<Profile[]>([])
+  const [loadingProfiles, setLoadingProfiles] = useState(false)
+  const [errorProfiles, setErrorProfiles] = useState<string | null>(null)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -119,6 +122,14 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
 
     fetchPerson()
   }, [id, form])
+
+  useEffect(() => {
+    setLoadingProfiles(true)
+    getProfiles()
+      .then(data => setProfiles(data))
+      .catch(e => setErrorProfiles(e.message || 'Error al cargar perfiles'))
+      .finally(() => setLoadingProfiles(false))
+  }, [])
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -214,14 +225,22 @@ export default function EditPersonPage({ params }: { params: Promise<{ id: strin
                     <FormControl>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger data-test="person-profile-select">
-                          <SelectValue placeholder="Selecciona un perfil" />
+                          <SelectValue placeholder={loadingProfiles ? 'Cargando perfiles...' : 'Selecciona un perfil'} />
                         </SelectTrigger>
                         <SelectContent>
-                          {PERSON_PROFILE_OPTIONS.map(option => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
+                          {loadingProfiles ? (
+                            <div className="px-4 py-2 text-gray-500">Cargando...</div>
+                          ) : errorProfiles ? (
+                            <div className="px-4 py-2 text-red-500">{errorProfiles}</div>
+                          ) : profiles.length === 0 ? (
+                            <div className="px-4 py-2 text-gray-500">No hay perfiles</div>
+                          ) : (
+                            profiles.map(profile => (
+                              <SelectItem key={profile.id} value={profile.name}>
+                                {profile.name}
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                     </FormControl>
