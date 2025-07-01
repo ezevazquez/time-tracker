@@ -17,32 +17,21 @@ import { Separator } from '@/components/ui/separator'
 import { ResourceLoading } from '@/components/ui/resource-loading'
 import { ResourceError } from '@/components/ui/resource-error'
 import { ResourceNotFound } from '@/components/resource-not-found'
-import { AssignmentSummary } from '@/components/assignment-summary'
 import { useProjects } from '@/hooks/use-projects'
 import { useAssignments } from '@/hooks/use-assignments'
 import { projectsService } from '@/lib/services/projects.service'
-import { PROJECT_STATUS_OPTIONS } from '@/constants/projects'
 
 import { 
-  calculateProjectAssignedFTE, 
   calculateFTEUtilization, 
   isProjectOverallocated 
 } from '@/lib/utils/fte-calculations'
 import { getStatusBadge, getStatusLabel } from '@/lib/projects'
-import type { Project } from '@/types/project'
-import type { Client } from '@/types/client'
-import { TableResource } from '@/components/ui/table-resource'
-import { activityLogsColumns } from '@/constants/resource-columns/activityLogsColumns'
+import type { ProjectWithClient } from '@/types/project'
 import { AssignmentModal } from '@/components/assignment-modal'
-import { peopleService } from '@/lib/services/people.service'
 import { ProjectAuditLog } from '@/components/project-audit-log'
 import { renderDate } from '@/utils/renderDate'
 import { ProjectAssignmentsPanel } from '@/components/project-assignments-panel'
 
-
-interface ProjectWithClient extends Project {
-  client?: Client
-}
 
 export default function ProjectShowPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params)
@@ -123,10 +112,13 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" asChild data-test="back-button">
-              <Link href="/projects">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
+           <Button
+              variant="outline"
+              size="icon"
+              onClick={() => router.back()}
+              data-test="back-button"
+            >
+              <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
               <h1 className="text-3xl font-bold" data-test="project-title">{project.name}</h1>
@@ -245,11 +237,11 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {project.client ? (
+                {project.clients ? (
                   <div className="space-y-3">
                     <div>
                       <h3 className="font-medium text-sm text-muted-foreground mb-1" data-test="project-name-title">Nombre</h3>
-                      <p className="font-semibold">{project.client.name}</p>
+                      <p className="font-semibold">{project?.clients?.name}</p>
                     </div>
                   </div>
                 ) : (
