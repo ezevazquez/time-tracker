@@ -112,10 +112,13 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" asChild data-test="back-button">
-              <Link href="/projects">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
+           <Button
+              variant="outline"
+              size="icon"
+              onClick={() => router.back()}
+              data-test="back-button"
+            >
+              <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
               <h1 className="text-3xl font-bold" data-test="project-title">{project.name}</h1>
