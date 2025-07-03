@@ -50,9 +50,9 @@ export function ProjectStatusChart({ projects }: ProjectStatusChartProps) {
   }
 
   return (
-    <Card>
+    <Card data-test="project-status-chart-card">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2" data-test="project-status-chart-title">
+        <CardTitle className="flex items-center gap-2">
           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
           Estado de proyectos
         </CardTitle>

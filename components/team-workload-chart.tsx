@@ -92,9 +92,9 @@ export function TeamWorkloadChart({ people, assignments }: TeamWorkloadChartProp
   }
 
   return (
-    <Card>
+    <Card data-test="team-workload-chart-card">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2" data-test="team-workload-chart-title">
+        <CardTitle className="flex items-center gap-2">
           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
           Asignación por equipo
         </CardTitle>
