@@ -146,7 +146,7 @@ export default function ClientsPage() {
                 filteredClients.map(client => {
                   const clientProjects = projects.filter(p => p.client_id === client.id && p.status !== 'Finished')
                   return (
-                    <TableRow key={client.id}>
+                    <TableRow key={client.id} data-test={`client-row-${client.id}`}>
                       <TableCell className="font-medium">
                         <span
                           title={client.name.length > 30 ? client.name : undefined}
@@ -167,13 +167,14 @@ export default function ClientsPage() {
                           <div
                             className="bg-muted/40 rounded-lg p-2 max-h-40 overflow-y-auto border border-muted/60 shadow-sm"
                             style={{ minWidth: 220, width: '100%', boxSizing: 'border-box' }}
+                            
                           >
                             {clientProjects.map((project, idx) => {
                               const assigned = project.assignedFTE || 0
                               const total = project.fte || 0
                               const utilization = total > 0 ? Math.round((assigned / total) * 100) : 0
                               return (
-                                <div key={project.id} className="flex items-center gap-2 py-1 border-b last:border-b-0 border-muted/30">
+                                <div key={project.id} className="flex items-center gap-2 py-1 border-b last:border-b-0 border-muted/30" data-test={`client-project-${project.id}`}>
                                   <Folder className="h-4 w-4 text-primary/70 shrink-0" />
                                   <Link
                                     href={`/projects/${project.id}/show`}
