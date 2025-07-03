@@ -9,6 +9,7 @@ import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
 import { parseDateFromString } from '@/lib/assignments'
 import { fteToPercentage } from '@/lib/utils/fte-calculations'
+import { useRouter } from 'next/navigation'
 
 interface UpcomingDeadlinesProps {
   projects: Project[]
@@ -18,6 +19,7 @@ interface UpcomingDeadlinesProps {
 export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesProps) {
   const currentDate = new Date()
   const twoWeeksFromNow = addDays(currentDate, 14)
+  const router = useRouter()
 
   // Get upcoming project deadlines and assignment end dates
   const upcomingDeadlines = [
@@ -25,6 +27,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
     ...projects
       .filter(
         project =>
+          project.status === 'In Progress' &&
           project.end_date &&
           isAfter(new Date(project.end_date), currentDate) &&
           isBefore(new Date(project.end_date), twoWeeksFromNow)
@@ -35,6 +38,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
         title: project.name,
         date: new Date(project.end_date!),
         status: project.status,
+        projectId: project.id,
       })),
 
     // Assignment end dates
@@ -50,6 +54,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
           id: assignment.id,
           type: 'assignment' as const,
           title: project?.name || 'Proyecto desconocido',
+          projectId: assignment.project_id,
           date: parseDateFromString(assignment.end_date),
           status: project?.status || 'Unknown',
           allocation: assignment.allocation,
@@ -84,12 +89,12 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
             const urgency = getUrgencyLevel(deadline.date)
             const daysUntil = differenceInCalendarDays(deadline.date, currentDate)
             const UrgencyIcon = urgency.icon
-
             return (
               <div
                 key={`${deadline.type}-${deadline.id}`}
-                className="flex items-start gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
+                className="flex items-start gap-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer transition-colors"
                 data-test={`upcoming-deadline-${deadline.type}-${deadline.id}`}
+                onClick={() => router.push(`/projects/${deadline.projectId}/show`)}
               >
                 <div
                   className={`p-2 rounded-full ${urgency.color.replace('text-', 'bg-').replace('-800', '-200')}`}
