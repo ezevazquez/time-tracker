@@ -69,7 +69,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
   }
 
   return (
-    <Card>
+    <Card data-test="upcoming-deadlines-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5 text-orange-600" />
@@ -89,6 +89,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
               <div
                 key={`${deadline.type}-${deadline.id}`}
                 className="flex items-start gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
+                data-test={`upcoming-deadline-${deadline.type}-${deadline.id}`}
               >
                 <div
                   className={`p-2 rounded-full ${urgency.color.replace('text-', 'bg-').replace('-800', '-200')}`}
