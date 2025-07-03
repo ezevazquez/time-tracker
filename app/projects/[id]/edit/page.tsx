@@ -165,7 +165,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       
       await projectsService.update(unwrappedParams.id, updateData)
       toast({ title: 'Proyecto actualizado', description: 'El proyecto fue actualizado correctamente.' })
-      router.push('/projects')
+      router.back()
     } catch (error) {
       console.error('Error updating project:', error)
       toast({ title: 'Error al actualizar', description: 'Error al actualizar el proyecto.', variant: 'destructive' })
