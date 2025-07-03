@@ -3,12 +3,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, Calendar, Clock } from 'lucide-react'
-import { format, differenceInDays, isAfter, isBefore, addDays } from 'date-fns'
+import { format, differenceInCalendarDays, isAfter, isBefore, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
 import { parseDateFromString } from '@/lib/assignments'
 import { fteToPercentage } from '@/lib/utils/fte-calculations'
+import { useRouter } from 'next/navigation'
 
 interface UpcomingDeadlinesProps {
   projects: Project[]
@@ -18,6 +19,7 @@ interface UpcomingDeadlinesProps {
 export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesProps) {
   const currentDate = new Date()
   const twoWeeksFromNow = addDays(currentDate, 14)
+  const router = useRouter()
 
   // Get upcoming project deadlines and assignment end dates
   const upcomingDeadlines = [
@@ -25,6 +27,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
     ...projects
       .filter(
         project =>
+          project.status === 'In Progress' &&
           project.end_date &&
           isAfter(new Date(project.end_date), currentDate) &&
           isBefore(new Date(project.end_date), twoWeeksFromNow)
@@ -35,6 +38,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
         title: project.name,
         date: new Date(project.end_date!),
         status: project.status,
+        projectId: project.id,
       })),
 
     // Assignment end dates
@@ -50,9 +54,11 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
           id: assignment.id,
           type: 'assignment' as const,
           title: project?.name || 'Proyecto desconocido',
+          projectId: assignment.project_id,
           date: parseDateFromString(assignment.end_date),
           status: project?.status || 'Unknown',
           allocation: assignment.allocation,
+          assignatedTo: `${assignment?.people?.first_name} ${assignment?.people?.last_name}` ,
         }
       }),
   ]
@@ -60,7 +66,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
     .slice(0, 6)
 
   const getUrgencyLevel = (date: Date) => {
-    const daysUntil = differenceInDays(date, currentDate)
+    const daysUntil = differenceInCalendarDays(date, currentDate)
     if (daysUntil <= 3)
       return { level: 'high', color: 'bg-red-100 text-red-800', icon: AlertTriangle }
     if (daysUntil <= 7)
@@ -69,7 +75,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
   }
 
   return (
-    <Card>
+    <Card data-test="upcoming-deadlines-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5 text-orange-600" />
@@ -82,13 +88,14 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
         ) : (
           upcomingDeadlines.map(deadline => {
             const urgency = getUrgencyLevel(deadline.date)
-            const daysUntil = differenceInDays(deadline.date, currentDate)
+            const daysUntil = differenceInCalendarDays(deadline.date, currentDate)
             const UrgencyIcon = urgency.icon
-
             return (
               <div
                 key={`${deadline.type}-${deadline.id}`}
-                className="flex items-start gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
+                className="flex items-start gap-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer transition-colors"
+                data-test={`upcoming-deadline-${deadline.type}-${deadline.id}`}
+                onClick={() => router.push(`/projects/${deadline.projectId}/show`)}
               >
                 <div
                   className={`p-2 rounded-full ${urgency.color.replace('text-', 'bg-').replace('-800', '-200')}`}
@@ -118,6 +125,11 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
                   {deadline.type === 'assignment' && deadline.allocation && (
                     <p className="text-xs text-gray-500 mt-1">
                       Asignación: {fteToPercentage(deadline.allocation)}%
+                    </p>
+                  )}
+                  {deadline.type === 'assignment' && deadline.assignatedTo && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Asignado a: {deadline.assignatedTo}
                     </p>
                   )}
                 </div>

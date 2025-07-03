@@ -62,9 +62,9 @@ export function OverallocatedProjectsChart({ projects, assignments }: Overalloca
 
   if (projectsWithOverallocation.length === 0) {
     return (
-      <Card>
+      <Card data-test="overallocated-projects-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm" data-test="overallocated-projects-title">
+          <CardTitle className="flex items-center gap-2 text-sm">
             <AlertTriangle className="h-4 w-4 text-green-600" />
             Proyectos sobreasignados
           </CardTitle>
@@ -87,7 +87,7 @@ export function OverallocatedProjectsChart({ projects, assignments }: Overalloca
   }
 
   return (
-    <Card>
+    <Card data-test="overallocated-projects-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm">
           <AlertTriangle className="h-4 w-4 text-red-600" data-test="overallocated-projects-title" />
@@ -104,6 +104,7 @@ export function OverallocatedProjectsChart({ projects, assignments }: Overalloca
               key={project.id}
               className="p-2 border rounded text-xs hover:bg-gray-50 cursor-pointer transition-colors"
               onClick={() => router.push(`/projects/${project.id}/show`)}
+              data-test={`overallocated-project-${project.id}`}
             >
               <div className="flex items-start justify-between mb-1">
                 <div className="flex-1 min-w-0">

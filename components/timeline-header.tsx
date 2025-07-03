@@ -70,6 +70,7 @@ export function TimelineHeader({
                 ${isSameDay(day, today) ? "bg-blue-50 border-blue-200" : ""}
               `}
               style={{ width: `${dayWidth}px`, height: `${headerHeight - 24}px` }}
+              data-test={`header-day-${i}`}
             >
               <div className={`font-medium ${isSameDay(day, today) ? "text-blue-600" : "text-gray-900"}`}>
                 {format(day, "dd")}

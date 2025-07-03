@@ -53,7 +53,7 @@ export const TableResource = <T extends { id: string }>({
           </TableHeader>
           <TableBody>
             {items.map((item, rowIndex) => (
-              <TableRow key={rowIndex}>
+              <TableRow key={rowIndex} data-test={`table-row-${item.id}`}>
                 {columns.map((column: ResourceColumn<T>, colIndex) => {
                   return <TableCell key={colIndex}>{column.render(item)}</TableCell>
                 })}
