@@ -222,6 +222,7 @@ export function AssignmentBar({
         onMouseLeave={handleBarMouseLeave}
         onContextMenu={handleContextMenu}
         data-assignment-bar-id={assignment.id}
+        data-test={`assignment-bar-${assignment.id}`}
       >
         {/* Left resize handle */}
         {false && (
