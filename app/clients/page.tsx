@@ -158,6 +158,7 @@ export default function ClientsPage() {
                             whiteSpace: 'nowrap',
                             verticalAlign: 'bottom',
                           }}
+                          data-test={`client-name-${client.id}`}
                         >
                           {client.name.length > 30 ? client.name.slice(0, 30) + '…' : client.name}
                         </span>
