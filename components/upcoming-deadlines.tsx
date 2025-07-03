@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, Calendar, Clock } from 'lucide-react'
-import { format, differenceInDays, isAfter, isBefore, addDays } from 'date-fns'
+import { format, differenceInCalendarDays, isAfter, isBefore, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
@@ -60,7 +60,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
     .slice(0, 6)
 
   const getUrgencyLevel = (date: Date) => {
-    const daysUntil = differenceInDays(date, currentDate)
+    const daysUntil = differenceInCalendarDays(date, currentDate)
     if (daysUntil <= 3)
       return { level: 'high', color: 'bg-red-100 text-red-800', icon: AlertTriangle }
     if (daysUntil <= 7)
@@ -82,7 +82,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
         ) : (
           upcomingDeadlines.map(deadline => {
             const urgency = getUrgencyLevel(deadline.date)
-            const daysUntil = differenceInDays(deadline.date, currentDate)
+            const daysUntil = differenceInCalendarDays(deadline.date, currentDate)
             const UrgencyIcon = urgency.icon
 
             return (
