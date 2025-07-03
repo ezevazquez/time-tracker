@@ -58,6 +58,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
           date: parseDateFromString(assignment.end_date),
           status: project?.status || 'Unknown',
           allocation: assignment.allocation,
+          assignatedTo: `${assignment?.people?.first_name} ${assignment?.people?.last_name}` ,
         }
       }),
   ]
@@ -124,6 +125,11 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
                   {deadline.type === 'assignment' && deadline.allocation && (
                     <p className="text-xs text-gray-500 mt-1">
                       Asignación: {fteToPercentage(deadline.allocation)}%
+                    </p>
+                  )}
+                  {deadline.type === 'assignment' && deadline.assignatedTo && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Asignado a: {deadline.assignatedTo}
                     </p>
                   )}
                 </div>
