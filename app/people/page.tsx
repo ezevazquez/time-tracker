@@ -337,7 +337,7 @@ export default function PeoplePage() {
             </TableHeader>
             <TableBody>
               {filteredPeople.map(person => (
-                <TableRow key={person.id}>
+                <TableRow key={person.id} data-test={`person-row-${person.id}`}>
                   <TableCell className="font-medium">{getDisplayName(person)}</TableCell>
                   <TableCell>{person.profile}</TableCell>
                   <TableCell>
