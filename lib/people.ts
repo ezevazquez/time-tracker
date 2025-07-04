@@ -59,9 +59,9 @@ export function getPersonStatusLabel(status: string): string {
  */
 export function getPersonStatusBadge(status: string) {
   const variants = {
-    Active: 'bg-green-100 text-green-800',
-    Paused: 'bg-yellow-100 text-yellow-800',
-    Terminated: 'bg-red-100 text-red-800',
+    Active: 'bg-green-100 text-green-800 hover:bg-green-200',
+    Paused: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
+    Terminated: 'bg-red-100 text-red-800 hover:bg-red-200',
   }
   return variants[status as keyof typeof variants] || 'bg-gray-100 text-gray-800'
 }
@@ -71,8 +71,8 @@ export function getPersonStatusBadge(status: string) {
  */
 export function getPersonTypeBadge(type: string) {
   const variants = {
-    Internal: 'bg-blue-100 text-blue-800',
-    External: 'bg-purple-100 text-purple-800',
+    Internal: 'bg-blue-100 text-blue-800 hover:bg-blue-200',
+    External: 'bg-purple-100 text-purple-800 hover:bg-purple-200',
   }
-  return variants[type as keyof typeof variants] || 'bg-gray-100 text-gray-800'
+  return variants[type as keyof typeof variants] || 'bg-gray-100 text-gray-800 hover:bg-gray-200'
 }

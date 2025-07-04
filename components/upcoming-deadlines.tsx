@@ -70,10 +70,10 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
   const getUrgencyLevel = (date: Date) => {
     const daysUntil = differenceInCalendarDays(date, currentDate)
     if (daysUntil <= 3)
-      return { level: 'high', color: 'bg-red-100 text-red-800', icon: AlertTriangle }
+      return { level: 'high', color: 'bg-red-100 text-red-800 hover:bg-red-200', icon: AlertTriangle }
     if (daysUntil <= 7)
-      return { level: 'medium', color: 'bg-yellow-100 text-yellow-800', icon: Clock }
-    return { level: 'low', color: 'bg-blue-100 text-blue-800', icon: Calendar }
+      return { level: 'medium', color: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200', icon: Clock }
+    return { level: 'low', color: 'bg-blue-100 text-blue-800 hover:bg-blue-200', icon: Calendar }
   }
 
   return (
