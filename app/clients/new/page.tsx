@@ -42,8 +42,8 @@ export default function NewClientPage() {
     try {
       setIsSubmitting(true)
       await createClient({
-        name: data.name,
-        description: data.description || null,
+        name: data.name.trim(),
+        description: data.description ? data.description.trim() : null,
       })
 
       toast({
