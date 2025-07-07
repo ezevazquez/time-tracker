@@ -27,21 +27,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     checkSession()
   }, [])
 
+  useEffect(() => {
+    try {
+    //  we force the document to be in light mode
+      document.documentElement.classList.remove('dark')
+    } catch (e) {
+      // ignoring errors
+    }
+  }, [])
+
   return (
     <html lang="es" suppressHydrationWarning>
-      <head>
-        <Script id="theme-script" strategy="beforeInteractive">
-          {`
-            try {
-              if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark')
-              } else {
-                document.documentElement.classList.remove('dark')
-              }
-            } catch (_) {}
-          `}
-        </Script>
-      </head>
+      <head></head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <div className="flex flex-col min-h-screen">
