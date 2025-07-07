@@ -173,7 +173,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                   <FormItem>
                     <FormLabel>Nombre del Cliente</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nombre del cliente" {...field} data-test="client-name-field" maxLength={30}/>
+                      <Input placeholder="Nombre del cliente" {...field} data-test="client-name-field"/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
