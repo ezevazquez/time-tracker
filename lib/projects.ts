@@ -36,10 +36,10 @@ export function getProjectStatusBadge(
  */
 export function getStatusBadge(status?: string) {
   const variants = {
-    'In Progress': 'bg-green-100 text-green-800',
-    'On Hold': 'bg-yellow-100 text-yellow-800',
-    Finished: 'bg-gray-100 text-gray-800',
-    'Not Started': 'bg-blue-100 text-blue-800',
+    'In Progress': 'bg-green-100 text-green-800 hover:bg-green-200',
+    'On Hold': 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
+    Finished: 'bg-gray-100 text-gray-800 hover:bg-gray-200',
+    'Not Started': 'bg-blue-100 text-blue-800 hover:bg-blue-200',
   }
 
   if (!status) {

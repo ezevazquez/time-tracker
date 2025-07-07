@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, Calendar, Clock } from 'lucide-react'
-import { format, differenceInCalendarDays, isAfter, isBefore, addDays } from 'date-fns'
+import { format, differenceInCalendarDays, isAfter, isBefore, addDays,startOfDay, isSameDay } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { Project } from '@/types/project'
 import type { AssignmentWithRelations } from '@/types/assignment'
@@ -17,7 +17,7 @@ interface UpcomingDeadlinesProps {
 }
 
 export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesProps) {
-  const currentDate = new Date()
+  const currentDate =  startOfDay(new Date())
   const twoWeeksFromNow = addDays(currentDate, 14)
   const router = useRouter()
 
@@ -25,13 +25,13 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
   const upcomingDeadlines = [
     // Project deadlines
     ...projects
-      .filter(
-        project =>
-          project.status === 'In Progress' &&
-          project.end_date &&
-          isAfter(new Date(project.end_date), currentDate) &&
-          isBefore(new Date(project.end_date), twoWeeksFromNow)
-      )
+      .filter(project => {
+        if (project.status !== 'In Progress' || !project.end_date) return false
+        const endDate = startOfDay(parseDateFromString(project.end_date))
+        return (
+          isAfter(endDate, currentDate) || isSameDay(endDate, currentDate)
+        ) && isBefore(endDate, twoWeeksFromNow)
+    })
       .map(project => ({
         id: project.id,
         type: 'project' as const,
@@ -43,11 +43,13 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
 
     // Assignment end dates
     ...assignments
-      .filter(
-        assignment =>
-          isAfter(parseDateFromString(assignment.end_date), currentDate) &&
-          isBefore(parseDateFromString(assignment.end_date), twoWeeksFromNow)
-      )
+      .filter(assignment => {
+        const endDate = parseDateFromString(assignment.end_date)
+        return (
+          (isAfter(endDate, currentDate) || isSameDay(endDate, currentDate)) &&
+          isBefore(endDate, twoWeeksFromNow)
+        )
+      })
       .map(assignment => {
         const project = projects.find(p => p.id === assignment.project_id)
         return {
@@ -68,10 +70,10 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
   const getUrgencyLevel = (date: Date) => {
     const daysUntil = differenceInCalendarDays(date, currentDate)
     if (daysUntil <= 3)
-      return { level: 'high', color: 'bg-red-100 text-red-800', icon: AlertTriangle }
+      return { level: 'high', color: 'bg-red-100 text-red-800 hover:bg-red-200', icon: AlertTriangle }
     if (daysUntil <= 7)
-      return { level: 'medium', color: 'bg-yellow-100 text-yellow-800', icon: Clock }
-    return { level: 'low', color: 'bg-blue-100 text-blue-800', icon: Calendar }
+      return { level: 'medium', color: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200', icon: Clock }
+    return { level: 'low', color: 'bg-blue-100 text-blue-800 hover:bg-blue-200', icon: Calendar }
   }
 
   return (
