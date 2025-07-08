@@ -13,7 +13,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { CalendarIcon, Filter, X } from 'lucide-react'
+import { CalendarIcon, Filter, X, ChevronDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/utils/classnames'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -81,7 +81,7 @@ export function FiltersPopover({
   }
 
   const hasActiveFilters =
-    filters.personProfile !== defaultProfile ||
+    (Array.isArray(filters.personProfile) ? filters.personProfile.length > 0 : !!filters.personProfile) ||
     filters.personType !== defaultType ||
     filters.overallocatedOnly !== defaultOverallocated ||
     (mode === 'list' && (
@@ -132,23 +132,55 @@ export function FiltersPopover({
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Filtro de perfil */}
-            {filtersToShow.includes('profile') && people.length > 0 && (
+            {filtersToShow.includes('profile') && uniqueProfiles.length > 0 && (
               <div className="space-y-2">
                 <Label>Perfil</Label>
-                <Select
-                  value={filters.personProfile}
-                  onValueChange={(value) => onFiltersChange({ ...filters, personProfile: value })}
-                >
-                  <SelectTrigger className="w-full mt-1" data-test="profile-select">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos los perfiles</SelectItem>
-                    {uniqueProfiles.map(profile => (
-                      <SelectItem key={profile} value={profile}>{profile}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between" data-test="profile-multiselect-trigger">
+                      <span className="truncate">
+                        {filters.personProfile.length === 0
+                          ? 'Todos los perfiles'
+                          : filters.personProfile.join(', ')
+                        }
+                      </span>
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-2">
+                    <div className="flex items-center justify-between px-2 pb-2">
+                      <span className="font-semibold text-sm">Perfiles</span>
+                      {filters.personProfile.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => onFiltersChange({ ...filters, personProfile: [] })}
+                          className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 px-2 py-1 rounded transition-colors"
+                          data-test="clear-profile-filter"
+                        >
+                          <X className="h-3 w-3" /> Limpiar
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+                      {uniqueProfiles.map(profile => (
+                        <label key={profile} className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-accent">
+                          <Checkbox
+                            checked={filters.personProfile.includes(profile)}
+                            onCheckedChange={checked => {
+                              if (checked) {
+                                onFiltersChange({ ...filters, personProfile: [...filters.personProfile, profile] })
+                              } else {
+                                onFiltersChange({ ...filters, personProfile: filters.personProfile.filter(p => p !== profile) })
+                              }
+                            }}
+                            id={`profile-checkbox-${profile}`}
+                          />
+                          <span className="text-sm">{profile}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
             {/* Filtro de proyecto */}

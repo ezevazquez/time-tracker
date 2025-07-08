@@ -51,7 +51,7 @@ export default function ProjectsPage() {
 
   // Estado de filtros para FiltersPopover
   const [filters, setFilters] = useState<TimelineFilters>({
-    personProfile: 'all',
+    personProfile: [],
     projectStatus: '',
     dateRange: { from: new Date(), to: undefined },
     overallocatedOnly: false,

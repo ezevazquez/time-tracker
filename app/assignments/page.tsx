@@ -44,20 +44,10 @@ export default function AssignmentsPage() {
     })(),
   }
 
-  const [filters, setFilters] = useState<{
-    personProfile: string
-    projectStatus: string
-    dateRange: { from: Date; to: Date | undefined }
-    overallocatedOnly: boolean
-    personType: string
-    search: string
-  }>({
-    personProfile: 'all',
+  const [filters, setFilters] = useState({
+    personProfile: [],
     projectStatus: '',
-    dateRange: {
-      from: defaultDateRange.from,
-      to: defaultDateRange.to,
-    },
+    dateRange: { from: defaultDateRange.from, to: defaultDateRange.to },
     overallocatedOnly: false,
     personType: 'all',
     search: '',
@@ -87,7 +77,7 @@ export default function AssignmentsPage() {
 
   const clearFilters = () => {
     setFilters({
-      personProfile: 'all',
+      personProfile: [],
       projectStatus: '',
       dateRange: {
         from: defaultDateRange.from,
@@ -114,7 +104,7 @@ export default function AssignmentsPage() {
     scrollToTodayRef.current = fn
   }
 
-  const hasActiveFilters = filters.personProfile || filters.projectStatus || filters.overallocatedOnly
+  const hasActiveFilters = filters.personProfile.length > 0 || filters.projectStatus || filters.overallocatedOnly
 
   // Filtrado por búsqueda
   const searchLower = filters.search?.toLowerCase() || ''
@@ -139,8 +129,8 @@ export default function AssignmentsPage() {
         )
       })
     }
-    if (filters.personProfile && filters.personProfile !== 'all') {
-      result = result.filter(person => person.profile === filters.personProfile)
+    if (filters.personProfile.length > 0) {
+      result = result.filter(person => filters.personProfile.includes(person.profile || ''))
     }
     if (filters.personType && filters.personType !== 'all') {
       result = result.filter(person => person.type === filters.personType)
@@ -199,7 +189,7 @@ export default function AssignmentsPage() {
     result = result.filter(assignment => {
       const person = people.find(p => p.id === assignment.person_id)
       // Filtro por perfil
-      if (filters.personProfile && filters.personProfile !== 'all' && person?.profile !== filters.personProfile) return false
+      if (filters.personProfile.length > 0 && !filters.personProfile.includes(person?.profile || '')) return false
       // Filtro por tipo
       if (filters.personType && filters.personType !== 'all' && person?.type !== filters.personType) return false
       // Filtro por fechas
