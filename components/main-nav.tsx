@@ -105,7 +105,7 @@ export function MainNav() {
 
         {/* Mobile Menu Overlay */}
         {mobileMenuOpen && (
-          <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-50">
+          <div className="fixed top-[60px] left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-[9999]">
             <div className="px-4 py-3 space-y-1">
               {/* Home */}
               <Link
