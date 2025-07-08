@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Search, Edit, Trash2, Eye, ArrowDown, ArrowUp, X, ChevronDown, ArrowUpDown } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Eye, ArrowDown, ArrowUp, X, ChevronDown, ArrowUpDown, List, CalendarDays } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,6 +19,9 @@ import {
 import { TableResource } from '@/components/ui/table-resource'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ResourceHeader } from '@/components/resource-header'
+import { ResourceSubheader } from '@/components/resource-subheader'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 import { useProjects } from '@/hooks/use-projects'
 import { projectColumns } from '@/constants/resource-columns/projectColumns'
@@ -42,6 +45,7 @@ export default function ProjectsPage() {
   const { toast } = useToast()
   const [sortField, setSortField] = useState<'nombre' | 'cliente' | 'estado' | 'fechas' | null>(null)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list')
 
   const sortableKeys = ['nombre', 'cliente', 'estado', 'fechas'] as const;
 
@@ -184,103 +188,116 @@ export default function ProjectsPage() {
   ]
 
   return (
-    <main className="flex-1 container mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold" data-test="projects-title">Proyectos</h1>
-          <p className="text-muted-foreground">Gestiona los proyectos en curso</p>
-        </div>
-        <Button asChild data-test="create-project-button">
-          <Link href="/projects/new">
-            <Plus className="h-4 w-4 mr-2" />
-            Crear Proyecto
-          </Link>
-        </Button>
+    <main className="flex-1 w-full h-[92vh] flex flex-col">
+      <ResourceHeader
+        title="Proyectos"
+        buttonLabel="Nuevo Proyecto"
+        buttonHref="/projects/new"
+      />
+      <ResourceSubheader
+        searchPlaceholder="Buscar proyectos..."
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        filtersComponent={
+          <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="min-w-[220px] justify-between"
+                data-test="status-filter-popover-trigger"
+              >
+                <span className="truncate">
+                  {statusFilter.length === 0
+                    ? 'Todos los estados'
+                    : statusFilter.map(val => PROJECT_STATUS_OPTIONS.find(opt => opt.value === val)?.label || val).join(', ')
+                  }
+                </span>
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-2">
+              <div className="flex items-center justify-between px-2 pb-2">
+                <span className="font-semibold text-sm">Filtros</span>
+                {statusFilter.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter([])}
+                    className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 px-2 py-1 rounded transition-colors"
+                    data-test="clear-status-filter"
+                  >
+                    <X className="h-3 w-3" /> Limpiar
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+                {PROJECT_STATUS_OPTIONS.map(option => (
+                  <label key={option.value} className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-accent">
+                    <Checkbox
+                      checked={statusFilter.includes(option.value)}
+                      onCheckedChange={checked => {
+                        setStatusFilter(prev =>
+                          checked
+                            ? [...prev, option.value]
+                            : prev.filter(val => val !== option.value)
+                        )
+                      }}
+                      id={`status-checkbox-${option.value}`}
+                    />
+                    <span className="text-sm">{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        }
+        toggleComponent={
+          <ToggleGroup type="single" value={viewMode} onValueChange={value => {
+            if (value) setViewMode(value as 'list' | 'timeline')
+          }} className="bg-gray-100 p-1 rounded-lg shadow-sm">
+            <ToggleGroupItem
+              value="list"
+              aria-label="Ver como tabla"
+              className="rounded-md data-[state=on]:bg-white data-[state=on]:shadow-md data-[state=on]:text-blue-600 data-[state=off]:text-gray-500 data-[state=off]:hover:text-gray-700 transition-all duration-200"
+              data-test="toggle-list-button"
+            >
+              <List className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="timeline"
+              aria-label="Ver como timeline"
+              className="rounded-md data-[state=on]:bg-white data-[state=on]:shadow-md data-[state=on]:text-blue-600 data-[state=off]:text-gray-500 data-[state=off]:hover:text-gray-700 transition-all duration-200"
+              data-test="toggle-timeline-button"
+            >
+              <CalendarDays className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+        }
+      />
+      <div className="flex-1 min-h-0 overflow-hidden">
+        {viewMode === 'timeline' ? (
+          <div className="flex items-center justify-center h-full">
+            <span className="text-muted-foreground text-lg">Acá va el Gantt</span>
+          </div>
+        ) : (
+          <div className="h-full overflow-auto">
+            <div className="container mx-auto px-4 py-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle data-test="projects-title">Lista de Proyectos</CardTitle>
+                  <CardDescription>Proyectos registrados en el sistema</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TableResource
+                    items={sortedProjects}
+                    columns={columnsWithSorting as ResourceColumn<ProjectWithFTE>[]}
+                    actions={actions}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Filtros */}
-      <Card className="mb-6">
-        <CardContent className="pt-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
-          <div className="relative w-full sm:w-1/4 sm:max-w-xs">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nombre o descripción..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="pl-10"
-              data-test="search-projects-input"
-            />
-          </div>
-          <div className="flex gap-2 items-center justify-end w-full sm:w-auto">
-            <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="min-w-[220px] justify-between"
-                  data-test="status-filter-popover-trigger"
-                >
-                  <span className="truncate">
-                    {statusFilter.length === 0
-                      ? 'Todos los estados'
-                      : statusFilter.map(val => PROJECT_STATUS_OPTIONS.find(opt => opt.value === val)?.label || val).join(', ')
-                    }
-                  </span>
-                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64 p-2">
-                <div className="flex items-center justify-between px-2 pb-2">
-                  <span className="font-semibold text-sm">Filtros</span>
-                  {statusFilter.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setStatusFilter([])}
-                      className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 px-2 py-1 rounded transition-colors"
-                      data-test="clear-status-filter"
-                    >
-                      <X className="h-3 w-3" /> Limpiar
-                    </button>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
-                  {PROJECT_STATUS_OPTIONS.map(option => (
-                    <label key={option.value} className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-accent">
-                      <Checkbox
-                        checked={statusFilter.includes(option.value)}
-                        onCheckedChange={checked => {
-                          setStatusFilter(prev =>
-                            checked
-                              ? [...prev, option.value]
-                              : prev.filter(val => val !== option.value)
-                          )
-                        }}
-                        id={`status-checkbox-${option.value}`}
-                      />
-                      <span className="text-sm">{option.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tabla */}
-      <Card>
-        <CardHeader>
-          <CardTitle data-test="projects-title">Lista de Proyectos</CardTitle>
-          <CardDescription>Proyectos registrados en el sistema</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TableResource
-            items={sortedProjects}
-            columns={columnsWithSorting as ResourceColumn<ProjectWithFTE>[]}
-            actions={actions}
-          />
-        </CardContent>
-      </Card>
-
       {/* Modal de confirmación */}
       {projectToDelete && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
