@@ -76,9 +76,6 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
     return { level: 'low', color: 'bg-blue-100 text-blue-800 hover:bg-blue-200', icon: Calendar }
   }
 
-  console.log('Upcoming deadlines:', upcomingDeadlines);
-  
-
   return (
     <Card data-test="upcoming-deadlines-card">
       <CardHeader>
