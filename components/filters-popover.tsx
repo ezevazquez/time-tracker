@@ -21,7 +21,7 @@ import type { Person } from '@/types/people'
 import type { ProjectWithClient } from '@/types/project'
 import { es } from "date-fns/locale"
 import type { TimelineFilters } from "@/types/timeline"
-import { PROJECT_STATUS_OPTIONS, PROJECT_STATUS } from '@/constants/projects'
+import { PROJECT_STATUS_OPTIONS, PROJECT_CONTRACT_TYPE_OPTIONS } from '@/constants/projects'
 import { Badge } from './ui/badge'
 
 interface FiltersPopoverProps {
@@ -114,6 +114,12 @@ export function FiltersPopover({
           !isSameDay(filters.dateRange.from, effectiveDateRangeDefault.from) ||
           !isSameDay(filters.dateRange.to ?? new Date(0), effectiveDateRangeDefault.to ?? new Date(0))
         ) ? 1 : 0)
+      case 'contractType':
+        // Solo cuenta como activo si NO están todos los tipos seleccionados
+        const allContractTypes = PROJECT_CONTRACT_TYPE_OPTIONS.map(opt => opt.value)
+        const selected = filters.contractType || []
+        const isAllSelected = selected.length === allContractTypes.length && allContractTypes.every(val => selected.includes(val))
+        return count + (!isAllSelected && selected.length > 0 ? 1 : 0)
       default:
         return count
     }
@@ -424,6 +430,58 @@ export function FiltersPopover({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+            {/* Filtro de tipo de contratación */}
+            {filtersToShow.includes('contractType') && (
+              <div className="space-y-2">
+                <Label>Tipo de contratación</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between" data-test="contract-type-multiselect-trigger">
+                      <span className="truncate">
+                        {filters.contractType && filters.contractType.length === 0
+                          ? 'Todos los tipos'
+                          : PROJECT_CONTRACT_TYPE_OPTIONS.filter(opt => filters.contractType?.includes(opt.value)).map(opt => opt.label).join(', ')
+                        }
+                      </span>
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-2">
+                    <div className="flex items-center justify-between px-2 pb-2">
+                      <span className="font-semibold text-sm">Tipos de contratación</span>
+                      {filters.contractType && filters.contractType.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => onFiltersChange({ ...filters, contractType: [] })}
+                          className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 px-2 py-1 rounded transition-colors"
+                          data-test="clear-contract-type-filter"
+                        >
+                          <X className="h-3 w-3" /> Limpiar
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+                      {PROJECT_CONTRACT_TYPE_OPTIONS.map(option => (
+                        <label key={option.value} className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-accent">
+                          <Checkbox
+                            checked={filters.contractType?.includes(option.value)}
+                            onCheckedChange={checked => {
+                              if (checked) {
+                                onFiltersChange({ ...filters, contractType: [...(filters.contractType || []), option.value] })
+                              } else {
+                                onFiltersChange({ ...filters, contractType: (filters.contractType || []).filter(val => val !== option.value) })
+                              }
+                            }}
+                            id={`contract-type-checkbox-${option.value}`}
+                          />
+                          <span className="text-sm">{option.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
           </CardContent>

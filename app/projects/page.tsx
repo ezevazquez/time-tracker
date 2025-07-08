@@ -26,7 +26,7 @@ import { FiltersPopover } from '@/components/filters-popover'
 
 import { useProjects } from '@/hooks/use-projects'
 import { projectColumns } from '@/constants/resource-columns/projectColumns'
-import { PROJECT_STATUS_OPTIONS, PROJECT_STATUS } from '@/constants/projects'
+import { PROJECT_STATUS_OPTIONS, PROJECT_STATUS, PROJECT_CONTRACT_TYPE_OPTIONS } from '@/constants/projects'
 
 import type { Project } from '@/types/project'
 import type { ResourceAction } from '@/types/ResourceAction'
@@ -63,6 +63,9 @@ export default function ProjectsPage() {
 
   const [statusFilter, setStatusFilter] = useState<string[]>(defaultStatusFilter)
 
+  // Valor por defecto para tipo de contratación (vacío = todos)
+  const defaultContractTypeFilter: string[] = []
+
   // Estado de filtros para FiltersPopover
   const [filters, setFilters] = useState<TimelineFilters>({
     personProfile: [],
@@ -74,6 +77,7 @@ export default function ProjectsPage() {
     projectId: [],
     status: defaultStatusFilter,
     clientId: undefined,
+    contractType: defaultContractTypeFilter,
   })
 
   const sortableKeys = ['nombre', 'cliente', 'estado', 'fechas'] as const;
@@ -104,7 +108,8 @@ export default function ProjectsPage() {
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase()))
     const matchesStatus = statusFilter.length === 0 || statusFilter.includes(project.status)
-    return matchesSearch && matchesStatus
+    const matchesContractType = !filters.contractType || filters.contractType.length === 0 || filters.contractType.includes(project.contract_type || '')
+    return matchesSearch && matchesStatus && matchesContractType
   })
 
   const handleSort = (field: typeof sortField) => {
@@ -248,11 +253,12 @@ export default function ProjectsPage() {
                 ...filters,
                 status: [],
                 dateRange: { from: defaultDateRange.from, to: defaultDateRange.to },
+                contractType: defaultContractTypeFilter,
               })
               setStatusFilter([])
             }}
             mode="list"
-            filtersToShow={['status', 'dateRange']}
+            filtersToShow={['status', 'dateRange', 'contractType']}
             dateRangeDefault={defaultDateRange}
           />
         }

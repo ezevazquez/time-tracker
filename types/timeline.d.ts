@@ -8,4 +8,5 @@ export interface TimelineFilters {
   projectId?: string[]
   status?: string[]
   clientId?: string
+  contractType?: string[]
 } 
