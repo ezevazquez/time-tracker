@@ -23,6 +23,7 @@ import { ResourceHeader } from '@/components/resource-header'
 import { ResourceSubheader } from '@/components/resource-subheader'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { FiltersPopover } from '@/components/filters-popover'
+import { ProjectTimeline } from '@/components/project-timeline'
 
 import { useProjects } from '@/hooks/use-projects'
 import { projectColumns } from '@/constants/resource-columns/projectColumns'
@@ -278,11 +279,10 @@ export default function ProjectsPage() {
           </ToggleGroup>
         }
       />
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 h-full w-full flex flex-col">
         {viewMode === 'timeline' ? (
-          <div className="flex items-center justify-center h-full">
-            <span className="text-muted-foreground text-lg">Acá va el Gantt</span>
-          </div>
+          <ProjectTimeline
+          />
         ) : (
           <div className="h-full overflow-auto">
             <div className="container mx-auto px-4 py-4">
