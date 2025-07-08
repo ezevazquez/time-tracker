@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 const PUBLIC_PATHS = [
-  '/', // si querés que la raíz sea pública
   '/login',
   '/auth/callback',
   '/auth/auth-code-error',
