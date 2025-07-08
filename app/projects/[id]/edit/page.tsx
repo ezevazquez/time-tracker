@@ -126,7 +126,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       try {
         setLoading(true)
         const projectData = await projectsService.getById(unwrappedParams.id)
-        console.log('Fetched project data:', projectData);
         
         if (projectData) {
           setProject(projectData)
