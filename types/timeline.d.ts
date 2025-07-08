@@ -5,7 +5,7 @@ export interface TimelineFilters {
   overallocatedOnly: boolean
   personType: string
   search: string
-  projectId?: string
+  projectId?: string[]
   status?: string
   clientId?: string
 } 

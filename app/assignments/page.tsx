@@ -22,6 +22,7 @@ import { supabase } from '@/lib/supabase/client'
 import { parseDateFromString } from '@/lib/assignments'
 import { fteToPercentage, isOverallocated } from '@/lib/utils/fte-calculations'
 import { AssignmentModal } from '@/components/assignment-modal'
+import type { TimelineFilters } from '@/types/timeline'
 
 export default function AssignmentsPage() {
   const router = useRouter()
@@ -44,7 +45,7 @@ export default function AssignmentsPage() {
     })(),
   }
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<TimelineFilters>({
     personProfile: [],
     projectStatus: '',
     dateRange: { from: defaultDateRange.from, to: defaultDateRange.to },
@@ -300,7 +301,7 @@ export default function AssignmentsPage() {
               projects={projects}
               profiles={profiles}
               filters={filters}
-              onFiltersChange={setFilters}
+              onFiltersChange={setFilters as (filters: TimelineFilters) => void}
               onClearFilters={clearFilters}
               showDateRange={viewMode === 'list'}
               mode={viewMode}
