@@ -36,7 +36,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
         id: project.id,
         type: 'project' as const,
         title: project.name,
-        date: new Date(project.end_date!),
+        date: parseDateFromString(project?.end_date || ''),
         status: project.status,
         projectId: project.id,
       })),
@@ -75,6 +75,9 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
       return { level: 'medium', color: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200', icon: Clock }
     return { level: 'low', color: 'bg-blue-100 text-blue-800 hover:bg-blue-200', icon: Calendar }
   }
+
+  console.log('Upcoming deadlines:', upcomingDeadlines);
+  
 
   return (
     <Card data-test="upcoming-deadlines-card">
