@@ -27,10 +27,10 @@ export function TimelineHeader({
   onScrollToToday,
 }: TimelineHeaderProps) {
   return (
-    <div className="sticky top-0 z-40 bg-white border-b border-gray-200 flex" style={{ height: `${headerHeight}px` }}>
+    <div className="sticky top-0 z-10 bg-white border-b border-gray-200 flex" style={{ height: `${headerHeight}px` }}>
       {/* Header left corner - Today button */}
       <div
-        className="sticky top-0 left-0 z-50 bg-gray-50 border-r border-gray-200 flex items-center px-4 justify-end"
+        className="sticky top-0 left-0 z-20 bg-gray-50 border-r border-gray-200 flex items-center px-4 justify-end"
         style={{ width: `${sidebarWidth}px` }}
       >
         <Button
@@ -70,6 +70,7 @@ export function TimelineHeader({
                 ${isSameDay(day, today) ? "bg-blue-50 border-blue-200" : ""}
               `}
               style={{ width: `${dayWidth}px`, height: `${headerHeight - 24}px` }}
+              data-test={`header-day-${i}`}
             >
               <div className={`font-medium ${isSameDay(day, today) ? "text-blue-600" : "text-gray-900"}`}>
                 {format(day, "dd")}

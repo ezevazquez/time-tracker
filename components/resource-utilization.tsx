@@ -75,7 +75,7 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
   const noAssignmentCount = utilizationData.filter(p => p.utilization === 0).length
 
   return (
-    <Card>
+    <Card data-test="resource-utilization-card">
       <CardHeader>
         <CardTitle className="flex items-center justify-between" data-test="resource-utilization-title">
           <div className="flex items-center gap-2">
@@ -85,15 +85,15 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-1">
               <TrendingUp className="h-4 w-4 text-red-500" />
-              <span className="text-red-600">{overallocatedCount} sobreasignados</span>
+              <span className="text-red-600"><span data-test={`resource-utilization-overallocated-count`}>{overallocatedCount}</span> sobreasignados</span>
             </div>
             <div className="flex items-center gap-1">
               <TrendingDown className="h-4 w-4 text-yellow-500" />
-              <span className="text-yellow-600">{underutilizedCount} subasignados</span>
+              <span className="text-yellow-600"><span data-test={`resource-utilization-underutilized-count`}>{underutilizedCount}</span> subasignados</span>
             </div>
             <div className="flex items-center gap-1">
               <MinusCircle className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-600">{noAssignmentCount} sin asignación</span>
+              <span className="text-gray-600"><span data-test={`resource-utilization-no-assignment-count`}>{noAssignmentCount}</span> sin asignación</span>
             </div>
           </div>
         </CardTitle>
@@ -114,6 +114,7 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
             <div
               key={person.id}
               className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+              data-test={`resource-utilization-person-${person.id}`}
             >
               <Avatar className="h-10 w-10">
                 <AvatarFallback className="text-sm bg-gray-100">

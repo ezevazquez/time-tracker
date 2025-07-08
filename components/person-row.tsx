@@ -309,11 +309,13 @@ export function PersonRow({
         ${isEvenRow ? "bg-white" : "bg-gray-50/20"}
       `}
       style={{ height: `${rowHeight}px` }}
+      data-test={`person-row-${person.id}`}
     >
       {/* Sidebar */}
       <div
         className="sticky left-0 z-20 bg-white border-r border-gray-200 flex flex-col items-start justify-start"
         style={{ width: `${sidebarWidth}px` }}
+        data-test={`person-sidebar-${person.id}`}
       >
         <div className="p-4 flex items-start space-x-3 w-full">
           <Avatar className="h-10 w-10">
@@ -336,6 +338,7 @@ export function PersonRow({
         {days.map((day, i) => (
           <div
             key={i}
+            data-test={`day-${i}`}
             className={[
               "absolute top-0 bottom-0 border-r border-gray-100 transition-colors duration-75",
               isSameDay(day, today) ? "bg-blue-50/30" : "",

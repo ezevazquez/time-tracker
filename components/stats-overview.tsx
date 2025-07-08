@@ -116,13 +116,13 @@ export function StatsOverview({ people, projects, assignments, clients }: StatsO
       {stats.map((stat, index) => (
         <Card
           key={index}
-          className="hover:shadow-md transition-shadow flex flex-col justify-between"
+          className="hover:shadow-md transition-shadow flex flex-col justify-between" data-test={`stat-card-${stringToKebabCase(stat.title)}`}
         >
           <CardContent className="p-4 h-full flex flex-col justify-between">
             <div className="flex items-start justify-between">
               <p
                 className="text-sm font-medium text-gray-600"
-                data-test={`stat-title-${stringToKebabCase(stat.title)}`}
+                
               >
                 {stat.title}
               </p>
