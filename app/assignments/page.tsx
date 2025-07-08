@@ -16,11 +16,14 @@ import { Input } from '@/components/ui/input'
 import { usePeople } from '@/hooks/use-people'
 import { useProjects } from '@/hooks/use-projects'
 import { useAssignments } from '@/hooks/use-assignments'
+import { useProfiles } from '@/hooks/use-profiles'
 
 import { supabase } from '@/lib/supabase/client'
 import { parseDateFromString } from '@/lib/assignments'
 import { fteToPercentage, isOverallocated } from '@/lib/utils/fte-calculations'
 import { AssignmentModal } from '@/components/assignment-modal'
+import type { TimelineFilters } from '@/types/timeline'
+import { getDefaultDateRange } from '@/utils/calculateDefaultDateRange'
 
 export default function AssignmentsPage() {
   const router = useRouter()
@@ -30,43 +33,25 @@ export default function AssignmentsPage() {
   const scrollToTodayRef = useRef<(() => void) | null>(null)
   const [createModalOpen, setCreateModalOpen] = useState(false)
 
-  const defaultDateRange = {
-    from: (() => {
-      const d = new Date()
-      d.setDate(d.getDate() - 7)
-      return d
-    })(),
-    to: (() => {
-      const d = new Date()
-      d.setDate(d.getDate() + 30)
-      return d
-    })(),
-  }
+  // Calcular el defaultDateRange cada vez que se renderiza el componente, para que siempre sea relativo a hoy
+  const defaultDateRange = getDefaultDateRange()
 
-  const [filters, setFilters] = useState<{
-    personProfile: string
-    projectStatus: string
-    dateRange: { from: Date; to: Date | undefined }
-    overallocatedOnly: boolean
-    personType: string
-    search: string
-  }>({
-    personProfile: 'all',
+  const [filters, setFilters] = useState<TimelineFilters>({
+    personProfile: [],
     projectStatus: '',
-    dateRange: {
-      from: defaultDateRange.from,
-      to: defaultDateRange.to,
-    },
+    dateRange: { from: defaultDateRange.from, to: defaultDateRange.to },
     overallocatedOnly: false,
     personType: 'all',
     search: '',
+    projectId: [],
   })
 
   const { people, loading: loadingPeople } = usePeople()
   const { projects, loading: loadingProjects } = useProjects()
   const { assignments, loading: loadingAssignments, deleteAssignment, createAssignment, updateAssignment } = useAssignments()
+  const { profiles, loading: loadingProfiles } = useProfiles()
 
-  const loading = loadingPeople || loadingProjects || loadingAssignments
+  const loading = loadingPeople || loadingProjects || loadingAssignments || loadingProfiles
 
   useEffect(() => {
     setMounted(true)
@@ -85,7 +70,7 @@ export default function AssignmentsPage() {
 
   const clearFilters = () => {
     setFilters({
-      personProfile: 'all',
+      personProfile: [],
       projectStatus: '',
       dateRange: {
         from: defaultDateRange.from,
@@ -94,6 +79,7 @@ export default function AssignmentsPage() {
       overallocatedOnly: false,
       personType: 'all',
       search: '',
+      projectId: [],
     })
   }
 
@@ -112,7 +98,7 @@ export default function AssignmentsPage() {
     scrollToTodayRef.current = fn
   }
 
-  const hasActiveFilters = filters.personProfile || filters.projectStatus || filters.overallocatedOnly
+  const hasActiveFilters = filters.personProfile.length > 0 || filters.projectStatus || filters.overallocatedOnly
 
   // Filtrado por búsqueda
   const searchLower = filters.search?.toLowerCase() || ''
@@ -137,8 +123,8 @@ export default function AssignmentsPage() {
         )
       })
     }
-    if (filters.personProfile && filters.personProfile !== 'all') {
-      result = result.filter(person => person.profile === filters.personProfile)
+    if (filters.personProfile.length > 0) {
+      result = result.filter(person => filters.personProfile.includes(person.profile || ''))
     }
     if (filters.personType && filters.personType !== 'all') {
       result = result.filter(person => person.type === filters.personType)
@@ -170,6 +156,12 @@ export default function AssignmentsPage() {
         })
       }
     }
+    if (filters.projectId && filters.projectId.length > 0) {
+      result = result.filter(person => {
+        // La persona debe tener al menos una asignación en uno de los proyectos seleccionados
+        return assignments.some(a => a.person_id === person.id && filters.projectId!.includes(a.project_id))
+      })
+    }
     return result
   }, [people, filters, viewMode, assignments, searchLower])
 
@@ -197,7 +189,9 @@ export default function AssignmentsPage() {
     result = result.filter(assignment => {
       const person = people.find(p => p.id === assignment.person_id)
       // Filtro por perfil
-      if (filters.personProfile && filters.personProfile !== 'all' && person?.profile !== filters.personProfile) return false
+      if (filters.personProfile.length > 0 && !filters.personProfile.includes(person?.profile || '')) return false
+      // Filtro por proyecto
+      if (filters.projectId && filters.projectId.length > 0 && !filters.projectId.includes(assignment.project_id)) return false
       // Filtro por tipo
       if (filters.personType && filters.personType !== 'all' && person?.type !== filters.personType) return false
       // Filtro por fechas
@@ -306,11 +300,13 @@ export default function AssignmentsPage() {
             <FiltersPopover
               people={people}
               projects={projects}
+              profiles={profiles}
               filters={filters}
-              onFiltersChange={setFilters}
+              onFiltersChange={setFilters as (filters: TimelineFilters) => void}
               onClearFilters={clearFilters}
               showDateRange={viewMode === 'list'}
               mode={viewMode}
+              dateRangeDefault={defaultDateRange}
             />
             <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {
               if (value) setViewMode(value as 'timeline' | 'list')

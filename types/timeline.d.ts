@@ -1,9 +1,12 @@
 export interface TimelineFilters {
-  personProfile: string
+  personProfile: string[]
   projectStatus: string
   dateRange: { from: Date; to: Date | undefined }
   overallocatedOnly: boolean
   personType: string
   search: string
-  projectId?: string
+  projectId?: string[]
+  status?: string[]
+  clientId?: string
+  contractType?: string[]
 } 
