@@ -22,6 +22,7 @@ import type { ProjectWithClient } from '@/types/project'
 import { es } from "date-fns/locale"
 import type { TimelineFilters } from "@/types/timeline"
 import { PROJECT_STATUS_OPTIONS, PROJECT_STATUS } from '@/constants/projects'
+import { Badge } from './ui/badge'
 
 interface FiltersPopoverProps {
   people?: Person[]
@@ -81,19 +82,50 @@ export function FiltersPopover({
     to: (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d; })(),
   }
 
-  const hasActiveFilters =
-    (Array.isArray(filters.personProfile) ? filters.personProfile.length > 0 : !!filters.personProfile) ||
-    filters.personType !== defaultType ||
-    filters.overallocatedOnly !== defaultOverallocated ||
-    (mode === 'list' && (
-      filters.dateRange.from.getTime() !== defaultDateRange.from.getTime() ||
-      (filters.dateRange.to ? filters.dateRange.to.getTime() : 0) !== defaultDateRange.to.getTime()
-    ))
+  // Calcular cantidad de filtros activos SOLO de los visibles
+  const activeFiltersCount = filtersToShow.reduce((count, filterKey) => {
+    switch (filterKey) {
+      case 'profile':
+        return count + ((Array.isArray(filters.personProfile) && filters.personProfile.length > 0) ? 1 : 0)
+      case 'type':
+        return count + (filters.personType !== defaultType ? 1 : 0)
+      case 'overallocated':
+        return count + (filters.overallocatedOnly !== defaultOverallocated ? 1 : 0)
+      case 'project':
+        return count + (filters.projectId && filters.projectId.length > 0 ? 1 : 0)
+      case 'status':
+        return count + (filters.status && filters.status.length > 0 ? 1 : 0)
+      case 'client':
+        return count + (filters.clientId ? 1 : 0)
+      case 'dateRange':
+        return count + (mode === 'list' && (
+          filters.dateRange.from.getTime() !== defaultDateRange.from.getTime() ||
+          (filters.dateRange.to ? filters.dateRange.to.getTime() : 0) !== defaultDateRange.to.getTime()
+        ) ? 1 : 0)
+      default:
+        return count
+    }
+  }, 0)
+
+  // Calcular si hay filtros activos SOLO de los visibles
+  const hasActiveFilters = activeFiltersCount > 0
 
   const defaultTrigger = (
-    <Button variant="outline" size="sm" className="h-8" data-test="filters-button">
-      <Filter className="h-4 w-4 mr-2" />
+    <Button
+      className={`h-8 relative transition-colors duration-150 ${hasActiveFilters ? 'bg-primary text-white border-primary' : ''}`}
+      variant={hasActiveFilters ? 'default' : 'outline'}
+      size="sm"
+      data-test="filters-button"
+    >
+      <Filter className={`h-4 w-4 mr-2 ${hasActiveFilters ? 'text-white' : 'text-primary'}`} />
       Filtros
+      {activeFiltersCount > 0 && (
+        <span className="absolute -top-1 -right-1">
+          <Badge className="px-1.5 py-0.5 text-xs bg-primary text-white rounded-full shadow" variant="default">
+            {activeFiltersCount}
+          </Badge>
+        </span>
+      )}
     </Button>
   )
 

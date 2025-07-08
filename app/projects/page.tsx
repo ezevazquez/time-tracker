@@ -39,7 +39,6 @@ interface ProjectWithFTE extends Project {
 
 export default function ProjectsPage() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string[]>(PROJECT_STATUS_OPTIONS.filter(opt => opt.value !== PROJECT_STATUS.FINISHED).map(opt => opt.value))
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false)
   const { projects, loading, error, deleteProject } = useProjects()
   const router = useRouter()
@@ -48,6 +47,10 @@ export default function ProjectsPage() {
   const [sortField, setSortField] = useState<'nombre' | 'cliente' | 'estado' | 'fechas' | null>(null)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list')
+
+  // Valor por defecto para los estados (todos menos 'Finished')
+  const defaultStatusFilter = PROJECT_STATUS_OPTIONS.filter(opt => opt.value !== PROJECT_STATUS.FINISHED).map(opt => opt.value)
+  const [statusFilter, setStatusFilter] = useState<string[]>(defaultStatusFilter)
 
   // Estado de filtros para FiltersPopover
   const [filters, setFilters] = useState<TimelineFilters>({
@@ -58,7 +61,7 @@ export default function ProjectsPage() {
     personType: 'all',
     search: '',
     projectId: [],
-    status: statusFilter,
+    status: defaultStatusFilter,
     clientId: undefined,
   })
 
@@ -232,7 +235,7 @@ export default function ProjectsPage() {
             onClearFilters={() => {
               setFilters({
                 ...filters,
-                status: 'all',
+                status: [],
               })
               setStatusFilter([])
             }}
