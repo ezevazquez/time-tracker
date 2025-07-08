@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { useState } from 'react'
 import { AssignmentModal } from '@/components/assignment-modal'
+import { useAssignments } from '@/hooks/use-assignments'
 
 export function DashboardHeader() {
   const currentDate = new Date().toLocaleDateString('es-ES', {
@@ -17,6 +18,7 @@ export function DashboardHeader() {
   const formattedDate = currentDate.charAt(0).toUpperCase() + currentDate.slice(1).toLowerCase()
 
   const [createModalOpen, setCreateModalOpen] = useState(false)
+  const { createAssignment } = useAssignments()
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -43,7 +45,7 @@ export function DashboardHeader() {
           open={createModalOpen}
           mode="new"
           onSave={async data => {
-            // Aquí deberías llamar a tu función de creación de asignación
+            await createAssignment(data)
             setCreateModalOpen(false)
           }}
           onCancel={() => setCreateModalOpen(false)}
