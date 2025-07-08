@@ -45,6 +45,14 @@ interface FiltersPopoverProps {
    * - 'client': filtro de cliente
    */
   filtersToShow?: string[]
+  dateRangeDefault?: { from: Date; to: Date | undefined }
+}
+
+// Helper para comparar solo año, mes y día
+function isSameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
 }
 
 export function FiltersPopover({
@@ -58,6 +66,7 @@ export function FiltersPopover({
   trigger,
   mode,
   filtersToShow = ['profile', 'project', 'type', 'overallocated', 'dateRange'], // default para asignaciones
+  dateRangeDefault,
 }: FiltersPopoverProps) {
   const [open, setOpen] = useState(false)
   const [isSelectingStart, setIsSelectingStart] = useState(true)
@@ -82,6 +91,9 @@ export function FiltersPopover({
     to: (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d; })(),
   }
 
+  // Usar el default pasado por prop o el hardcodeado
+  const effectiveDateRangeDefault = dateRangeDefault || defaultDateRange
+
   // Calcular cantidad de filtros activos SOLO de los visibles
   const activeFiltersCount = filtersToShow.reduce((count, filterKey) => {
     switch (filterKey) {
@@ -99,8 +111,8 @@ export function FiltersPopover({
         return count + (filters.clientId ? 1 : 0)
       case 'dateRange':
         return count + (mode === 'list' && (
-          filters.dateRange.from.getTime() !== defaultDateRange.from.getTime() ||
-          (filters.dateRange.to ? filters.dateRange.to.getTime() : 0) !== defaultDateRange.to.getTime()
+          !isSameDay(filters.dateRange.from, effectiveDateRangeDefault.from) ||
+          !isSameDay(filters.dateRange.to ?? new Date(0), effectiveDateRangeDefault.to ?? new Date(0))
         ) ? 1 : 0)
       default:
         return count
@@ -304,7 +316,7 @@ export function FiltersPopover({
             {/* Filtro de rango de fechas */}
             {filtersToShow.includes('dateRange') && mode === 'list' && showDateRange && (
               <div className="space-y-2">
-                <Label>Rango de fechas</Label>
+                <Label>Fechas</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button

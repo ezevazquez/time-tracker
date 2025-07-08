@@ -276,8 +276,6 @@ export default function ProjectsPage() {
             <div className="container mx-auto px-4 py-4">
               <Card>
                 <CardHeader>
-                  <CardTitle data-test="projects-title">Lista de Proyectos</CardTitle>
-                  <CardDescription>Proyectos registrados en el sistema</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <TableResource

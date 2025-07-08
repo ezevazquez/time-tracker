@@ -32,18 +32,15 @@ export default function AssignmentsPage() {
   const scrollToTodayRef = useRef<(() => void) | null>(null)
   const [createModalOpen, setCreateModalOpen] = useState(false)
 
-  const defaultDateRange = {
-    from: (() => {
-      const d = new Date()
-      d.setDate(d.getDate() - 7)
-      return d
-    })(),
-    to: (() => {
-      const d = new Date()
-      d.setDate(d.getDate() + 30)
-      return d
-    })(),
+  // Calcular el defaultDateRange cada vez que se renderiza el componente, para que siempre sea relativo a hoy
+  const getDefaultDateRange = () => {
+    const from = new Date()
+    from.setDate(from.getDate() - 7)
+    const to = new Date()
+    to.setDate(to.getDate() + 30)
+    return { from, to }
   }
+  const defaultDateRange = getDefaultDateRange()
 
   const [filters, setFilters] = useState<TimelineFilters>({
     personProfile: [],
@@ -315,6 +312,7 @@ export default function AssignmentsPage() {
               onClearFilters={clearFilters}
               showDateRange={viewMode === 'list'}
               mode={viewMode}
+              dateRangeDefault={defaultDateRange}
             />
             <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {
               if (value) setViewMode(value as 'timeline' | 'list')
