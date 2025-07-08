@@ -50,13 +50,24 @@ export default function ProjectsPage() {
 
   // Valor por defecto para los estados (todos menos 'Finished')
   const defaultStatusFilter = PROJECT_STATUS_OPTIONS.filter(opt => opt.value !== PROJECT_STATUS.FINISHED).map(opt => opt.value)
+
+  // Valor por defecto para el filtro de fechas (1 semana atrás y 1 mes adelante)
+  const getDefaultDateRange = () => {
+    const from = new Date()
+    from.setDate(from.getDate() - 7)
+    const to = new Date()
+    to.setDate(to.getDate() + 30)
+    return { from, to }
+  }
+  const defaultDateRange = getDefaultDateRange()
+
   const [statusFilter, setStatusFilter] = useState<string[]>(defaultStatusFilter)
 
   // Estado de filtros para FiltersPopover
   const [filters, setFilters] = useState<TimelineFilters>({
     personProfile: [],
     projectStatus: '',
-    dateRange: { from: new Date(), to: undefined },
+    dateRange: { from: defaultDateRange.from, to: defaultDateRange.to },
     overallocatedOnly: false,
     personType: 'all',
     search: '',
@@ -236,11 +247,13 @@ export default function ProjectsPage() {
               setFilters({
                 ...filters,
                 status: [],
+                dateRange: { from: defaultDateRange.from, to: defaultDateRange.to },
               })
               setStatusFilter([])
             }}
             mode="list"
-            filtersToShow={['status']}
+            filtersToShow={['status', 'dateRange']}
+            dateRangeDefault={defaultDateRange}
           />
         }
         toggleComponent={
