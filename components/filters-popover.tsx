@@ -112,16 +112,16 @@ export function FiltersPopover({
 
   const defaultTrigger = (
     <Button
-      className={`h-8 relative transition-colors duration-150 ${hasActiveFilters ? 'bg-primary text-white border-primary' : ''}`}
+      className={`h-8 relative transition-colors duration-150 flex items-center gap-1 ${hasActiveFilters ? 'bg-primary text-white border-primary' : ''}`}
       variant={hasActiveFilters ? 'default' : 'outline'}
       size="sm"
       data-test="filters-button"
     >
-      <Filter className={`h-4 w-4 mr-2 ${hasActiveFilters ? 'text-white' : 'text-primary'}`} />
+      <Filter className={`h-4 w-4 mr-1 ${hasActiveFilters ? 'text-white' : 'text-primary'}`} />
       Filtros
       {activeFiltersCount > 0 && (
-        <span className="absolute -top-1 -right-1">
-          <Badge className="px-1.5 py-0.5 text-xs bg-primary text-white rounded-full shadow" variant="default">
+        <span className="absolute -top-1.5 -right-1.5">
+          <Badge className="w-5 h-5 p-0 text-xs bg-red-500 text-white rounded-full shadow flex items-center justify-center pointer-events-none" variant="default">
             {activeFiltersCount}
           </Badge>
         </span>
