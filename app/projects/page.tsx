@@ -57,8 +57,8 @@ export default function ProjectsPage() {
     overallocatedOnly: false,
     personType: 'all',
     search: '',
-    projectId: undefined,
-    status: statusFilter.length === 0 ? 'all' : statusFilter[0],
+    projectId: [],
+    status: statusFilter,
     clientId: undefined,
   })
 
@@ -203,10 +203,12 @@ export default function ProjectsPage() {
   ]
 
   // Sincronizar statusFilter con filters.status
-  const handleFiltersChange = (newFilters: typeof filters) => {
+  const handleFiltersChange = (newFilters: TimelineFilters) => {
     setFilters(newFilters)
-    if (newFilters.status && newFilters.status !== 'all') {
-      setStatusFilter([newFilters.status])
+    if (Array.isArray(newFilters.status)) {
+      setStatusFilter(newFilters.status)
+    } else if (typeof newFilters.status === 'string') {
+      setStatusFilter(newFilters.status ? [newFilters.status] : [])
     } else {
       setStatusFilter([])
     }
