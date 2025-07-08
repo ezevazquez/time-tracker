@@ -23,6 +23,7 @@ import { parseDateFromString } from '@/lib/assignments'
 import { fteToPercentage, isOverallocated } from '@/lib/utils/fte-calculations'
 import { AssignmentModal } from '@/components/assignment-modal'
 import type { TimelineFilters } from '@/types/timeline'
+import { getDefaultDateRange } from '@/utils/calculateDefaultDateRange'
 
 export default function AssignmentsPage() {
   const router = useRouter()
@@ -33,13 +34,6 @@ export default function AssignmentsPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false)
 
   // Calcular el defaultDateRange cada vez que se renderiza el componente, para que siempre sea relativo a hoy
-  const getDefaultDateRange = () => {
-    const from = new Date()
-    from.setDate(from.getDate() - 7)
-    const to = new Date()
-    to.setDate(to.getDate() + 30)
-    return { from, to }
-  }
   const defaultDateRange = getDefaultDateRange()
 
   const [filters, setFilters] = useState<TimelineFilters>({

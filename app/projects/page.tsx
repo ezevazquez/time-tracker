@@ -28,6 +28,7 @@ import { ProjectTimeline } from '@/components/project-timeline'
 import { useProjects } from '@/hooks/use-projects'
 import { projectColumns } from '@/constants/resource-columns/projectColumns'
 import { PROJECT_STATUS_OPTIONS, PROJECT_STATUS, PROJECT_CONTRACT_TYPE_OPTIONS } from '@/constants/projects'
+import { getDefaultDateRange } from '@/utils/calculateDefaultDateRange'
 
 import type { Project } from '@/types/project'
 import type { ResourceAction } from '@/types/ResourceAction'
@@ -53,13 +54,6 @@ export default function ProjectsPage() {
   const defaultStatusFilter = PROJECT_STATUS_OPTIONS.filter(opt => opt.value !== PROJECT_STATUS.FINISHED).map(opt => opt.value)
 
   // Valor por defecto para el filtro de fechas (1 semana atrás y 1 mes adelante)
-  const getDefaultDateRange = () => {
-    const from = new Date()
-    from.setDate(from.getDate() - 7)
-    const to = new Date()
-    to.setDate(to.getDate() + 30)
-    return { from, to }
-  }
   const defaultDateRange = getDefaultDateRange()
 
   const [statusFilter, setStatusFilter] = useState<string[]>(defaultStatusFilter)
