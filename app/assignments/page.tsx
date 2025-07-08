@@ -372,7 +372,7 @@ export default function AssignmentsPage() {
         open={createModalOpen}
         mode="new"
         onSave={async (data) => {
-          // Aquí deberías llamar a tu función de creación de asignación
+          await createAssignment(data)
           setCreateModalOpen(false)
         }}
         onCancel={() => setCreateModalOpen(false)}
