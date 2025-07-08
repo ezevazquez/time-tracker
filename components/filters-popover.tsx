@@ -23,33 +23,47 @@ import { es } from "date-fns/locale"
 import type { TimelineFilters } from "@/types/timeline"
 
 interface FiltersPopoverProps {
-  people: Person[]
-  projects: ProjectWithClient[]
+  people?: Person[]
+  projects?: ProjectWithClient[]
+  profiles?: { id: string; name: string }[]
   filters: TimelineFilters
   onFiltersChange: (filters: TimelineFilters) => void
   onClearFilters: () => void
   showDateRange?: boolean
   trigger?: React.ReactNode
   mode: 'timeline' | 'list'
+  /**
+   * Qué filtros mostrar. Valores posibles:
+   * - 'profile': filtro de perfil de persona
+   * - 'project': filtro de proyecto
+   * - 'type': filtro de tipo de persona
+   * - 'overallocated': filtro de sobreasignados
+   * - 'dateRange': filtro de rango de fechas
+   * - 'status': filtro de estado de proyecto
+   * - 'client': filtro de cliente
+   */
+  filtersToShow?: string[]
 }
 
 export function FiltersPopover({
-  people,
-  projects,
+  people = [],
+  projects = [],
+  profiles = [],
   filters,
   onFiltersChange,
   onClearFilters,
   showDateRange = true,
   trigger,
   mode,
+  filtersToShow = ['profile', 'project', 'type', 'overallocated', 'dateRange'], // default para asignaciones
 }: FiltersPopoverProps) {
   const [open, setOpen] = useState(false)
   const [isSelectingStart, setIsSelectingStart] = useState(true)
 
-  // Get unique profiles from people
-  const uniqueProfiles = Array.from(new Set(people.map(p => p.profile)))
-    .filter(Boolean)
-    .sort()
+  // Get unique profiles from people or from profiles prop
+  const uniqueProfiles = profiles.length > 0
+    ? profiles.map(p => p.name)
+    : Array.from(new Set(people.map(p => p.profile))).filter(Boolean).sort()
 
   // Get unique types from people
   const uniqueTypes = Array.from(new Set(people.map(p => p.type)))
@@ -117,25 +131,28 @@ export function FiltersPopover({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Person Profile Filter */}
-            <div className="space-y-2">
-              <Label>Perfil</Label>
-              <Select
-                value={filters.personProfile}
-                onValueChange={(value) => onFiltersChange({ ...filters, personProfile: value })}
-              >
-                <SelectTrigger className="w-full mt-1" data-test="profile-select">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los perfiles</SelectItem>
-                  {uniqueProfiles.map(profile => (
-                    <SelectItem key={profile} value={profile}>{profile}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {projects.length > 0 && (
+            {/* Filtro de perfil */}
+            {filtersToShow.includes('profile') && people.length > 0 && (
+              <div className="space-y-2">
+                <Label>Perfil</Label>
+                <Select
+                  value={filters.personProfile}
+                  onValueChange={(value) => onFiltersChange({ ...filters, personProfile: value })}
+                >
+                  <SelectTrigger className="w-full mt-1" data-test="profile-select">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los perfiles</SelectItem>
+                    {uniqueProfiles.map(profile => (
+                      <SelectItem key={profile} value={profile}>{profile}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {/* Filtro de proyecto */}
+            {filtersToShow.includes('project') && projects.length > 0 && (
               <div className="space-y-2">
                 <Label>Proyecto</Label>
                 <Select
@@ -158,28 +175,39 @@ export function FiltersPopover({
                 </Select>
               </div>
             )}
-
-            {/* Person Type Filter */}
-            <div className="space-y-2">
-              <Label>Tipo</Label>
-              <Select
-                value={filters.personType}
-                onValueChange={(value) => onFiltersChange({ ...filters, personType: value })}
-              >
-                <SelectTrigger className="w-full mt-1" data-test="person-type-select">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {uniqueTypes.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Date Range Filter - Only in list mode */}
-            {mode === 'list' && showDateRange && (
+            {/* Filtro de tipo de persona */}
+            {filtersToShow.includes('type') && people.length > 0 && (
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select
+                  value={filters.personType}
+                  onValueChange={(value) => onFiltersChange({ ...filters, personType: value })}
+                >
+                  <SelectTrigger className="w-full mt-1" data-test="person-type-select">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {uniqueTypes.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {/* Filtro de sobreasignados */}
+            {filtersToShow.includes('overallocated') && (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={filters.overallocatedOnly}
+                  onCheckedChange={checked => onFiltersChange({ ...filters, overallocatedOnly: !!checked })}
+                  id="overallocated-checkbox"
+                />
+                <Label htmlFor="overallocated-checkbox">Solo sobreasignados</Label>
+              </div>
+            )}
+            {/* Filtro de rango de fechas */}
+            {filtersToShow.includes('dateRange') && mode === 'list' && showDateRange && (
               <div className="space-y-2">
                 <Label>Rango de fechas</Label>
                 <Popover>
@@ -198,42 +226,67 @@ export function FiltersPopover({
                         : "Elegir rango"}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent align="end" className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0">
                     <Calendar
-                      initialFocus
                       mode="range"
                       selected={{ from: filters.dateRange.from, to: filters.dateRange.to }}
-                      onDayClick={(date) => {
-                        if (isSelectingStart) {
-                          onFiltersChange({ ...filters, dateRange: { from: date, to: undefined } })
-                          setIsSelectingStart(false)
-                        } else {
-                          let from = filters.dateRange.from;
-                          let to = date;
-                          if (from && to && to < from) {
-                            // Si el usuario selecciona una fecha anterior, intercambiar
-                            [from, to] = [to, from];
-                          }
-                          onFiltersChange({ ...filters, dateRange: { from: from!, to: to } })
-                          setIsSelectingStart(true)
+                      onSelect={range => {
+                        if (range && range.from) {
+                          onFiltersChange({ ...filters, dateRange: { from: range.from, to: range.to } })
                         }
                       }}
-                      numberOfMonths={2}
+                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
               </div>
             )}
-
-            {/* Overallocated Filter */}
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Solo sobreasignados</Label>
-              <Checkbox
-                checked={filters.overallocatedOnly}
-                onCheckedChange={(checked) => onFiltersChange({ ...filters, overallocatedOnly: checked as boolean })}
-                data-test="overallocated-checkbox"
-              />
-            </div>
+            {/* Filtro de estado de proyecto */}
+            {filtersToShow.includes('status') && (
+              <div className="space-y-2">
+                <Label>Estado</Label>
+                <Select
+                  value={filters.status || 'all'}
+                  onValueChange={value => onFiltersChange({ ...filters, status: value })}
+                >
+                  <SelectTrigger className="w-full mt-1" data-test="status-select">
+                    <SelectValue placeholder="Todos los estados" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los estados</SelectItem>
+                    {/* Aquí deberías mapear los estados posibles de proyecto */}
+                    {/* Ejemplo: */}
+                    {/* PROJECT_STATUS_OPTIONS.map(opt => <SelectItem value={opt.value}>{opt.label}</SelectItem>) */}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {/* Filtro de cliente */}
+            {filtersToShow.includes('client') && projects.length > 0 && (
+              <div className="space-y-2">
+                <Label>Cliente</Label>
+                <Select
+                  value={filters.clientId || 'all'}
+                  onValueChange={value => onFiltersChange({ ...filters, clientId: value })}
+                >
+                  <SelectTrigger className="w-full mt-1" data-test="client-select">
+                    <SelectValue placeholder="Todos los clientes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los clientes</SelectItem>
+                    {projects
+                      .filter(project => project.clients && typeof project.clients.id === 'string')
+                      .map(project => (
+                        project.clients ? (
+                          <SelectItem key={project.clients.id} value={project.clients.id}>
+                            {project.clients.name}
+                          </SelectItem>
+                        ) : null
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </CardContent>
         </Card>
       </PopoverContent>

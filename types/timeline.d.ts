@@ -6,4 +6,6 @@ export interface TimelineFilters {
   personType: string
   search: string
   projectId?: string
+  status?: string
+  clientId?: string
 } 

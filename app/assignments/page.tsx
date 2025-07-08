@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input'
 import { usePeople } from '@/hooks/use-people'
 import { useProjects } from '@/hooks/use-projects'
 import { useAssignments } from '@/hooks/use-assignments'
+import { useProfiles } from '@/hooks/use-profiles'
 
 import { supabase } from '@/lib/supabase/client'
 import { parseDateFromString } from '@/lib/assignments'
@@ -65,8 +66,9 @@ export default function AssignmentsPage() {
   const { people, loading: loadingPeople } = usePeople()
   const { projects, loading: loadingProjects } = useProjects()
   const { assignments, loading: loadingAssignments, deleteAssignment, createAssignment, updateAssignment } = useAssignments()
+  const { profiles, loading: loadingProfiles } = useProfiles()
 
-  const loading = loadingPeople || loadingProjects || loadingAssignments
+  const loading = loadingPeople || loadingProjects || loadingAssignments || loadingProfiles
 
   useEffect(() => {
     setMounted(true)
@@ -306,6 +308,7 @@ export default function AssignmentsPage() {
             <FiltersPopover
               people={people}
               projects={projects}
+              profiles={profiles}
               filters={filters}
               onFiltersChange={setFilters}
               onClearFilters={clearFilters}

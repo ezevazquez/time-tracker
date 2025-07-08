@@ -22,6 +22,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { ResourceHeader } from '@/components/resource-header'
 import { ResourceSubheader } from '@/components/resource-subheader'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { FiltersPopover } from '@/components/filters-popover'
 
 import { useProjects } from '@/hooks/use-projects'
 import { projectColumns } from '@/constants/resource-columns/projectColumns'
@@ -30,6 +31,7 @@ import { PROJECT_STATUS_OPTIONS, PROJECT_STATUS } from '@/constants/projects'
 import type { Project } from '@/types/project'
 import type { ResourceAction } from '@/types/ResourceAction'
 import type { ResourceColumn } from '@/types/ResourceColumn'
+import type { TimelineFilters } from '@/types/timeline'
 
 interface ProjectWithFTE extends Project {
   assignedFTE?: number
@@ -46,6 +48,19 @@ export default function ProjectsPage() {
   const [sortField, setSortField] = useState<'nombre' | 'cliente' | 'estado' | 'fechas' | null>(null)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list')
+
+  // Estado de filtros para FiltersPopover
+  const [filters, setFilters] = useState<TimelineFilters>({
+    personProfile: 'all',
+    projectStatus: '',
+    dateRange: { from: new Date(), to: undefined },
+    overallocatedOnly: false,
+    personType: 'all',
+    search: '',
+    projectId: undefined,
+    status: statusFilter.length === 0 ? 'all' : statusFilter[0],
+    clientId: undefined,
+  })
 
   const sortableKeys = ['nombre', 'cliente', 'estado', 'fechas'] as const;
 
@@ -187,6 +202,16 @@ export default function ProjectsPage() {
     },
   ]
 
+  // Sincronizar statusFilter con filters.status
+  const handleFiltersChange = (newFilters: typeof filters) => {
+    setFilters(newFilters)
+    if (newFilters.status && newFilters.status !== 'all') {
+      setStatusFilter([newFilters.status])
+    } else {
+      setStatusFilter([])
+    }
+  }
+
   return (
     <main className="flex-1 w-full h-[92vh] flex flex-col">
       <ResourceHeader
@@ -199,56 +224,19 @@ export default function ProjectsPage() {
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
         filtersComponent={
-          <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="min-w-[220px] justify-between"
-                data-test="status-filter-popover-trigger"
-              >
-                <span className="truncate">
-                  {statusFilter.length === 0
-                    ? 'Todos los estados'
-                    : statusFilter.map(val => PROJECT_STATUS_OPTIONS.find(opt => opt.value === val)?.label || val).join(', ')
-                  }
-                </span>
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64 p-2">
-              <div className="flex items-center justify-between px-2 pb-2">
-                <span className="font-semibold text-sm">Filtros</span>
-                {statusFilter.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setStatusFilter([])}
-                    className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 px-2 py-1 rounded transition-colors"
-                    data-test="clear-status-filter"
-                  >
-                    <X className="h-3 w-3" /> Limpiar
-                  </button>
-                )}
-              </div>
-              <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
-                {PROJECT_STATUS_OPTIONS.map(option => (
-                  <label key={option.value} className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-accent">
-                    <Checkbox
-                      checked={statusFilter.includes(option.value)}
-                      onCheckedChange={checked => {
-                        setStatusFilter(prev =>
-                          checked
-                            ? [...prev, option.value]
-                            : prev.filter(val => val !== option.value)
-                        )
-                      }}
-                      id={`status-checkbox-${option.value}`}
-                    />
-                    <span className="text-sm">{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+          <FiltersPopover
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onClearFilters={() => {
+              setFilters({
+                ...filters,
+                status: 'all',
+              })
+              setStatusFilter([])
+            }}
+            mode="list"
+            filtersToShow={['status']}
+          />
         }
         toggleComponent={
           <ToggleGroup type="single" value={viewMode} onValueChange={value => {
