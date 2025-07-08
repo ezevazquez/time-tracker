@@ -1,6 +1,6 @@
 "use client"
 
-import { format } from "date-fns"
+import { format, differenceInDays } from "date-fns"
 import Link from "next/link"
 import type { Assignment } from "@/types/assignment"
 import type { Project } from "@/types/project"
@@ -117,6 +117,10 @@ export function AssignmentBar({
 
   // Obtener DAY_WIDTH desde props o definirlo aquí si no está disponible
   const DAY_WIDTH = 40 // Debe coincidir con el valor en ResourceTimeline
+
+  // Calculate assignment duration in days
+  const assignmentDuration = differenceInDays(dimensions.endDate, dimensions.startDate) + 1
+  const isShortAssignment = assignmentDuration <= 3
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: assignment.id,
@@ -282,9 +286,12 @@ export function AssignmentBar({
             {/* Project name and percentage together */}
             <div className="flex items-center space-x-2 min-w-0">
               <span className="truncate">{project.name}</span>
-              <span className="text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0" style={{ background: 'rgba(0,0,0,0.18)', color: getContrastYIQ(bgColor) }}>
-                {fteToPercentage(assignment.allocation)}%
-              </span>
+              {/* Only show percentage for assignments longer than 3 days */}
+              {!isShortAssignment && (
+                <span className="text-xs px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0" style={{ background: 'rgba(0,0,0,0.18)', color: getContrastYIQ(bgColor) }}>
+                  {fteToPercentage(assignment.allocation)}%
+                </span>
+              )}
             </div>
           </div>
         </div>
