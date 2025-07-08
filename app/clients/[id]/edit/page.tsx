@@ -40,7 +40,7 @@ const formSchema = z.object({
   name: z.string()
     .min(2, { message: 'El nombre debe tener al menos 2 caracteres' })
     .max(30, { message: 'El nombre no puede superar los 30 caracteres' }),
-  description: z.string().optional(),
+  description: z.string().max(500, { message: 'La descripción no puede superar los 500 caracteres' }).optional(),
 })
 
 export default function EditClientPage({ params }: { params: Promise<{ id: string }> }) {
@@ -173,7 +173,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                   <FormItem>
                     <FormLabel>Nombre del Cliente</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nombre del cliente" {...field} data-test="client-name-field" maxLength={30}/>
+                      <Input placeholder="Nombre del cliente" {...field} data-test="client-name-field"/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

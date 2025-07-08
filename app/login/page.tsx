@@ -9,14 +9,25 @@ export default function Page() {
   const router = useRouter()
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession()
-      if (data.session) {
-        router.push('/')
-      }
+  const checkSession = async () => {
+    const { data } = await supabase.auth.getSession()
+    const accessToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('sb-access-token='))
+
+    if (!accessToken && data.session) {
+      await supabase.auth.signOut() 
+      return
     }
-    checkSession()
-  }, [router])
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      router.push('/')
+    }
+  }
+
+  checkSession()
+}, [router])
 
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">

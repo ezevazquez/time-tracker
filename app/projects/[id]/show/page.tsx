@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useToast } from '@/hooks/use-toast'
-import { supabase } from '@/lib/supabase/client'
 
 import { ArrowLeft, Calendar, User, Building2, Clock, Edit, Trash2, Plus } from 'lucide-react'
 
@@ -335,7 +334,7 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
             onCreate={createAssignment}
             onUpdate={updateAssignment}
             onDelete={deleteAssignment}
-            showAddButton={false}
+            showAddButton={true}
           />
         </div>
 

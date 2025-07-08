@@ -12,37 +12,38 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useClients } from '@/hooks/use-clients'
 import { useToast } from '@/hooks/use-toast'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 
 export default function NewClientPage() {
   const router = useRouter()
   const { createClient } = useClients()
   const { toast } = useToast()
-
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-  })
-
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [warnings, setWarnings] = useState<string[]>([])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const formSchema = z.object({
+    name: z.string()
+      .min(1, "El nombre del cliente es obligatorio")
+      .max(30, "El nombre no puede superar los 30 caracteres"),
+    description: z.string().max(500, "Máximo 500 caracteres").optional(),
+  })
 
-    if (!formData.name.trim()) {
-      setWarnings(['El nombre del cliente es obligatorio'])
-      return
-    }
-    if (formData.name.trim().length > 30) {
-      setWarnings(['El nombre del cliente no puede superar los 30 caracteres'])
-      return
-    }
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+    },
+  })
 
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
       setIsSubmitting(true)
       await createClient({
-        name: formData.name.trim(),
-        description: formData.description.trim() || null,
+        name: data.name.trim(),
+        description: data.description ? data.description.trim() : null,
       })
 
       toast({
@@ -62,22 +63,8 @@ export default function NewClientPage() {
     }
   }
 
-  const checkForWarnings = () => {
-    const newWarnings: string[] = []
-
-    if (!formData.name.trim()) {
-      newWarnings.push('El nombre del cliente es obligatorio')
-    }
-    if (formData.name.trim().length > 30) {
-      newWarnings.push('El nombre del cliente no puede superar los 30 caracteres')
-    }
-
-    setWarnings(newWarnings)
-  }
-
-  React.useEffect(() => {
-    checkForWarnings()
-  }, [formData])
+  const name = form.watch('name');
+  const description = form.watch('description');
 
   return (
     <main className="flex-1 container mx-auto px-4 py-6">
@@ -113,29 +100,37 @@ export default function NewClientPage() {
             <CardDescription>Completa la información del nuevo cliente</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre del Cliente *</Label>
                 <Input
                   id="name"
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  {...form.register('name')}
                   placeholder="Ej: Empresa XYZ"
                   data-test="client-name-field"
-                  maxLength={30}
+
                 />
+                {form.formState.errors.name && (
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.name.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="description">Descripción</Label>
                 <Textarea
                   id="description"
-                  value={formData.description}
-                  onChange={e => setFormData({ ...formData, description: e.target.value })}
+                  {...form.register('description')}
                   placeholder="Información adicional sobre el cliente..."
                   rows={4}
                   data-test="client-description-field"
                 />
+                {form.formState.errors.description && (
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.description.message}
+                  </p>
+                )}
               </div>
 
               <div className="flex justify-end space-x-2">
@@ -153,17 +148,17 @@ export default function NewClientPage() {
           </CardContent>
         </Card>
 
-        {formData.name && (
+        {name && (
           <Card className="mt-6 bg-muted/50">
             <CardContent className="pt-6">
               <h3 className="font-medium mb-2">Resumen del Cliente</h3>
               <div className="space-y-1 text-sm">
                 <div>
-                  <strong>Nombre:</strong> {formData.name}
+                  <strong>Nombre:</strong> {name}
                 </div>
-                {formData.description && (
+                {description && (
                   <div>
-                    <strong>Descripción:</strong> {formData.description}
+                    <strong>Descripción:</strong> {description}
                   </div>
                 )}
               </div>
