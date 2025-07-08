@@ -187,24 +187,54 @@ export function FiltersPopover({
             {filtersToShow.includes('project') && projects.length > 0 && (
               <div className="space-y-2">
                 <Label>Proyecto</Label>
-                <Select
-                  value={filters.projectId || 'all'}
-                  onValueChange={value => onFiltersChange({ ...filters, projectId: value })}
-                >
-                  <SelectTrigger className="w-full mt-1" data-test="project-select">
-                    <SelectValue placeholder="Todos los proyectos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos los proyectos</SelectItem>
-                    {projects
-                      .filter(project => typeof project.id === 'string' && project.id.trim() !== '')
-                      .map(project => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.name}{project.clients ? ` - ${project.clients.name}` : ''}
-                        </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between" data-test="project-multiselect-trigger">
+                      <span className="truncate">
+                        {filters.projectId && filters.projectId.length === 0
+                          ? 'Todos los proyectos'
+                          : projects.filter(p => filters.projectId?.includes(p.id)).map(p => p.name).join(', ')
+                        }
+                      </span>
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-2">
+                    <div className="flex items-center justify-between px-2 pb-2">
+                      <span className="font-semibold text-sm">Proyectos</span>
+                      {filters.projectId && filters.projectId.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => onFiltersChange({ ...filters, projectId: [] })}
+                          className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 px-2 py-1 rounded transition-colors"
+                          data-test="clear-project-filter"
+                        >
+                          <X className="h-3 w-3" /> Limpiar
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+                      {projects
+                        .filter(project => typeof project.id === 'string' && project.id.trim() !== '')
+                        .map(project => (
+                          <label key={project.id} className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-accent">
+                            <Checkbox
+                              checked={filters.projectId?.includes(project.id)}
+                              onCheckedChange={checked => {
+                                if (checked) {
+                                  onFiltersChange({ ...filters, projectId: [...(filters.projectId || []), project.id] })
+                                } else {
+                                  onFiltersChange({ ...filters, projectId: (filters.projectId || []).filter(id => id !== project.id) })
+                                }
+                              }}
+                              id={`project-checkbox-${project.id}`}
+                            />
+                            <span className="text-sm">{project.name}{project.clients ? ` - ${project.clients.name}` : ''}</span>
+                          </label>
+                        ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
             {/* Filtro de tipo de persona */}

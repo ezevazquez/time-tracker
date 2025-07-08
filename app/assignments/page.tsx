@@ -52,6 +52,7 @@ export default function AssignmentsPage() {
     overallocatedOnly: false,
     personType: 'all',
     search: '',
+    projectId: [],
   })
 
   const { people, loading: loadingPeople } = usePeople()
@@ -87,6 +88,7 @@ export default function AssignmentsPage() {
       overallocatedOnly: false,
       personType: 'all',
       search: '',
+      projectId: [],
     })
   }
 
@@ -163,6 +165,12 @@ export default function AssignmentsPage() {
         })
       }
     }
+    if (filters.projectId && filters.projectId.length > 0) {
+      result = result.filter(person => {
+        // La persona debe tener al menos una asignación en uno de los proyectos seleccionados
+        return assignments.some(a => a.person_id === person.id && filters.projectId!.includes(a.project_id))
+      })
+    }
     return result
   }, [people, filters, viewMode, assignments, searchLower])
 
@@ -191,6 +199,8 @@ export default function AssignmentsPage() {
       const person = people.find(p => p.id === assignment.person_id)
       // Filtro por perfil
       if (filters.personProfile.length > 0 && !filters.personProfile.includes(person?.profile || '')) return false
+      // Filtro por proyecto
+      if (filters.projectId && filters.projectId.length > 0 && !filters.projectId.includes(assignment.project_id)) return false
       // Filtro por tipo
       if (filters.personType && filters.personType !== 'all' && person?.type !== filters.personType) return false
       // Filtro por fechas
