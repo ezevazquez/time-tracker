@@ -47,7 +47,7 @@ export function ProjectAssignmentsPanel({
                     {showAddButton && (
                         <Button onClick={() => setShowAssignmentModal(true)} size="sm" data-test="add-assignment-button">
                             <Plus className="h-4 w-4 mr-2" />
-                            Agregar
+                            Nueva asignación
                         </Button>
                     )}
                 </div>
