@@ -36,6 +36,7 @@ interface ResourceTableProps {
   onFiltersChange: (filters: any) => void
   onClearFilters: () => void
   onDelete: (id: string) => void
+  viewMode?: 'timeline' | 'list'
 }
 
 // Constante para ancho y padding de la columna Acciones
@@ -51,6 +52,7 @@ export function ResourceTable({
   onFiltersChange,
   onClearFilters,
   onDelete,
+  viewMode = 'list',
 }: ResourceTableProps) {
   // Sorting state
   const [sortField, setSortField] = useState<'person' | 'profile' | 'project' | 'start' | 'end'>('start')
@@ -229,7 +231,7 @@ export function ResourceTable({
                                     </TableCell>
                                     <TableCell className="text-right" style={ACTIONS_COL_STYLE}>
                                       <div className="flex flex-row gap-1 justify-end items-center min-h-[36px] h-full">
-                                        <Button size="icon" variant="ghost" asChild><Link href={`/assignments/${a.id}/edit`}><Edit className="w-4 h-4" /></Link></Button>
+                                        <Button size="icon" variant="ghost" asChild><Link href={`/assignments/${a.id}/edit?view=${viewMode}`}><Edit className="w-4 h-4" /></Link></Button>
                                         <Button size="icon" variant="ghost" onClick={e => { e.stopPropagation(); onDelete(a.id) }}><Trash2 className="w-4 h-4" /></Button>
                                       </div>
                                     </TableCell>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -60,6 +60,7 @@ const formSchema = z
 
 export default function EditAssignmentPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [showOverallocationModal, setShowOverallocationModal] = useState(false)
   const [overallocationData, setOverallocationData] = useState<any>(null)
@@ -74,6 +75,12 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
   const { projects } = useProjects()
   const { assignments, updateAssignment, deleteAssignment } = useAssignments()
   const { validateAssignment, getOverallocationMessage } = useAssignmentValidation()
+
+  // Function to build return URL with current view mode
+  const getReturnUrl = () => {
+    const currentViewMode = searchParams.get('view')
+    return currentViewMode ? `/assignments?view=${currentViewMode}` : '/assignments'
+  }
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -174,7 +181,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
       }
 
       await updateAssignment(id, updatedAssignment)
-      router.push('/assignments')
+      router.push(getReturnUrl())
     } catch (err) {
       console.error('Error updating assignment:', err)
       toast.error('No se pudo actualizar la asignación')
@@ -202,7 +209,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
       setShowOverallocationModal(false)
       setOverallocationData(null)
       setPendingFormData(null)
-      router.push('/assignments')
+      router.push(getReturnUrl())
     } catch (err) {
       console.error('Error updating assignment:', err)
       toast.error('No se pudo actualizar la asignación')
@@ -231,7 +238,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
         setIsLoading(true)
         await deleteAssignment(id)
         toast.success('Asignación eliminada correctamente')
-        router.push('/assignments')
+        router.push(getReturnUrl())
       } catch (error) {
         console.error('Error deleting assignment:', error)
         toast.error('Error al eliminar la asignación')
@@ -280,7 +287,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
           <Button
             variant="outline"
             size="sm"
-            onClick={() => router.push('/assignments')}
+            onClick={() => router.push(getReturnUrl())}
             className="mr-4"
             data-test="back-assignment-list-button"
           >
@@ -460,7 +467,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
                   {isLoading ? 'Actualizando...' : 'Actualizar Asignación'}
                 </Button>
                 <Button type="button" variant="outline" asChild data-test="cancel-edit-assignment-button">
-                  <Link href="/assignments">Cancelar</Link>
+                  <Link href={getReturnUrl()}>Cancelar</Link>
                 </Button>
                 <Button 
                   type="button" 
