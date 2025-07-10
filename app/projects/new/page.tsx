@@ -88,16 +88,27 @@ export default function NewProjectPage() {
     }),
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  interface FormData {
+    name: string;
+    description?: string;
+    status: ProjectStatus;
+    start_date?: Date;
+    end_date?: Date;
+    client_id: string | null;
+    fte: number | null;
+    contract_type: ProjectContractType;
+  } 
+
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       description: '',
-      status: 'In Progress',
-      start_date: undefined,
-      end_date: undefined,
-      client_id: '',
-      fte: undefined,
+      status: 'In Progress' as ProjectStatus,
+      start_date: undefined as Date | undefined,
+      end_date: undefined as Date | undefined,
+      client_id: '' as string | null,
+      fte: null as number | null,
       contract_type: PROJECT_CONTRACT_TYPE_OPTIONS[0].value as ProjectContractType,
     },
   })
@@ -118,7 +129,7 @@ export default function NewProjectPage() {
     fetchClients()
   }, [])
 
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async (data: FormData) => {
     console.log('Form data submitted:', data);
     
     try {
@@ -131,7 +142,7 @@ export default function NewProjectPage() {
         start_date: data.start_date?.toISOString().split('T')[0] || null,
         end_date: data.end_date?.toISOString().split('T')[0] || null,
         client_id: data.client_id || null,
-        fte: data.fte,
+        fte: data.fte || null,
         contract_type: data.contract_type,
       })
       toast.success('El proyecto se ha creado exitosamente.')
@@ -361,9 +372,10 @@ export default function NewProjectPage() {
                     step="0.1"
                     min="0.1"
                     value={form.watch("fte") ?? ""}
-                   onChange={(e) => {
-                      const floatValue = parseFloat(e.target.value);
+                    onChange={(e) => {
+                      const floatValue = isNaN(parseFloat(e.target.value)) ? null : parseFloat(e.target.value);
                       form.setValue("fte", floatValue, { shouldValidate: true });
+                      
                     }}
                     placeholder="Ej: 4.5"
                     data-test="fte-input"
@@ -421,13 +433,13 @@ export default function NewProjectPage() {
                 )}
               </div>
 
-              {formData.name && (
+              {formFields.name && (
                 <Card className="bg-muted/50">
                   <CardContent className="pt-6">
                     <h3 className="font-medium mb-2">Resumen del Proyecto</h3>
                     <div className="space-y-1 text-sm">
                       <div>
-                        <strong>Nombre:</strong> {formData.name}
+                        <strong>Nombre:</strong> {formFields.name}
                       </div>
                       {selectedClient && (
                         <div>
@@ -436,19 +448,19 @@ export default function NewProjectPage() {
                       )}
                       <div>
                         <strong>Estado:</strong>{' '}
-                        {PROJECT_STATUS_OPTIONS.find(opt => opt.value === formData.status)?.label || formData.status}
+                        {PROJECT_STATUS_OPTIONS.find(opt => opt.value === formFields.status)?.label || formFields.status}
 
 
                       </div>
-                      {formData.start_date && formData.end_date && (
+                      {formFields.start_date && formFields.end_date && (
                         <div>
-                          <strong>Período:</strong> {format(formData.start_date, 'dd/MM/yyyy')} -{' '}
-                          {format(formData.end_date, 'dd/MM/yyyy')}
+                          <strong>Período:</strong> {format(formFields.start_date, 'dd/MM/yyyy')} -{' '}
+                          {format(formFields.end_date, 'dd/MM/yyyy')}
                         </div>
                       )}
-                      {formData.fte && (
+                      {formFields.fte && (
                         <div>
-                          <strong>FTE Total:</strong> {formData.fte}
+                          <strong>FTE Total:</strong> {formFields.fte}
                         </div>
                       )}
                     </div>
