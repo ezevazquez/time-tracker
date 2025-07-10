@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useRef } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Plus, List, CalendarDays, Search } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -27,9 +27,13 @@ import { getDefaultDateRange } from '@/utils/calculateDefaultDateRange'
 
 export default function AssignmentsPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [mounted, setMounted] = useState(false)
-  const [viewMode, setViewMode] = useState<'timeline' | 'list'>('timeline')
+  
+  // Read view mode from URL parameters, default to 'timeline'
+  const viewModeFromUrl = searchParams.get('view') as 'timeline' | 'list' | null
+  const [viewMode, setViewMode] = useState<'timeline' | 'list'>(viewModeFromUrl || 'timeline')
   const scrollToTodayRef = useRef<(() => void) | null>(null)
   const [createModalOpen, setCreateModalOpen] = useState(false)
 
@@ -67,6 +71,22 @@ export default function AssignmentsPage() {
 
     validateUser()
   }, [router])
+
+  // Sync view mode with URL parameters
+  useEffect(() => {
+    const urlViewMode = searchParams.get('view') as 'timeline' | 'list' | null
+    if (urlViewMode && (urlViewMode === 'timeline' || urlViewMode === 'list')) {
+      setViewMode(urlViewMode)
+    }
+  }, [searchParams])
+
+  // Function to handle view mode changes and update URL
+  const handleViewModeChange = (newMode: 'timeline' | 'list') => {
+    setViewMode(newMode)
+    const currentParams = new URLSearchParams(searchParams.toString())
+    currentParams.set('view', newMode)
+    router.push(`/assignments?${currentParams.toString()}`)
+  }
 
   const clearFilters = () => {
     setFilters({
@@ -309,7 +329,7 @@ export default function AssignmentsPage() {
               dateRangeDefault={defaultDateRange}
             />
             <ToggleGroup type="single" value={viewMode} onValueChange={(value) => {
-              if (value) setViewMode(value as 'timeline' | 'list')
+              if (value) handleViewModeChange(value as 'timeline' | 'list')
             }} className="bg-gray-100 p-1 rounded-lg shadow-sm">
               <ToggleGroupItem 
                 value="timeline" 
@@ -358,6 +378,7 @@ export default function AssignmentsPage() {
                 onFiltersChange={setFilters}
                 onClearFilters={clearFilters}
                 onDelete={handleDeleteAssignment}
+                viewMode={viewMode}
               />
             </div>
           </div>
