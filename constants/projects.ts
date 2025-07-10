@@ -33,4 +33,6 @@ export const PROJECT_STATUS = {
     { label: 'FP-FT', value: PROJECT_CONTRACT_TYPE.FIX_TIME },
     { label: 'T&M', value: PROJECT_CONTRACT_TYPE.TM },
   ]
+
+  export type ProjectContractType = typeof PROJECT_CONTRACT_TYPE_OPTIONS[number]['value'];
   
