@@ -28,7 +28,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/utils/classnames'
 import { useProjects } from '@/hooks/use-projects'
 import { clientsService } from '@/lib/services/clients.service'
-import { PROJECT_STATUS_OPTIONS, PROJECT_CONTRACT_TYPE_OPTIONS } from '@/constants/projects'
+import { PROJECT_STATUS_OPTIONS, PROJECT_CONTRACT_TYPE_OPTIONS, ProjectContractType } from '@/constants/projects'
 
 import type { Client } from '@/types/client'
 import { useForm } from 'react-hook-form'
@@ -98,7 +98,7 @@ export default function NewProjectPage() {
       end_date: undefined,
       client_id: '',
       fte: undefined,
-      contract_type: PROJECT_CONTRACT_TYPE_OPTIONS[0].value,
+      contract_type: PROJECT_CONTRACT_TYPE_OPTIONS[0].value as ProjectContractType,
     },
   })
 
@@ -382,9 +382,8 @@ export default function NewProjectPage() {
                 <div className="space-y-2">
                   <Label htmlFor="contract_type">Tipo de contratación *</Label>
                   <Select
-                    value={form.watch("contract_type")}
-                    onValueChange={(value) => form.setValue("contract_type", value)}
-                    data-test="contract-type-select"
+                    value={formData.contract_type}
+                    onValueChange={value => setFormData({ ...formData, contract_type: value as ProjectContractType })}
                   >
                     <SelectTrigger data-test="contract-type-select">
                       <SelectValue placeholder="Seleccionar tipo de contratación" />
