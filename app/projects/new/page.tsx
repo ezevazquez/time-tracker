@@ -31,6 +31,9 @@ import { clientsService } from '@/lib/services/clients.service'
 import { PROJECT_STATUS_OPTIONS, PROJECT_CONTRACT_TYPE_OPTIONS } from '@/constants/projects'
 
 import type { Client } from '@/types/client'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 
 
 export default function NewProjectPage() {
@@ -39,20 +42,65 @@ export default function NewProjectPage() {
 
   const [clients, setClients] = useState<Client[]>([])
   const [loadingClients, setLoadingClients] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [warnings, setWarnings] = useState<string[]>([])
+
+  type ProjectStatus = 'In Progress' | 'Finished' | 'On Hold' | 'Not Started'
 
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    status: 'In Progress' as 'In Progress' | 'Finished' | 'On Hold' | 'Not Started',
+    status: 'In Progress' as ProjectStatus,
     start_date: undefined as Date | undefined,
     end_date: undefined as Date | undefined,
     client_id: '' as string | null,
     fte: null as number | null,
-    contract_type: PROJECT_CONTRACT_TYPE_OPTIONS[0].value,
+    contract_type: PROJECT_CONTRACT_TYPE_OPTIONS[0].value as string,
   })
 
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [warnings, setWarnings] = useState<string[]>([])
+  const formSchema = z.object({
+    name: z.string()
+    .min(1, "El nombre del cliente es obligatorio")
+    .max(30, "El nombre no puede superar los 30 caracteres"),
+    description: z.string().max(500, "Máximo 500 caracteres").optional(),
+    status: z.enum(['In Progress', 'Finished', 'On Hold', 'Not Started']).optional(),
+    start_date: z.date({
+      required_error: "La fecha de inicio es obligatoria",
+      invalid_type_error: "Debe ser una fecha válida",
+    }),
+    end_date: z.date({
+      required_error: "La fecha de fin es obligatoria",
+      invalid_type_error: "Debe ser una fecha válida",
+    }),
+    client_id: z.string({
+      required_error: "El cliente es obligatorio",
+      invalid_type_error: "Debe ser un texto válido",
+    }),
+    fte: z
+      .number({
+        required_error: "El FTE es obligatorio",
+        invalid_type_error: "Debe ser un número",
+      })
+      .min(0.1, "Mínimo 0.1")
+      .max(60, "Máximo 60"),
+    contract_type: z.string({
+      required_error: "El tipo de contrato es obligatorio",
+    }),
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      status: 'In Progress',
+      start_date: undefined,
+      end_date: undefined,
+      client_id: '',
+      fte: undefined,
+      contract_type: PROJECT_CONTRACT_TYPE_OPTIONS[0].value,
+    },
+  })
 
   // Fetch clients
   useEffect(() => {
@@ -70,30 +118,21 @@ export default function NewProjectPage() {
     fetchClients()
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const newWarnings: string[] = []
-    if (!formData.name.trim()) newWarnings.push('El nombre del proyecto es obligatorio')
-    if (formData.fte === null || isNaN(formData.fte)) newWarnings.push('El FTE total es obligatorio')
-    if (formData.fte !== null && (formData.fte <= 0 || formData.fte > 60 || !Number.isInteger(formData.fte))) newWarnings.push('El FTE debe ser menor a 60 (Equivalente a 5 años)')
-    if (!formData.start_date) newWarnings.push('La fecha de inicio es obligatoria')
-    if (!formData.end_date) newWarnings.push('La fecha de fin es obligatoria')
-    if (formData.start_date && formData.end_date && formData.start_date > formData.end_date) newWarnings.push('La fecha de inicio debe ser anterior o igual a la fecha de fin')
-    if (!formData.client_id || formData.client_id === 'no-client') newWarnings.push('El cliente es obligatorio')
-    setWarnings(newWarnings)
-    if (newWarnings.length > 0) return
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    console.log('Form data submitted:', data);
+    
     try {
       setIsSubmitting(true)
       await createProject({
         id: uuidv4(),
-        name: formData.name.trim(),
-        description: formData.description.trim() || null,
-        status: formData.status,
-        start_date: formData.start_date?.toISOString().split('T')[0] || null,
-        end_date: formData.end_date?.toISOString().split('T')[0] || null,
-        client_id: formData.client_id || null,
-        fte: formData.fte,
-        contract_type: formData.contract_type,
+        name: data.name.trim(),
+        description: data.description?.trim() || null,
+        status: data.status as ProjectStatus,
+        start_date: data.start_date?.toISOString().split('T')[0] || null,
+        end_date: data.end_date?.toISOString().split('T')[0] || null,
+        client_id: data.client_id || null,
+        fte: data.fte,
+        contract_type: data.contract_type,
       })
       toast.success('El proyecto se ha creado exitosamente.')
       router.push('/projects')
@@ -104,15 +143,16 @@ export default function NewProjectPage() {
     }
   }
 
+  const formFields = form.watch()
   const checkForWarnings = () => {
     const newWarnings: string[] = []
-    if (!formData.name.trim()) newWarnings.push('El nombre del proyecto es obligatorio')
-    if (formData.fte === null || isNaN(formData.fte)) newWarnings.push('El FTE total es obligatorio')
-    if (formData.fte !== null && (formData.fte <= 0 || formData.fte > 60 || !Number.isInteger(formData.fte))) newWarnings.push('El FTE debe ser menor a 60 (Equivalente a 5 años)')
-    if (!formData.start_date) newWarnings.push('La fecha de inicio es obligatoria')
-    if (!formData.end_date) newWarnings.push('La fecha de fin es obligatoria')
-    if (formData.start_date && formData.end_date && formData.start_date > formData.end_date) newWarnings.push('La fecha de inicio debe ser anterior o igual a la fecha de fin')
-    if (!formData.client_id || formData.client_id === 'no-client') newWarnings.push('El cliente es obligatorio')
+    if (!formFields.name.trim()) newWarnings.push('El nombre del proyecto es obligatorio')
+    if (formFields.fte === null || isNaN(formFields.fte)) newWarnings.push('El FTE total es obligatorio')
+    if (formFields.fte !== null && (formFields.fte <= 0 || formFields.fte > 60 || !Number.isInteger(formFields.fte))) newWarnings.push('El FTE debe ser menor a 60 (Equivalente a 5 años)')
+    if (!formFields.start_date) newWarnings.push('La fecha de inicio es obligatoria')
+    if (!formFields.end_date) newWarnings.push('La fecha de fin es obligatoria')
+    if (formFields.start_date && formFields.end_date && formFields.start_date > formFields.end_date) newWarnings.push('La fecha de inicio debe ser anterior o igual a la fecha de fin')
+    if (!formFields.client_id || formFields.client_id === 'no-client') newWarnings.push('El cliente es obligatorio')
     setWarnings(newWarnings)
   }
 
@@ -156,16 +196,20 @@ export default function NewProjectPage() {
             <CardDescription>Completa la información del nuevo proyecto</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre del Proyecto *</Label>
                   <Input
                     id="name"
-                    value={formData.name}
-                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    {...form.register('name')}
                     placeholder="Ej: E-commerce Platform"
                   />
+                  {form.formState.errors.name && (
+                    <p className="text-sm text-red-500">
+                      {form.formState.errors.name.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -184,8 +228,8 @@ export default function NewProjectPage() {
                 <div className="space-y-2">
                   <Label htmlFor="client">Cliente *</Label>
                   <Select
-                    value={formData.client_id || ''}
-                    onValueChange={value => setFormData({ ...formData, client_id: value || null })}
+                    value={form.watch("client_id") || undefined}
+                    onValueChange={(value) => form.setValue("client_id", value)}
                   >
                     <SelectTrigger data-test="client-select">
                       <SelectValue placeholder="Seleccionar cliente" />
@@ -198,15 +242,18 @@ export default function NewProjectPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                   {form.formState.errors.client_id && (
+                    <p className="text-sm text-red-500">
+                      {form.formState.errors.client_id.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="status">Estado</Label>
                   <Select
-                    value={formData.status}
-                    onValueChange={(
-                      value: 'In Progress' | 'Finished' | 'On Hold' | 'Not Started'
-                    ) => setFormData({ ...formData, status: value })}
+                    value={form.watch("status")}
+                    onValueChange={(value) => form.setValue("status", value as ProjectStatus)}
                   >
                     <SelectTrigger data-test="status-select">
                       <SelectValue />
@@ -219,6 +266,11 @@ export default function NewProjectPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {form.formState.errors.status && (
+                    <p className="text-sm text-red-500">
+                      {form.formState.errors.status.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -229,13 +281,13 @@ export default function NewProjectPage() {
                         variant="outline"
                         className={cn(
                           'w-full justify-start text-left font-normal',
-                          !formData.start_date && 'text-muted-foreground'
+                          !form.watch('start_date') && 'text-muted-foreground'
                         )}
                         data-test="start-date-button"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.start_date ? (
-                          format(formData.start_date, 'PPP', { locale: es })
+                        {form.watch('start_date') ? (
+                          format(form.watch('start_date') as Date, 'PPP', { locale: es })
                         ) : (
                           <span>Seleccionar fecha</span>
                         )}
@@ -244,12 +296,21 @@ export default function NewProjectPage() {
                     <PopoverContent className="w-auto p-0">
                       <Calendar
                         mode="single"
-                        selected={formData.start_date}
-                        onSelect={date => setFormData({ ...formData, start_date: date })}
+                        selected={form.watch("start_date") || undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            form.setValue("start_date", date, { shouldValidate: true });
+                          }
+                        }}
                         initialFocus
                       />
                     </PopoverContent>
                   </Popover>
+                  {form.formState.errors.start_date && (
+                    <p className="text-sm text-red-500">
+                      {form.formState.errors.start_date.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -258,15 +319,15 @@ export default function NewProjectPage() {
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        className={cn(
+                         className={cn(
                           'w-full justify-start text-left font-normal',
-                          !formData.end_date && 'text-muted-foreground'
+                          !form.watch('end_date') && 'text-muted-foreground'
                         )}
                         data-test="end-date-button"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.end_date ? (
-                          format(formData.end_date, 'PPP', { locale: es })
+                        {form.watch('end_date') ? (
+                          format(form.watch('end_date') as Date, 'PPP', { locale: es })
                         ) : (
                           <span>Seleccionar fecha</span>
                         )}
@@ -275,12 +336,21 @@ export default function NewProjectPage() {
                     <PopoverContent className="w-auto p-0">
                       <Calendar
                         mode="single"
-                        selected={formData.end_date}
-                        onSelect={date => setFormData({ ...formData, end_date: date })}
+                        selected={form.watch("end_date") || undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            form.setValue("end_date", date, { shouldValidate: true });
+                          }
+                        }}
                         initialFocus
                       />
                     </PopoverContent>
                   </Popover>
+                  {form.formState.errors.end_date && (
+                    <p className="text-sm text-red-500">
+                      {form.formState.errors.end_date.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -290,35 +360,31 @@ export default function NewProjectPage() {
                     type="number"
                     step="0.1"
                     min="0.1"
-                    max="60"
-                    value={formData.fte === null ? '' : formData.fte}
-                    onChange={e => {
-                      let value = e.target.value;
-                      if (value === '') {
-                        setFormData({ ...formData, fte: null })
-                      } else {
-                        value = value.replace(',', '.');
-                        const floatValue = parseFloat(value);
-                        if (/^\d+([\.,]\d{0,1})?$/.test(e.target.value) && floatValue > 0 && floatValue <= 60) {
-                          setFormData({ ...formData, fte: floatValue })
-                        } else {
-                          setFormData({ ...formData, fte: null })
-                        }
-                      }
+                    value={form.watch("fte") ?? ""}
+                   onChange={(e) => {
+                      const floatValue = parseFloat(e.target.value);
+                      form.setValue("fte", floatValue, { shouldValidate: true });
                     }}
                     placeholder="Ej: 4.5"
                     data-test="fte-input"
                   />
-                  <p className="text-sm text-muted-foreground">
-                    Número mayor a 0 y menor o igual a 60. Se permite un decimal (Ej: 4.5)
-                  </p>
+                  {form.formState.errors.fte ? (
+                    <p className="text-sm text-red-500">
+                      {form.formState.errors.fte.message}
+                    </p>
+                  ):(
+                    <p className="text-sm text-muted-foreground">
+                      Número mayor a 0 y menor o igual a 60. Se permite un decimal (Ej: 4.5)
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="contract_type">Tipo de contratación *</Label>
                   <Select
-                    value={formData.contract_type}
-                    onValueChange={value => setFormData({ ...formData, contract_type: value })}
+                    value={form.watch("contract_type")}
+                    onValueChange={(value) => form.setValue("contract_type", value)}
+                    data-test="contract-type-select"
                   >
                     <SelectTrigger data-test="contract-type-select">
                       <SelectValue placeholder="Seleccionar tipo de contratación" />
@@ -331,6 +397,11 @@ export default function NewProjectPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {form.formState.errors.contract_type && (
+                    <p className="text-sm text-red-500">
+                      {form.formState.errors.contract_type.message}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -338,12 +409,17 @@ export default function NewProjectPage() {
                 <Label htmlFor="description">Descripción</Label>
                 <Textarea
                   id="description"
-                  value={formData.description}
-                  onChange={e => setFormData({ ...formData, description: e.target.value })}
+                  value={form.watch("description")}
+                  onChange={e => form.setValue("description", e.target.value)}
                   placeholder="Describe el proyecto..."
                   rows={4}
                   data-test="description-textarea"
                 />
+                {form.formState.errors.description && (
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.description.message}
+                  </p>
+                )}
               </div>
 
               {formData.name && (
@@ -385,7 +461,6 @@ export default function NewProjectPage() {
                 <Button
                   type="submit"
                   className="flex-1"
-                  disabled={!formData.name.trim() || !formData.fte || formData.fte <= 0 || !formData.start_date || !formData.end_date || !formData.client_id || formData.client_id === 'no-client' || warnings.length > 0 || isSubmitting}
                   data-test="create-project-button"
                 >
                   <Save className="h-4 w-4 mr-2" />
