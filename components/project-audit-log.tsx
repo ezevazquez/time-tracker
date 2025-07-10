@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button'
 
 interface ProjectAuditLogProps {
   projectCode: string
+  version?: number // Version-based refresh
 }
 
 const LOGS_PAGE_SIZE = 20
 
-export function ProjectAuditLog({ projectCode }: ProjectAuditLogProps) {
+export function ProjectAuditLog({ projectCode, version }: ProjectAuditLogProps) {
   const [logs, setLogs] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -91,7 +92,7 @@ export function ProjectAuditLog({ projectCode }: ProjectAuditLogProps) {
     }
     fetchLogs()
     return () => { isMounted = false }
-  }, [projectCode, page])
+  }, [projectCode, page, version])
 
   const totalPages = Math.max(1, Math.ceil(total / LOGS_PAGE_SIZE))
   const from = (page - 1) * LOGS_PAGE_SIZE + 1
