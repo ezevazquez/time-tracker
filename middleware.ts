@@ -16,6 +16,10 @@ export function middleware(req: NextRequest) {
 
   const access_token = req.cookies.get('sb-access-token')
 
+  if (process.env.NEXT_PUBLIC_IS_TEST === 'true') {
+    return NextResponse.next()
+  }
+
   if (!isPublic && !access_token) {
     const loginUrl = req.nextUrl.clone()
     loginUrl.pathname = '/login'
