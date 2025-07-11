@@ -47,17 +47,6 @@ export default function NewProjectPage() {
 
   type ProjectStatus = 'In Progress' | 'Finished' | 'On Hold' | 'Not Started'
 
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    status: 'In Progress' as ProjectStatus,
-    start_date: undefined as Date | undefined,
-    end_date: undefined as Date | undefined,
-    client_id: '' as string | null,
-    fte: null as number | null,
-    contract_type: PROJECT_CONTRACT_TYPE_OPTIONS[0].value as string,
-  })
-
   const formSchema = z.object({
     name: z.string()
     .min(1, "El nombre del cliente es obligatorio")
@@ -101,6 +90,7 @@ export default function NewProjectPage() {
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
     defaultValues: {
       name: '',
       description: '',
@@ -155,23 +145,26 @@ export default function NewProjectPage() {
   }
 
   const formFields = form.watch()
-  const checkForWarnings = () => {
-    const newWarnings: string[] = []
-    if (!formFields.name.trim()) newWarnings.push('El nombre del proyecto es obligatorio')
-    if (formFields.fte === null || isNaN(formFields.fte)) newWarnings.push('El FTE total es obligatorio')
-    if (formFields.fte !== null && (formFields.fte <= 0 || formFields.fte > 60 || !Number.isInteger(formFields.fte))) newWarnings.push('El FTE debe ser menor a 60 (Equivalente a 5 años)')
-    if (!formFields.start_date) newWarnings.push('La fecha de inicio es obligatoria')
-    if (!formFields.end_date) newWarnings.push('La fecha de fin es obligatoria')
-    if (formFields.start_date && formFields.end_date && formFields.start_date > formFields.end_date) newWarnings.push('La fecha de inicio debe ser anterior o igual a la fecha de fin')
-    if (!formFields.client_id || formFields.client_id === 'no-client') newWarnings.push('El cliente es obligatorio')
-    setWarnings(newWarnings)
-  }
 
   useEffect(() => {
-    checkForWarnings()
-  }, [formData])
+  const subscription = form.watch((value : any) => {
+    const newWarnings: string[] = []
 
-  const selectedClient = clients.find(client => client.id === formData.client_id)
+      if (!value.name?.trim()) newWarnings.push('El nombre del proyecto es obligatorio')
+      if (value.fte === null || isNaN(value.fte)) newWarnings.push('El FTE total es obligatorio')
+      if (value.fte !== null && (value.fte <= 0 || value.fte > 60 || !Number.isInteger(value.fte))) newWarnings.push('El FTE debe ser menor a 60 (Equivalente a 5 años)')
+      if (!value.start_date) newWarnings.push('La fecha de inicio es obligatoria')
+      if (!value.end_date) newWarnings.push('La fecha de fin es obligatoria')
+      if (value.start_date && value.end_date && value.start_date > value.end_date) newWarnings.push('La fecha de inicio debe ser anterior o igual a la fecha de fin')
+      if (!value.client_id || value.client_id === 'no-client') newWarnings.push('El cliente es obligatorio')
+
+      setWarnings(newWarnings)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [form])
+
+  const selectedClient = clients.find(client => client.id === formFields.client_id)
 
   return (
     <main className="flex-1 container mx-auto px-4 py-6">
@@ -394,8 +387,8 @@ export default function NewProjectPage() {
                 <div className="space-y-2">
                   <Label htmlFor="contract_type">Tipo de contratación *</Label>
                   <Select
-                    value={formData.contract_type}
-                    onValueChange={value => setFormData({ ...formData, contract_type: value as ProjectContractType })}
+                    value={formFields.contract_type}
+                    onValueChange={value => form.setValue("contract_type", value as ProjectContractType)}
                   >
                     <SelectTrigger data-test="contract-type-select">
                       <SelectValue placeholder="Seleccionar tipo de contratación" />
@@ -420,8 +413,7 @@ export default function NewProjectPage() {
                 <Label htmlFor="description">Descripción</Label>
                 <Textarea
                   id="description"
-                  value={form.watch("description")}
-                  onChange={e => form.setValue("description", e.target.value)}
+                  {...form.register("description")}
                   placeholder="Describe el proyecto..."
                   rows={4}
                   data-test="description-textarea"
