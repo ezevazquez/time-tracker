@@ -435,28 +435,18 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                         <FormLabel>FTE Total</FormLabel>
                         <FormControl>
                           <Input
+                            id="fte"
                             type="number"
                             step="0.1"
                             min="0.1"
-                            max="60"
-                            value={field.value ?? ''}
-                            onChange={e => {
-                              let value = e.target.value;
-                              if (value === '') {
-                                field.onChange(null)
-                              } else {
-                                // Permitir punto o coma como separador decimal
-                                value = value.replace(',', '.');
-                                const floatValue = parseFloat(value);
-                                if (/^\d+([\.,]\d{0,1})?$/.test(e.target.value) && floatValue > 0 && floatValue <= 60) {
-                                  field.onChange(floatValue)
-                                } else {
-                                  field.onChange(null)
-                                }
-                              }
+                            value={form.watch("fte") ?? ""}
+                            onChange={(e) => {
+                              const floatValue = isNaN(parseFloat(e.target.value)) ? null : parseFloat(e.target.value);
+                              form.setValue("fte", floatValue, { shouldValidate: true });
+                              
                             }}
                             placeholder="Ej: 4.5"
-                            data-test="project-fte-input"
+                            data-test="fte-input"
                           />
                         </FormControl>
                         <p className="text-sm text-muted-foreground">
