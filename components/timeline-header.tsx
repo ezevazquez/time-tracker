@@ -27,7 +27,7 @@ export function TimelineHeader({
   onScrollToToday,
 }: TimelineHeaderProps) {
   return (
-    <div className="sticky top-0 z-10 bg-white border-b border-gray-200 flex" style={{ height: `${headerHeight}px` }}>
+    <div className="sticky top-0 z-20 bg-white border-b border-gray-200 flex" style={{ height: `${headerHeight}px` }}>
       {/* Header left corner - Today button */}
       <div
         className="sticky top-0 left-0 z-20 bg-gray-50 border-r border-gray-200 flex items-center px-4 justify-end"
