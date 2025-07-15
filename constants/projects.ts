@@ -23,15 +23,17 @@ export const PROJECT_STATUS = {
   ] as const
   
   export const PROJECT_CONTRACT_TYPE = {
-    RETAINER: 'Retainers',
-    FIX_TIME: 'Fix time',
-    TM: 'TyM',
+    RETAINER: 'Retainer',
+    FP_FY: 'FP-FY',
+    TM: 'T&M',
+    INTERNO: 'Interno',
   } as const
   
   export const PROJECT_CONTRACT_TYPE_OPTIONS = [
     { label: 'Retainer', value: PROJECT_CONTRACT_TYPE.RETAINER },
-    { label: 'FP-FT', value: PROJECT_CONTRACT_TYPE.FIX_TIME },
+    { label: 'FP-FY', value: PROJECT_CONTRACT_TYPE.FP_FY },
     { label: 'T&M', value: PROJECT_CONTRACT_TYPE.TM },
+    { label: 'Interno', value: PROJECT_CONTRACT_TYPE.INTERNO },
   ]
 
   export type ProjectContractType = typeof PROJECT_CONTRACT_TYPE_OPTIONS[number]['value'];
