@@ -17,7 +17,7 @@ import { ResourceLoading } from '@/components/ui/resource-loading'
 import { ResourceError } from '@/components/ui/resource-error'
 import { ResourceNotFound } from '@/components/resource-not-found'
 import { useProjects } from '@/hooks/use-projects'
-import { useAssignments } from '@/hooks/use-assignments'
+import { useProjectAssignments } from '@/hooks/use-project-assignments'
 import { projectsService } from '@/lib/services/projects.service'
 
 import { 
@@ -35,7 +35,7 @@ import { ProjectAssignmentsPanel } from '@/components/project-assignments-panel'
 export default function ProjectShowPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params)
   const { deleteProject } = useProjects()
-  const { assignments, createAssignment, updateAssignment, deleteAssignment } = useAssignments()
+  const { assignments, auditLogVersion, createAssignment, updateAssignment, deleteAssignment } = useProjectAssignments()
   const [project, setProject] = useState<ProjectWithClient | null>(null)
   const [assignedFTE, setAssignedFTE] = useState<number>(0)
   const [loading, setLoading] = useState(true)
@@ -348,7 +348,10 @@ export default function ProjectShowPage({ params }: { params: Promise<{ id: stri
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
               {project.project_code && (
-                <ProjectAuditLog projectCode={project.project_code} />
+                <ProjectAuditLog 
+                  projectCode={project.project_code} 
+                  version={auditLogVersion}
+                />
               )}
             </CardContent>
           </Card>

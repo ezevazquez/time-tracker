@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button'
 
 interface ProjectAuditLogProps {
   projectCode: string
+  version?: number // Version-based refresh
 }
 
 const LOGS_PAGE_SIZE = 20
 
-export function ProjectAuditLog({ projectCode }: ProjectAuditLogProps) {
+export function ProjectAuditLog({ projectCode, version }: ProjectAuditLogProps) {
   const [logs, setLogs] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -56,6 +57,8 @@ export function ProjectAuditLog({ projectCode }: ProjectAuditLogProps) {
         )
         // Mapear logs
         const mappedLogs = (activityLogs || []).map((log: any) => {
+          if(["is_archived","project_code","id"].includes(log.field_name)) return null
+          
           let displayName = 'Desconocido';
           if (log.changed_by_name?.trim()) {
             displayName = log.changed_by_name;
@@ -73,12 +76,16 @@ export function ProjectAuditLog({ projectCode }: ProjectAuditLogProps) {
             user_id: log.changed_by,
             display_name: displayName,
             action: log.action,
+            table_name: log.table_name,
+            old_value: log.old_value,
+            new_value: log.new_value,
+            field_name: log.field_name,
             resource_type: log.table_name,
             resource_id: log.record_id,
             metadata: null,
             created_at: log.changed_at,
           }
-        })
+        }).filter(Boolean)
         if (isMounted) {
           setLogs(mappedLogs)
           setTotal(count || 0)
@@ -91,7 +98,7 @@ export function ProjectAuditLog({ projectCode }: ProjectAuditLogProps) {
     }
     fetchLogs()
     return () => { isMounted = false }
-  }, [projectCode, page])
+  }, [projectCode, page, version])
 
   const totalPages = Math.max(1, Math.ceil(total / LOGS_PAGE_SIZE))
   const from = (page - 1) * LOGS_PAGE_SIZE + 1

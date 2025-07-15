@@ -36,7 +36,7 @@ export function UpcomingDeadlines({ projects, assignments }: UpcomingDeadlinesPr
         id: project.id,
         type: 'project' as const,
         title: project.name,
-        date: new Date(project.end_date!),
+        date: parseDateFromString(project?.end_date || ''),
         status: project.status,
         projectId: project.id,
       })),
