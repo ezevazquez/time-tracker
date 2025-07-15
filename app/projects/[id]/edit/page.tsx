@@ -50,6 +50,7 @@ import { PROJECT_STATUS_OPTIONS, PROJECT_STATUS, PROJECT_CONTRACT_TYPE_OPTIONS }
 import { ResourceError } from '@/components/ui/resource-error'
 import { ProjectAssignmentsPanel } from '@/components/project-assignments-panel'
 import { useAssignments } from '@/hooks/use-assignments'
+import { parseDateFromString } from '@/lib/assignments'
 
 
 const formSchema = z.object({
@@ -125,14 +126,15 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       try {
         setLoading(true)
         const projectData = await projectsService.getById(unwrappedParams.id)
+        
         if (projectData) {
           setProject(projectData)
           // Set form values
           form.reset({
             name: projectData.name,
             description: projectData.description || '',
-            start_date: projectData.start_date ? new Date(projectData.start_date) : null,
-            end_date: projectData.end_date ? new Date(projectData.end_date) : null,
+            start_date: projectData.start_date ? parseDateFromString(projectData.start_date) : null,
+            end_date: projectData.end_date ? parseDateFromString(projectData.end_date || "") : null,
             status: projectData.status,
             client_id: projectData.client_id,
             fte: projectData.fte,
@@ -433,28 +435,18 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
                         <FormLabel>FTE Total</FormLabel>
                         <FormControl>
                           <Input
+                            id="fte"
                             type="number"
                             step="0.1"
                             min="0.1"
-                            max="60"
-                            value={field.value ?? ''}
-                            onChange={e => {
-                              let value = e.target.value;
-                              if (value === '') {
-                                field.onChange(null)
-                              } else {
-                                // Permitir punto o coma como separador decimal
-                                value = value.replace(',', '.');
-                                const floatValue = parseFloat(value);
-                                if (/^\d+([\.,]\d{0,1})?$/.test(e.target.value) && floatValue > 0 && floatValue <= 60) {
-                                  field.onChange(floatValue)
-                                } else {
-                                  field.onChange(null)
-                                }
-                              }
+                            value={form.watch("fte") ?? ""}
+                            onChange={(e) => {
+                              const floatValue = isNaN(parseFloat(e.target.value)) ? null : parseFloat(e.target.value);
+                              form.setValue("fte", floatValue, { shouldValidate: true });
+                              
                             }}
                             placeholder="Ej: 4.5"
-                            data-test="project-fte-input"
+                            data-test="fte-input"
                           />
                         </FormControl>
                         <p className="text-sm text-muted-foreground">

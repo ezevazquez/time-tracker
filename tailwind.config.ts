@@ -8,6 +8,10 @@ const config: Config = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     '*.{js,ts,jsx,tsx,mdx}',
   ],
+  safelist: [
+    'hover:bg-green-200',
+    'hover:bg-purple-200'
+  ],
   theme: {
     extend: {
       colors: {
