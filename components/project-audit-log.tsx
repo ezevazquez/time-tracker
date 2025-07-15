@@ -57,6 +57,8 @@ export function ProjectAuditLog({ projectCode, version }: ProjectAuditLogProps) 
         )
         // Mapear logs
         const mappedLogs = (activityLogs || []).map((log: any) => {
+          if(["is_archived","project_code","id"].includes(log.field_name)) return null
+          
           let displayName = 'Desconocido';
           if (log.changed_by_name?.trim()) {
             displayName = log.changed_by_name;
@@ -74,12 +76,16 @@ export function ProjectAuditLog({ projectCode, version }: ProjectAuditLogProps) 
             user_id: log.changed_by,
             display_name: displayName,
             action: log.action,
+            table_name: log.table_name,
+            old_value: log.old_value,
+            new_value: log.new_value,
+            field_name: log.field_name,
             resource_type: log.table_name,
             resource_id: log.record_id,
             metadata: null,
             created_at: log.changed_at,
           }
-        })
+        }).filter(Boolean)
         if (isMounted) {
           setLogs(mappedLogs)
           setTotal(count || 0)
