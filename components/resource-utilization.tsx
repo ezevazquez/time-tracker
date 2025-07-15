@@ -126,13 +126,13 @@ export function ResourceUtilization({ people, assignments }: ResourceUtilization
                 <div className="flex items-center gap-2 mb-1">
                   <p className="text-sm font-medium text-gray-900 truncate">{getDisplayName(person)}</p>
                   {person.utilization === 0 && (
-                    <Badge variant="secondary" className="text-xs bg-gray-200 text-gray-700">Sin asignación</Badge>
+                    <Badge variant="secondary" className="text-xs bg-gray-200 text-gray-700 hover:bg-gray-300">Sin asignación</Badge>
                   )}
                   {person.utilization > 0 && person.utilization < 100 && (
-                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">Subasignado</Badge>
+                    <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Subasignado</Badge>
                   )}
                   {person.utilization > 100 && (
-                    <Badge variant="destructive" className="text-xs">Sobreasignado</Badge>
+                    <Badge variant="destructive" className="text-xs bg-red-100 text-red-800 hover:bg-red-200">Sobreasignado</Badge>
                   )}
                 </div>
 

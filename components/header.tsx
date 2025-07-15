@@ -2,29 +2,8 @@ import Link from 'next/link'
 import { MainNav } from '@/components/main-nav'
 import { AccountDropdown } from '@/components/account-dropdown'
 import { ReportModal } from '@/components/report-modal'
-import { useEffect, useState } from 'react'
-import { usePathname } from 'next/navigation'
-import { supabase } from '@/lib/supabase/client'
 
 export const Header = () => {
-    const [sessionExists, setSessionExists] = useState(false)
-    const pathname = usePathname()
-    
-    useEffect(() => {
-    const checkSession = async () => {
-        const { data } = await supabase.auth.getSession()
-        const accessToken = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('sb-access-token='))
-        setSessionExists(!!data.session && !!accessToken)
-    }
-    checkSession()
-    }, [pathname])
-
-    if (!sessionExists) {
-        return null 
-    }
-
     return ( 
         <header className="bg-white dark:bg-zinc-900 shadow-sm sticky top-0 z-30">
             <div className="container mx-auto px-6 py-3">
